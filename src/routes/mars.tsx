@@ -79,7 +79,11 @@ const imageryQuery = (rover: RoverKey) =>
 
 function readFeed(res: DataResult | undefined): MarsFeed | null {
   const d = res?.data as MarsFeed | undefined;
-  return d && Array.isArray(d.images) ? d : null;
+  if (!d || !Array.isArray(d.images)) return null;
+  // Curiosity's frames are no longer published through this service, so an
+  // empty response means "nothing to show", not a working feed of zero.
+  if (d.images.length === 0 && (d.total_images ?? 0) === 0) return null;
+  return d;
 }
 
 function prettyInstrument(raw: string | undefined): string {
