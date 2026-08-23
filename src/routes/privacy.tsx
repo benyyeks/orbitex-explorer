@@ -39,8 +39,9 @@ function PrivacyPage() {
             <p>
               You can use every ORBITEX tool without signing in or providing personal
               information. The only personal data the app ever sees is your approximate
-              location, and only when you choose to share it for the local sky conditions
-              feature. No tracking, advertising, or analytics identifiers are collected.
+              location, only when you choose to share it for the local sky conditions
+              feature, and whatever you choose to type into the feedback form. No tracking,
+              advertising, or analytics identifiers are collected.
             </p>
           </div>
 
@@ -80,12 +81,13 @@ function PrivacyPage() {
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>News, comments, and feedback</h2>
+            <h2>News and feedback</h2>
             <p>
-              Space news headlines are pulled from the Spaceflight News API and cached in
-              ORBITEX's database. They contain only public, already-published content and no
-              personal data. If you submit a feedback form, whatever you enter in that form
-              is sent to the ORBITEX team and used only to improve the tool.
+              Space news headlines are gathered daily from the Spaceflight News API. They
+              contain only public, already-published content and no personal data. If you
+              submit the feedback form, your message is stored securely and used only to
+              improve ORBITEX. Including your name or email is optional, and your address is
+              used solely to reply to you if you ask for a response.
             </p>
           </div>
 

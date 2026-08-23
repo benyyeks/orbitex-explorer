@@ -26,7 +26,7 @@ function DeepSpacePage() {
     <PageScaffold
       title="Deep Space"
       tagline="Voyager, New Horizons, and the outer probes, by distance and velocity."
-      description="A 3D view of the solar system with the farthest active spacecraft. Positions come from JPL Horizons where available, with documented physics-based extrapolation as a fallback so a probe's last known state is never shown as frozen or invented."
+      description="A 3D view of the solar system with the farthest active spacecraft. Positions come from JPL Horizons; when a live position is unavailable, the probe's last known state is extrapolated using documented orbital mechanics and clearly labeled as an estimate."
       sources={[
         "JPL Horizons ephemeris system",
         "NASA DSN mission pages (status)",

@@ -62,9 +62,9 @@ function AboutPage() {
             <h2>The core promise</h2>
             <p>
               If a figure cannot be traced to a source or a formula, it does not appear
-              on ORBITEX. Where an upstream source is temporarily unreachable, the page
-              falls back to a slightly stale cached copy and labels it as such, rather
-              than showing a blank or a fabricated placeholder.
+              on ORBITEX. If a source is temporarily unreachable, the page shows the most
+              recent verified reading with its timestamp, rather than a blank space or an
+              invented value.
             </p>
             <p>
               ORBITEX is not affiliated with NASA, NOAA, ESA, or any space agency. It
@@ -112,14 +112,12 @@ function AboutPage() {
               <li>
                 <strong>Satellites:</strong> the ISS and catalog groups are propagated from
                 NORAD element sets using a Kepler orbit solver with J2 secular perturbations.
-                OMM JSON is preferred over legacy fixed-width TLE to avoid catalog-number
-                truncation.
               </li>
               <li>
-                <strong>Deep-space probes:</strong> live vectors are queried from JPL Horizons
-                where available. When Horizons is unreachable, ORBITEX falls back to a
-                physics-based extrapolation from the last known state, clearly labeled as an
-                estimate.
+                <strong>Deep-space probes:</strong> positions are queried from JPL Horizons.
+                When a live position is unavailable, ORBITEX extrapolates from the probe's
+                last known state using documented orbital mechanics, and labels the result
+                as an estimate.
               </li>
               <li>
                 <strong>Moon:</strong> lunar phase and illumination use a standard
@@ -127,20 +125,16 @@ function AboutPage() {
                 Sun's position.
               </li>
             </ul>
-            <p className="scaffold-note">
-              All upstream calls are proxied through server functions. No third-party API is
-              ever called directly from the browser, and no API key ever reaches client code.
-            </p>
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>Rate limits & caching</h2>
+            <h2>Freshness & accuracy</h2>
             <p>
-              NASA endpoints currently use the free shared DEMO_KEY, capped at 30 requests
-              per hour and 50 per day. A read-through cache in the database softens this:
-              every upstream response is stored with a time-to-live, so repeated visits are
-              served from cache instead of hitting the provider. A configured personal key
-              would raise the limit to 1000 requests per hour.
+              Each dataset is refreshed on a schedule matched to how quickly it changes:
+              solar wind and geomagnetic readings every few minutes, asteroid approaches
+              and launch schedules throughout the day, and the news deck daily. Every figure
+              carries a timestamp, so you can always see when the most recent verified
+              reading was taken.
             </p>
             <p className="scaffold-note">
               Want to dig into a specific tool?{" "}
