@@ -10,7 +10,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, Line, Html, useTexture } from "@react-three/drei";
 import { propagateSat, RE_EARTH, type TLE } from "@/lib/satellite";
 import { DEG } from "@/lib/astronomy";

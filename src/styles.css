@@ -1050,7 +1050,13 @@ select.hud-pill option { color: #111; }
   align-items: center;
   pointer-events: none;
 }
-.scene-corner .scene-pill { pointer-events: auto; }
+.scene-corner .scene-pill {
+  pointer-events: auto;
+  background: rgba(9, 14, 28, 0.6);
+  color: #e8eefb;
+  border-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+}
 .legend-dot {
   display: inline-block;
   width: 8px;
