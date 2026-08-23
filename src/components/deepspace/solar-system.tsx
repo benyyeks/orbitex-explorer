@@ -33,6 +33,8 @@ import {
 
 const SCALE = 12; // scene units per AU
 const PROBE_KEYS = Object.keys(PROBE_ANCHORS) as ProbeKey[];
+const SUN_RADIUS = 3.2; // enlarged far beyond true scale for visibility
+const SUN_GLOW_SCALE = 1.25;
 
 export type SceneSelection =
   | { kind: "planet"; key: PlanetKey }
@@ -45,6 +47,35 @@ function toScene(v: Vec3): [number, number, number] {
 
 function planetVisualRadius(radiusKm: number): number {
   return Math.min(3.4, Math.max(0.55, Math.pow(radiusKm / 6371, 0.6) * 1.15));
+}
+
+// Probes whose true positions fall inside the enlarged body visuals (Parker
+// at perihelion sits 0.55 scene units from the Sun's center while the Sun
+// renders 4 units wide; JWST sits 0.12 units from Earth). Markers are pushed
+// radially outward to the body surface so they never render inside a body.
+// Display-only: telemetry and distances keep the true values.
+const PROBE_CLEARANCE: Partial<Record<ProbeKey, { center: "sun" | PlanetKey; minDist: number }>> = {
+  parkersolarprobe: { center: "sun", minDist: SUN_RADIUS * SUN_GLOW_SCALE + 1.4 },
+  jwst: { center: "earth", minDist: planetVisualRadius(PLANET_ELEMENTS.earth.radiusKm) + 1.7 },
+  juno: { center: "jupiter", minDist: planetVisualRadius(PLANET_ELEMENTS.jupiter.radiusKm) + 1.7 },
+};
+
+const scratchCenter = new THREE.Vector3();
+
+function clampOutsideBody(pos: THREE.Vector3, rule: { center: "sun" | PlanetKey; minDist: number }, jd: number) {
+  if (rule.center === "sun") {
+    scratchCenter.set(0, 0, 0);
+  } else {
+    const c = toScene(heliocentricEcliptic(rule.center, jd));
+    scratchCenter.set(c[0], c[1], c[2]);
+  }
+  const d = pos.distanceTo(scratchCenter);
+  if (d >= rule.minDist) return;
+  if (d < 1e-6) {
+    pos.set(scratchCenter.x, scratchCenter.y + rule.minDist, scratchCenter.z);
+    return;
+  }
+  pos.sub(scratchCenter).multiplyScalar(rule.minDist / d).add(scratchCenter);
 }
 
 function parkerPositionAU(jd: number): Vec3 {
@@ -62,7 +93,7 @@ function probePositionAU(key: ProbeKey, jd: number, now: Date): Vec3 | null {
   const earth = heliocentricEcliptic("earth", jd);
   if (key === "jwst") {
     const r = Math.sqrt(earth.x ** 2 + earth.y ** 2 + earth.z ** 2) || 1;
-    const k = 1 + 0.01 / r; // roughly 1.5 million km sunward of Earth
+    const k = 1 + 0.01 / r; // roughly 1.5 million km beyond Earth, at the Sun-Earth L2 point
     return { x: earth.x * k, y: earth.y * k, z: earth.z * k };
   }
   if (key === "juno") {
@@ -88,11 +119,11 @@ function Sun({ selected, onSelect }: { selected: boolean; onSelect: () => void }
           onSelect();
         }}
       >
-        <sphereGeometry args={[3.2, 48, 48]} />
+        <sphereGeometry args={[SUN_RADIUS, 48, 48]} />
         <meshBasicMaterial color="#ffc766" />
       </mesh>
-      <mesh scale={1.25}>
-        <sphereGeometry args={[3.2, 32, 32]} />
+      <mesh scale={SUN_GLOW_SCALE}>
+        <sphereGeometry args={[SUN_RADIUS, 32, 32]} />
         <meshBasicMaterial
           color="#ff9d3d"
           transparent
@@ -222,9 +253,12 @@ function Probes({ jdRef, positionsRef, selected, onSelect }: SystemProps) {
       const pos = probePositionAU(key, jd, now);
       if (!g || !pos) continue;
       const [x, y, z] = toScene(pos);
-      g.position.set(x, y, z);
-      positionsRef.current[`probe:${key}`] = positionsRef.current[`probe:${key}`] ?? new THREE.Vector3();
-      positionsRef.current[`probe:${key}`]!.set(x, y, z);
+      const v = positionsRef.current[`probe:${key}`] ?? new THREE.Vector3();
+      v.set(x, y, z);
+      const rule = PROBE_CLEARANCE[key];
+      if (rule) clampOutsideBody(v, rule, jd);
+      g.position.copy(v);
+      positionsRef.current[`probe:${key}`] = v;
     }
   });
   return (
