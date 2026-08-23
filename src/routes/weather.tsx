@@ -151,19 +151,6 @@ function parseDonki(raw: unknown): DonkiAlert[] {
 
 // ------------------------------ Components ---------------------------------
 
-function FreshnessBadge({ res }: { res: { isStale: boolean; fetchedAt: string } }) {
-  // The age string is clock-dependent; render it only after hydration to
-  // avoid a server/client text mismatch.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return (
-    <span className={`badge ${res.isStale ? "badge-warning" : "badge-success"}`}>
-      {res.isStale ? "Stale cache" : "Live"}
-      {mounted ? ` · ${timeAgo(new Date(res.fetchedAt))}` : ""}
-    </span>
-  );
-}
-
 function KpDial({ kp }: { kp: number | null }) {
   return (
     <div className="kp-dial" aria-hidden="true">
