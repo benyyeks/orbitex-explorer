@@ -7,8 +7,9 @@ export type FetchJsonResult<T> = { ok: true; data: T } | { ok: false; status: nu
 
 // Fetch a URL with an abort timeout and return parsed JSON. Throws a typed
 // error on non-2xx, timeout, or network failure so the caller (the cached()
-// wrapper) can fall back to a stale cache row.
-export async function fetchJson<T>(url: string, opts: { timeoutMs?: number; headers?: Record<string, string> } = {}): Promise<T> {
+// wrapper) can fall back to a stale cache row. Default T = any: upstream
+// JSON is dynamic and typed loosely, narrowed on the consuming page.
+export async function fetchJson<T = any>(url: string, opts: { timeoutMs?: number; headers?: Record<string, string> } = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 12000);
   try {
