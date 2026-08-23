@@ -33,6 +33,8 @@ import {
 
 const SCALE = 12; // scene units per AU
 const PROBE_KEYS = Object.keys(PROBE_ANCHORS) as ProbeKey[];
+const SUN_RADIUS = 3.2; // enlarged far beyond true scale for visibility
+const SUN_GLOW_SCALE = 1.25;
 
 export type SceneSelection =
   | { kind: "planet"; key: PlanetKey }
@@ -62,7 +64,7 @@ function probePositionAU(key: ProbeKey, jd: number, now: Date): Vec3 | null {
   const earth = heliocentricEcliptic("earth", jd);
   if (key === "jwst") {
     const r = Math.sqrt(earth.x ** 2 + earth.y ** 2 + earth.z ** 2) || 1;
-    const k = 1 + 0.01 / r; // roughly 1.5 million km sunward of Earth
+    const k = 1 + 0.01 / r; // roughly 1.5 million km beyond Earth, at the Sun-Earth L2 point
     return { x: earth.x * k, y: earth.y * k, z: earth.z * k };
   }
   if (key === "juno") {
