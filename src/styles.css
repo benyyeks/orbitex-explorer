@@ -613,3 +613,47 @@ html.nav-open-lock body {
   color: var(--color-text-faint);
 }
 
+/* --------------------------- Page hero (content) -------------------------- */
+.page-hero { margin-bottom: 28px; }
+.page-hero h1 {
+  font-family: var(--font-heading);
+  font-size: clamp(1.9rem, 4.5vw, 2.6rem);
+  margin: 12px 0 8px;
+  letter-spacing: -0.01em;
+}
+.tagline {
+  color: var(--color-text-muted);
+  font-size: 1.05rem;
+  max-width: 640px;
+  margin: 0;
+}
+.text-soft { color: var(--color-text-soft); }
+
+/* ------------------------------ Data table ------------------------------- */
+.source-table-wrap { overflow-x: auto; margin-top: 8px; }
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.data-table th {
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-strong);
+}
+.data-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+  vertical-align: top;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table a:hover { text-decoration: underline; }
+
+
