@@ -351,7 +351,16 @@ function NewsCard({ item }: { item: NewsItem }) {
   return (
     <a className="news-card interactive" href={item.url} target="_blank" rel="noopener noreferrer">
       {item.image_url ? (
-        <img className="news-img" src={item.image_url} alt="" loading="lazy" />
+        <img
+          className="news-img"
+          src={item.image_url}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
       ) : (
         <div className="news-img" />
       )}
@@ -377,7 +386,16 @@ function LaunchCard({ launch }: { launch: LaunchBrief }) {
   return (
     <Link className="news-card launch-card interactive" to="/launches">
       {launch.image ? (
-        <img className="news-img" src={launch.image} alt="" loading="lazy" />
+        <img
+          className="news-img"
+          src={launch.image}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+          onError={(e) => {
+            e.currentTarget.style.display = "none";
+          }}
+        />
       ) : (
         <div className="news-img" />
       )}
