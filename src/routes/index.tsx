@@ -12,6 +12,7 @@ import {
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
 import { timeAgo, safeText, pad2 } from "@/lib/format";
 import { EmptyState } from "@/components/site/data-state";
+import { SkeletonImage } from "@/components/site/skeleton-image";
 
 export const Route = createFileRoute("/")({
   head: () => ({
