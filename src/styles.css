@@ -1294,3 +1294,27 @@ a.side-item { text-decoration: none; color: inherit; }
   outline: 2px solid var(--color-accent, #b97f2e);
   outline-offset: 2px;
 }
+
+/* Saved-objects transfer (export / import) and compare card actions */
+.fav-transfer { margin-bottom: 12px; }
+.fav-transfer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.fav-transfer-status { margin: 8px 0 0; }
+.compare-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+/* Mars page: heliocentric orbit map and rover photo grid */
+.orbit-map { width: 100%; height: auto; display: block; }
+.orbit-map-path { fill: none; stroke: var(--color-border-strong); stroke-width: 1; stroke-dasharray: 3 4; }
+.orbit-map-link { stroke: var(--color-accent); stroke-width: 1.4; }
+.orbit-map-sun { fill: var(--color-accent); }
+.orbit-map-earth { fill: var(--color-text); }
+.orbit-map-mars { fill: var(--color-danger); }
+.orbit-map-label { fill: var(--color-text-faint); font-size: 10px; font-family: var(--font-mono); }
+.orbit-map-value { fill: var(--color-text); font-size: 11px; font-family: var(--font-mono); font-weight: 600; }
+
+.mars-photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.mars-photo { margin: 0; }
+.mars-photo a { display: block; }
+.mars-photo img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; border-radius: 10px; border: 1px solid var(--color-border); background: var(--color-bg-solid); }
+.mars-photo figcaption { font-size: 0.78rem; color: var(--color-text-faint); margin-top: 6px; line-height: 1.4; }
+@media (max-width: 900px) { .mars-photo-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .mars-photo-grid { grid-template-columns: 1fr; } }

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, queryOptions } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getSatellite } from "@/lib/orbitex-data.functions";
+import { satByIdQuery } from "@/lib/sat-queries";
 import { parseOMMArray, propagateSat, orbitRegime, type TLE } from "@/lib/satellite";
 import { fmtNum, timeAgo, utcClock, utcDateStr } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
@@ -37,14 +37,6 @@ export const Route = createFileRoute("/tracker/$noradId")({
   component: SatelliteDetailPage,
 });
 
-function satByIdQuery(noradId: string) {
-  return queryOptions({
-    queryKey: ["orbitex", "sat", noradId],
-    queryFn: () => getSatellite({ data: { noradId } }),
-    staleTime: 30 * 60_000,
-    retry: 1,
-  });
-}
 
 function epochDate(jd: number): Date {
   return new Date((jd - 2440587.5) * 86400000);

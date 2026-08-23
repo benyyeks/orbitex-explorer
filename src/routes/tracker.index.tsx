@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, queryOptions } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { getSatellites } from "@/lib/orbitex-data.functions";
 import { parseOMMArray, propagateSat, type TLE } from "@/lib/satellite";
+import { satByIdQuery, satGroupQuery, type SatGroup } from "@/lib/sat-queries";
 import { fmtNum, timeAgo } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state";
@@ -11,6 +11,7 @@ import { useObserverLocation } from "@/lib/location";
 import { ObserverLocationControls, PassForecast } from "@/components/tracker/observer-location";
 import { FavButton } from "@/components/tracker/fav-button";
 import { ComparePanel } from "@/components/tracker/compare-panel";
+import { FavoritesTransfer } from "@/components/tracker/favorites-transfer";
 
 // three.js is browser-only; the globe mounts after hydration.
 const TrackerGlobe = lazy(() => import("@/components/tracker/tracker-globe"));
@@ -34,10 +35,18 @@ export const Route = createFileRoute("/tracker/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  // The compare pair lives in the URL so a comparison can be shared or
+  // bookmarked and reopened exactly as it was left.
+  validateSearch: (search: Record<string, unknown>): { compare?: string | undefined } => {
+    const c = search["compare"];
+    return {
+      compare: typeof c === "string" && /^\d{1,6}(,\d{1,6})?$/.test(c) ? c : undefined,
+    };
+  },
   component: TrackerPage,
 });
 
-type SatGroup = "stations" | "active" | "starlink" | "gps-ops" | "iridium-NEXT" | "resource" | "weather" | "science";
+
 
 const GROUPS: { id: SatGroup; label: string; color: string; blurb: string; cap?: number }[] = [
   {
@@ -94,14 +103,6 @@ const GROUPS: { id: SatGroup; label: string; color: string; blurb: string; cap?:
 
 const ISS_NORAD = "25544";
 
-function satQuery(group: SatGroup) {
-  return queryOptions({
-    queryKey: ["orbitex", "sats", group],
-    queryFn: () => getSatellites({ data: { group } }),
-    staleTime: 30 * 60_000,
-    retry: 1,
-  });
-}
 
 function formatEpoch(jd: number): string {
   return timeAgo(new Date((jd - 2440587.5) * 86400000));
@@ -174,9 +175,25 @@ function TrackerPage() {
   const catalogRef = useRef<HTMLUListElement>(null);
   const favorites = useFavorites();
   const loc = useObserverLocation();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const query = useQuery(satQuery(group));
+  // Restore a comparison from a shared link on first load.
+  const initRef = useRef(false);
+  useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+    if (!search.compare) return;
+    const [a, b] = search.compare.split(",");
+    setCompareMode(true);
+    setCompareIds([a ?? null, b ?? null]);
+    setCompareNote("Comparison restored from the shared link.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const query = useQuery(satGroupQuery(group));
   const groupMeta = GROUPS.find((g) => g.id === group) ?? GROUPS[0]!;
 
   const tles = useMemo(() => {
@@ -196,14 +213,29 @@ function TrackerPage() {
     [tles, selectedId]
   );
 
-  const compareA = useMemo(
-    () => (compareIds[0] ? tles.find((t) => t.noradId === compareIds[0]) ?? null : null),
-    [tles, compareIds]
+  // Compare slots resolve from the visible catalog first; an object outside
+  // the current group (for example from a shared link) is fetched by catalog
+  // number so the comparison still renders.
+  const catalogA = compareIds[0] ? tles.find((t) => t.noradId === compareIds[0]) ?? null : null;
+  const catalogB = compareIds[1] ? tles.find((t) => t.noradId === compareIds[1]) ?? null : null;
+  const queryA = useQuery({
+    ...satByIdQuery(compareIds[0] ?? "0"),
+    enabled: !!compareIds[0] && !catalogA,
+  });
+  const queryB = useQuery({
+    ...satByIdQuery(compareIds[1] ?? "0"),
+    enabled: !!compareIds[1] && !catalogB,
+  });
+  const fetchedA = useMemo(
+    () => (queryA.data?.data ? parseOMMArray(queryA.data.data)[0] ?? null : null),
+    [queryA.data]
   );
-  const compareB = useMemo(
-    () => (compareIds[1] ? tles.find((t) => t.noradId === compareIds[1]) ?? null : null),
-    [tles, compareIds]
+  const fetchedB = useMemo(
+    () => (queryB.data?.data ? parseOMMArray(queryB.data.data)[0] ?? null : null),
+    [queryB.data]
   );
+  const compareA = catalogA ?? fetchedA;
+  const compareB = catalogB ?? fetchedB;
 
   const assignCompare = (t: TLE) => {
     const [a, b] = compareIds;
@@ -234,6 +266,36 @@ function TrackerPage() {
     setCompareMode(false);
     setCompareIds([null, null]);
     setCompareNote("Compare mode off.");
+  };
+
+  // Keep the address bar in step with the compare pair so the current view
+  // can be bookmarked or shared.
+  useEffect(() => {
+    const [a, b] = compareIds;
+    if (compareMode && a && b) {
+      const value = `${a},${b}`;
+      if (search.compare !== value) {
+        void navigate({ to: "/tracker", search: { compare: value }, replace: true });
+      }
+    } else if (!compareMode && search.compare) {
+      void navigate({ to: "/tracker", search: {}, replace: true });
+    }
+  }, [compareMode, compareIds, search.compare, navigate]);
+
+  const copyCompareLink = async () => {
+    const [a, b] = compareIds;
+    if (!a || !b) return;
+    const url = `${window.location.origin}/tracker?compare=${a},${b}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setCompareNote("Comparison link copied to the clipboard.");
+      window.setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setCompareNote(
+        "Copy was blocked by the browser. The address bar already holds this comparison link."
+      );
+    }
   };
 
   // Arrow-key navigation for the catalog list.
@@ -510,9 +572,20 @@ function TrackerPage() {
                       );
                     })}
                   </div>
-                  <button type="button" className="btn btn-sm" onClick={exitCompare}>
-                    Exit compare mode
-                  </button>
+                  <div className="compare-actions">
+                    {compareIds[0] && compareIds[1] ? (
+                      <button
+                        type="button"
+                        className="btn btn-sm"
+                        onClick={() => void copyCompareLink()}
+                      >
+                        {copied ? "Link copied" : "Copy share link"}
+                      </button>
+                    ) : null}
+                    <button type="button" className="btn btn-sm" onClick={exitCompare}>
+                      Exit compare mode
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="glass glass-card side-card">
@@ -584,9 +657,13 @@ function TrackerPage() {
                     </span>
                   </div>
 
-                  {favorites.favorites.length > 0 ? (
-                    <div className="fav-block">
-                      <div className="side-title">Saved objects</div>
+                  <div className="fav-block">
+                    <div className="side-title">Saved objects</div>
+                    <FavoritesTransfer
+                      favorites={favorites.favorites}
+                      onImport={favorites.importMany}
+                    />
+                    {favorites.favorites.length > 0 ? (
                       <ul className="side-list" aria-label="Saved objects">
                         {favorites.favorites.map((f) => {
                           const inCatalog = tles.find((t) => t.noradId === f.noradId) ?? null;
@@ -638,8 +715,13 @@ function TrackerPage() {
                           );
                         })}
                       </ul>
-                    </div>
-                  ) : null}
+                    ) : (
+                      <p className="detail-note">
+                        No saved objects yet. Select the star on any object to keep it
+                        here, or import a previously exported list.
+                      </p>
+                    )}
+                  </div>
 
                   <input
                     type="search"

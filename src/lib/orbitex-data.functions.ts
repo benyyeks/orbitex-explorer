@@ -73,23 +73,18 @@ export const getNEO = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 // ------------------------------- NASA: Mars ------------------------------
-const ROVERS = ["curiosity", "perseverance"] as const;
-const RoverInput = z.object({ rover: z.enum(ROVERS).default("perseverance") });
+// Raw surface imagery straight from the mission feeds at mars.nasa.gov
+// (mars2020 = Perseverance, msl = Curiosity). Every frame the rovers return
+// is published here with its sol, instrument, and timestamps, so the latest
+// entry doubles as a mission heartbeat.
+const MARS_MISSIONS = ["mars2020", "msl"] as const;
+const MarsFeedInput = z.object({ mission: z.enum(MARS_MISSIONS).default("mars2020") });
 
-export const getMarsPhotos = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => RoverInput.parse(input ?? {}))
+export const getMarsImagery = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => MarsFeedInput.parse(input ?? {}))
   .handler(async ({ data }) => {
-    const key = nasaKey();
-    const url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${data.rover}/latest_photos?api_key=${encodeURIComponent(key)}`;
-    return cached("mars-photos", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
-  });
-
-export const getMarsManifest = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => RoverInput.parse(input ?? {}))
-  .handler(async ({ data }) => {
-    const key = nasaKey();
-    const url = `https://api.nasa.gov/mars-photos/api/v1/manifests/${data.rover}?api_key=${encodeURIComponent(key)}`;
-    return cached("mars-manifest", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+    const url = `https://mars.nasa.gov/rss/api/?feed=raw_images&category=${data.mission}&feedtype=json&num=8&page=0&format=json&order=sol+desc`;
+    return cached("mars-imagery", { mission: data.mission }, 1800, () => fetchJson(url, { timeoutMs: 20000 }));
   });
 
 // --------------------------- CelesTrak: satellites ------------------------
