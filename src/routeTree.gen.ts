@@ -20,6 +20,8 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SkyRouteImport } from './routes/sky'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WeatherRouteImport } from './routes/weather'
+import { Route as DeepspaceIndexRouteImport } from './routes/deepspace.index'
+import { Route as DeepspaceObjectIdRouteImport } from './routes/deepspace.$objectId'
 import { Route as TrackerIndexRouteImport } from './routes/tracker.index'
 import { Route as TrackerNoradIdRouteImport } from './routes/tracker.$noradId'
 import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
@@ -79,6 +81,16 @@ const WeatherRoute = WeatherRouteImport.update({
   path: '/weather',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeepspaceIndexRoute = DeepspaceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => DeepspaceRoute,
+} as any)
+const DeepspaceObjectIdRoute = DeepspaceObjectIdRouteImport.update({
+  id: '/$objectId',
+  path: '/$objectId',
+  getParentRoute: () => DeepspaceRoute,
+} as any)
 const TrackerIndexRoute = TrackerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -99,7 +111,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
-  '/deepspace': typeof DeepspaceRoute
+  '/deepspace': typeof DeepspaceRouteWithChildren
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
@@ -107,7 +119,9 @@ export interface FileRoutesByFullPath {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/deepspace/': typeof DeepspaceIndexRoute
   '/tracker/': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
@@ -115,14 +129,15 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
-  '/deepspace': typeof DeepspaceRoute
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
   '/sky': typeof SkyRoute
   '/weather': typeof WeatherRoute
+  '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/deepspace': typeof DeepspaceIndexRoute
   '/tracker': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
@@ -131,7 +146,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
-  '/deepspace': typeof DeepspaceRoute
+  '/deepspace': typeof DeepspaceRouteWithChildren
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
@@ -139,7 +154,9 @@ export interface FileRoutesById {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/deepspace/': typeof DeepspaceIndexRoute
   '/tracker/': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
@@ -157,7 +174,9 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/deepspace/$objectId'
     | '/tracker/$noradId'
+    | '/deepspace/'
     | '/tracker/'
     | '/api/public/refresh-news'
   fileRoutesByTo: FileRoutesByTo
@@ -165,14 +184,15 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/ask'
-    | '/deepspace'
     | '/launches'
     | '/mars'
     | '/neo'
     | '/privacy'
     | '/sky'
     | '/weather'
+    | '/deepspace/$objectId'
     | '/tracker/$noradId'
+    | '/deepspace'
     | '/tracker'
     | '/api/public/refresh-news'
   id:
@@ -188,7 +208,9 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/deepspace/$objectId'
     | '/tracker/$noradId'
+    | '/deepspace/'
     | '/tracker/'
     | '/api/public/refresh-news'
   fileRoutesById: FileRoutesById
@@ -197,7 +219,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AskRoute: typeof AskRoute
-  DeepspaceRoute: typeof DeepspaceRoute
+  DeepspaceRoute: typeof DeepspaceRouteWithChildren
   LaunchesRoute: typeof LaunchesRoute
   MarsRoute: typeof MarsRoute
   NeoRoute: typeof NeoRoute
@@ -287,6 +309,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeatherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deepspace/': {
+      id: '/deepspace/'
+      path: '/'
+      fullPath: '/deepspace/'
+      preLoaderRoute: typeof DeepspaceIndexRouteImport
+      parentRoute: typeof DeepspaceRoute
+    }
+    '/deepspace/$objectId': {
+      id: '/deepspace/$objectId'
+      path: '/$objectId'
+      fullPath: '/deepspace/$objectId'
+      preLoaderRoute: typeof DeepspaceObjectIdRouteImport
+      parentRoute: typeof DeepspaceRoute
+    }
     '/tracker/': {
       id: '/tracker/'
       path: '/'
@@ -311,6 +347,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DeepspaceRouteChildren {
+  DeepspaceObjectIdRoute: typeof DeepspaceObjectIdRoute
+  DeepspaceIndexRoute: typeof DeepspaceIndexRoute
+}
+
+const DeepspaceRouteChildren: DeepspaceRouteChildren = {
+  DeepspaceObjectIdRoute: DeepspaceObjectIdRoute,
+  DeepspaceIndexRoute: DeepspaceIndexRoute,
+}
+
+const DeepspaceRouteWithChildren = DeepspaceRoute._addFileChildren(
+  DeepspaceRouteChildren,
+)
+
 interface TrackerRouteChildren {
   TrackerNoradIdRoute: typeof TrackerNoradIdRoute
   TrackerIndexRoute: typeof TrackerIndexRoute
@@ -328,7 +378,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AskRoute: AskRoute,
-  DeepspaceRoute: DeepspaceRoute,
+  DeepspaceRoute: DeepspaceRouteWithChildren,
   LaunchesRoute: LaunchesRoute,
   MarsRoute: MarsRoute,
   NeoRoute: NeoRoute,
