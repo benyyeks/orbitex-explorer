@@ -84,7 +84,7 @@ export const getMarsImagery = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => MarsFeedInput.parse(input ?? {}))
   .handler(async ({ data }) => {
     const url = `https://mars.nasa.gov/rss/api/?feed=raw_images&category=${data.mission}&feedtype=json&num=8&page=0&format=json&order=sol+desc`;
-    return cached("mars-imagery", { mission: data.mission }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+    return cached("mars-imagery", { mission: data.mission }, 1800, () => fetchJson(url, { timeoutMs: 20000 }));
   });
 
 // --------------------------- CelesTrak: satellites ------------------------

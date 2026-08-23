@@ -81,7 +81,7 @@ const imageryQuery = (rover: RoverKey) =>
   queryOptions({
     queryKey: ["orbitex", "mars-imagery", rover],
     queryFn: () => getMarsImagery({ data: { mission: ROVER_META[rover].mission } }),
-    retry: false,
+    retry: 1,
     staleTime: 30 * 60_000,
   });
 
