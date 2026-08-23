@@ -10,7 +10,7 @@
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, Line, Html, useTexture } from "@react-three/drei";
 import { propagateSat, RE_EARTH, type TLE } from "@/lib/satellite";
 import { DEG } from "@/lib/astronomy";
@@ -211,6 +211,21 @@ function SelectedSatellite({ tle }: { tle: TLE }) {
   );
 }
 
+// Keeps the whole Earth in frame when the canvas aspect changes (portrait
+// phones, fullscreen): pull the camera back when the viewport is narrow.
+function FitCamera() {
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    const dist = Math.max(5.8, 5.6 / Math.min(aspect, 1.4));
+    const dir = camera.position.clone().normalize();
+    camera.position.copy(dir.multiplyScalar(dist));
+    camera.lookAt(0, 0, 0);
+  }, [camera, size]);
+  return null;
+}
+
 export type TrackerGlobeProps = {
   tles: TLE[];
   color: string;
@@ -230,6 +245,7 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
       }}
       onPointerMissed={() => onSelect(null)}
     >
+      <FitCamera />
       <color attach="background" args={["#04060d"]} />
       <ambientLight intensity={0.55} />
       <directionalLight position={[6, 3, 8]} intensity={2.6} />

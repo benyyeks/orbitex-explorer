@@ -20,6 +20,8 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SkyRouteImport } from './routes/sky'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WeatherRouteImport } from './routes/weather'
+import { Route as TrackerIndexRouteImport } from './routes/tracker.index'
+import { Route as TrackerNoradIdRouteImport } from './routes/tracker.$noradId'
 import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +79,16 @@ const WeatherRoute = WeatherRouteImport.update({
   path: '/weather',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TrackerIndexRoute = TrackerIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => TrackerRoute,
+} as any)
+const TrackerNoradIdRoute = TrackerNoradIdRouteImport.update({
+  id: '/$noradId',
+  path: '/$noradId',
+  getParentRoute: () => TrackerRoute,
+} as any)
 const ApiPublicRefreshNewsRoute = ApiPublicRefreshNewsRouteImport.update({
   id: '/api/public/refresh-news',
   path: '/api/public/refresh-news',
@@ -93,8 +105,10 @@ export interface FileRoutesByFullPath {
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
   '/sky': typeof SkyRoute
-  '/tracker': typeof TrackerRoute
+  '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/tracker/': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesByTo {
@@ -107,8 +121,9 @@ export interface FileRoutesByTo {
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
   '/sky': typeof SkyRoute
-  '/tracker': typeof TrackerRoute
   '/weather': typeof WeatherRoute
+  '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/tracker': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesById {
@@ -122,8 +137,10 @@ export interface FileRoutesById {
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
   '/sky': typeof SkyRoute
-  '/tracker': typeof TrackerRoute
+  '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/tracker/$noradId': typeof TrackerNoradIdRoute
+  '/tracker/': typeof TrackerIndexRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +157,8 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/tracker/$noradId'
+    | '/tracker/'
     | '/api/public/refresh-news'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -152,8 +171,9 @@ export interface FileRouteTypes {
     | '/neo'
     | '/privacy'
     | '/sky'
-    | '/tracker'
     | '/weather'
+    | '/tracker/$noradId'
+    | '/tracker'
     | '/api/public/refresh-news'
   id:
     | '__root__'
@@ -168,6 +188,8 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/tracker/$noradId'
+    | '/tracker/'
     | '/api/public/refresh-news'
   fileRoutesById: FileRoutesById
 }
@@ -181,7 +203,7 @@ export interface RootRouteChildren {
   NeoRoute: typeof NeoRoute
   PrivacyRoute: typeof PrivacyRoute
   SkyRoute: typeof SkyRoute
-  TrackerRoute: typeof TrackerRoute
+  TrackerRoute: typeof TrackerRouteWithChildren
   WeatherRoute: typeof WeatherRoute
   ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
@@ -265,6 +287,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeatherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tracker/': {
+      id: '/tracker/'
+      path: '/'
+      fullPath: '/tracker/'
+      preLoaderRoute: typeof TrackerIndexRouteImport
+      parentRoute: typeof TrackerRoute
+    }
+    '/tracker/$noradId': {
+      id: '/tracker/$noradId'
+      path: '/$noradId'
+      fullPath: '/tracker/$noradId'
+      preLoaderRoute: typeof TrackerNoradIdRouteImport
+      parentRoute: typeof TrackerRoute
+    }
     '/api/public/refresh-news': {
       id: '/api/public/refresh-news'
       path: '/api/public/refresh-news'
@@ -274,6 +310,19 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface TrackerRouteChildren {
+  TrackerNoradIdRoute: typeof TrackerNoradIdRoute
+  TrackerIndexRoute: typeof TrackerIndexRoute
+}
+
+const TrackerRouteChildren: TrackerRouteChildren = {
+  TrackerNoradIdRoute: TrackerNoradIdRoute,
+  TrackerIndexRoute: TrackerIndexRoute,
+}
+
+const TrackerRouteWithChildren =
+  TrackerRoute._addFileChildren(TrackerRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -285,7 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   NeoRoute: NeoRoute,
   PrivacyRoute: PrivacyRoute,
   SkyRoute: SkyRoute,
-  TrackerRoute: TrackerRoute,
+  TrackerRoute: TrackerRouteWithChildren,
   WeatherRoute: WeatherRoute,
   ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
