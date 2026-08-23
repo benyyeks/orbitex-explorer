@@ -63,13 +63,14 @@ const donkiQueryOptions = queryOptions({
 
 type KpRow = { time: string; kp: number };
 
-// NOAA noaa-planetary-k-index.json: header row then [time_tag, Kp, a_running, station_count].
+// NOAA noaa-planetary-k-index.json: array of objects {time_tag, Kp, ...}.
+// Tolerate the legacy array-of-arrays shape with a header row as well.
 function parseKp(raw: unknown): KpRow[] {
   if (!Array.isArray(raw)) return [];
   const out: KpRow[] = [];
-  for (const r of raw.slice(1) as any[]) {
-    const kp = Number(r?.[1]);
-    if (Number.isFinite(kp)) out.push({ time: String(r?.[0] ?? ""), kp });
+  for (const r of raw as any[]) {
+    const kp = Number(Array.isArray(r) ? r[1] : r?.Kp);
+    if (Number.isFinite(kp)) out.push({ time: String((Array.isArray(r) ? r[0] : r?.time_tag) ?? ""), kp });
   }
   return out;
 }
