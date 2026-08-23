@@ -207,11 +207,11 @@ function WeatherPage() {
 
   const plasma = wind?.data?.plasma;
   const mag = wind?.data?.mag;
-  const speed = lastValid(plasma, 2); // km/s
-  const density = lastValid(plasma, 1); // p/cm³
-  const temp = lastValid(plasma, 3); // K
-  const bz = lastValid(mag, 3); // nT, GSM
-  const bt = lastValid(mag, 6); // nT total
+  const speed = lastValidField(plasma, "proton_speed"); // km/s
+  const density = lastValidField(plasma, "proton_density"); // p/cm³
+  const temp = lastValidField(plasma, "proton_temperature"); // K
+  const bz = lastValidField(mag, "bz_gsm"); // nT, GSM
+  const bt = lastValidField(mag, "bt"); // nT total
   const windTime = lastTimeTag(plasma);
 
   const xrRows = Array.isArray(xray?.data) ? (xray.data as any[]) : [];
