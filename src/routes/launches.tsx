@@ -214,8 +214,8 @@ function LaunchesPage() {
             </div>
             <div className="glass glass-card stat-card">
               <div className="stat-label">Next launch</div>
-              <div className="stat-value" style={{ fontSize: "1.3rem" }}>{next ? next.provider || next.name : "--"}</div>
-              <div className="stat-unit">{next ? fmtNet(next.net) : ""}</div>
+              <div className="stat-value" style={{ fontSize: "1.3rem" }}>{next ? next.rocket || next.name : "--"}</div>
+              <div className="stat-unit">{next ? `${next.provider || "Unknown provider"} · ${fmtNet(next.net)}` : ""}</div>
             </div>
           </div>
 
