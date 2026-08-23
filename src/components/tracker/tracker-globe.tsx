@@ -211,6 +211,21 @@ function SelectedSatellite({ tle }: { tle: TLE }) {
   );
 }
 
+// Keeps the whole Earth in frame when the canvas aspect changes (portrait
+// phones, fullscreen): pull the camera back when the viewport is narrow.
+function FitCamera() {
+  const camera = useThree((s) => s.camera);
+  const size = useThree((s) => s.size);
+  useEffect(() => {
+    const aspect = size.width / size.height;
+    const dist = Math.max(5.8, 5.6 / Math.min(aspect, 1.4));
+    const dir = camera.position.clone().normalize();
+    camera.position.copy(dir.multiplyScalar(dist));
+    camera.lookAt(0, 0, 0);
+  }, [camera, size]);
+  return null;
+}
+
 export type TrackerGlobeProps = {
   tles: TLE[];
   color: string;
