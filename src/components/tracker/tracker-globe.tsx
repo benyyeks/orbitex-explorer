@@ -245,6 +245,7 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
       }}
       onPointerMissed={() => onSelect(null)}
     >
+      <FitCamera />
       <color attach="background" args={["#04060d"]} />
       <ambientLight intensity={0.55} />
       <directionalLight position={[6, 3, 8]} intensity={2.6} />
