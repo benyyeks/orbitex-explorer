@@ -55,6 +55,7 @@ type Launch = {
   location: string;
   country: string;
   webcastLive: boolean;
+  image: string | null;
 };
 
 function parseLaunches(raw: unknown): Launch[] {
@@ -74,6 +75,12 @@ function parseLaunches(raw: unknown): Launch[] {
     location: safeText(l?.pad?.location?.name, 100),
     country: safeText(l?.pad?.country_code, 6),
     webcastLive: Boolean(l?.webcast_live),
+    image:
+      typeof l?.image === "string" && l.image
+        ? l.image
+        : typeof l?.rocket?.configuration?.image_url === "string" && l.rocket.configuration.image_url
+          ? l.rocket.configuration.image_url
+          : null,
   }));
 }
 
