@@ -224,7 +224,7 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
     <Canvas
       camera={{ position: [0, 1.3, 5.8], fov: 42, near: 0.1, far: 200 }}
       dpr={[1, 2]}
-      gl={{ antialias: true }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
       onCreated={({ raycaster }) => {
         raycaster.params.Points = { threshold: 0.05 };
       }}

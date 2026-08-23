@@ -330,7 +330,7 @@ export default function SolarSystemScene({
     <Canvas
       camera={{ position: [0, 150, 340], fov: 40, near: 0.5, far: 15000 }}
       dpr={[1, 2]}
-      gl={{ antialias: true }}
+      gl={{ antialias: true, preserveDrawingBuffer: true }}
       onPointerMissed={() => onSelect(null)}
     >
       <color attach="background" args={["#03050c"]} />
