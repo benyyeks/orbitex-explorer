@@ -14,7 +14,105 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      api_cache: {
+        Row: {
+          cache_key: string
+          endpoint: string
+          fetched_at: string
+          payload: Json
+          ttl_seconds: number
+        }
+        Insert: {
+          cache_key: string
+          endpoint: string
+          fetched_at?: string
+          payload: Json
+          ttl_seconds?: number
+        }
+        Update: {
+          cache_key?: string
+          endpoint?: string
+          fetched_at?: string
+          payload?: Json
+          ttl_seconds?: number
+        }
+        Relationships: []
+      }
+      competitions: {
+        Row: {
+          category: string | null
+          created_at: string
+          deadline: string | null
+          description: string | null
+          id: number
+          is_active: boolean
+          name: string
+          opens_at: string | null
+          organizer: string | null
+          url: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name: string
+          opens_at?: string | null
+          organizer?: string | null
+          url: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          deadline?: string | null
+          description?: string | null
+          id?: number
+          is_active?: boolean
+          name?: string
+          opens_at?: string | null
+          organizer?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
+      space_news: {
+        Row: {
+          content_type: string
+          fetched_at: string
+          id: number
+          image_url: string | null
+          news_site: string | null
+          published_at: string | null
+          summary: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          content_type: string
+          fetched_at?: string
+          id: number
+          image_url?: string | null
+          news_site?: string | null
+          published_at?: string | null
+          summary?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          content_type?: string
+          fetched_at?: string
+          id?: number
+          image_url?: string | null
+          news_site?: string | null
+          published_at?: string | null
+          summary?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
