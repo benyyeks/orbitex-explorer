@@ -1,9 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
-  AU_KM,
-  LIGHT_MIN_PER_AU,
   PLANET_ELEMENTS,
   PLANET_ORDER,
   heliocentricEcliptic,
@@ -13,20 +12,17 @@ import {
 } from "@/lib/astronomy";
 import {
   PROBE_ANCHORS,
-  probeDistanceKm,
   probeFallbackDistanceAU,
   type ProbeKey,
 } from "@/lib/satellite";
-import { fmtNum, raToHMS, decToDMS, jdToDateUTC, useNow } from "@/lib/format";
-import { horizonsProbeQuery } from "@/lib/orbitex-data.functions";
-import { useQuery } from "@tanstack/react-query";
+import { AU_KM } from "@/lib/astronomy";
+import { fmtNum, lightTimeFromAU, lightTimeFromKm, utcDateStr } from "@/lib/format";
+import { horizonsProbeQuery } from "@/lib/horizons-queries";
+import { useNow } from "@/hooks/use-now";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
+import type { SceneSelection } from "@/components/deepspace/solar-system";
 
-const SolarSystemScene = lazy(() =>
-  import("@/components/deepspace/solar-system").then((m) => ({
-    default: m.SolarSystemScene,
-  }))
-);
+const SolarSystemScene = lazy(() => import("@/components/deepspace/solar-system"));
 
 export const Route = createFileRoute("/deepspace/")({
   head: () => ({
@@ -50,25 +46,44 @@ export const Route = createFileRoute("/deepspace/")({
   component: DeepSpacePage,
 });
 
-// ---------------------------------------------------------------------------
-// Selection model: the Sun, a planet, or a probe.
-// ---------------------------------------------------------------------------
-type Selection =
-  | { kind: "sun" }
-  | { kind: "planet"; key: PlanetKey }
-  | { kind: "probe"; key: ProbeKey };
+const PROBE_KEYS = Object.keys(PROBE_ANCHORS) as ProbeKey[];
 
-function selectionId(sel: Selection): string {
+export function selectionId(sel: SceneSelection): string {
   if (sel.kind === "sun") return "sun";
   return sel.key;
 }
 
-const PROBE_KEYS = Object.keys(PROBE_ANCHORS) as ProbeKey[];
+function focusKey(sel: SceneSelection): string {
+  if (sel.kind === "sun") return "sun";
+  if (sel.kind === "planet") return sel.key;
+  return `probe:${sel.key}`;
+}
+
+export function objectDisplayName(sel: SceneSelection): string {
+  if (sel.kind === "sun") return "The Sun";
+  if (sel.kind === "planet")
+    return sel.key.charAt(0).toUpperCase() + sel.key.slice(1);
+  return PROBE_ANCHORS[sel.key].name;
+}
+
+function fmtRA(hours: number): string {
+  const h = Math.floor(hours);
+  const m = Math.floor((hours - h) * 60);
+  return `${h}h ${String(m).padStart(2, "0")}m`;
+}
+
+function fmtDec(deg: number): string {
+  return `${deg >= 0 ? "+" : ""}${fmtNum(deg, 1)} deg`;
+}
+
+function jdToUTCDate(jd: number): Date {
+  return new Date((jd - 2440587.5) * 86400000);
+}
 
 // ---------------------------------------------------------------------------
 // Detail rows
 // ---------------------------------------------------------------------------
-function SunCard() {
+function SunCard({ onFocus }: { onFocus: () => void }) {
   return (
     <>
       <div className="detail-rows">
@@ -89,6 +104,11 @@ function SunCard() {
         Planet sizes in this model are exaggerated for visibility. Distances and
         orbital positions are to scale.
       </p>
+      <div className="compare-actions" style={{ marginTop: 10 }}>
+        <button type="button" className="btn btn-sm" onClick={onFocus}>
+          Focus in the 3D model
+        </button>
+      </div>
     </>
   );
 }
@@ -100,10 +120,9 @@ function PlanetDetail({
 }: {
   pk: PlanetKey;
   jd: number;
-  onFocus: (ticks: number) => void;
+  onFocus: () => void;
 }) {
   const P = PLANET_ELEMENTS[pk];
-  const now = new Date();
   const helio = heliocentricEcliptic(pk, jd);
   const earth = heliocentricEcliptic("earth", jd);
   const dEarth =
@@ -112,7 +131,7 @@ function PlanetDetail({
       : Math.sqrt(
           (helio.x - earth.x) ** 2 + (helio.y - earth.y) ** 2 + (helio.z - earth.z) ** 2
         );
-  const eq = planetEquatorial(pk, now);
+  const eq = planetEquatorial(pk, jd);
   return (
     <>
       <div className="side-item-meta">
@@ -134,16 +153,16 @@ function PlanetDetail({
             From Earth <b className="mono">{fmtNum(dEarth, 3)} AU</b>
           </span>
           <span>
-            Light time <b className="mono">{fmtNum(dEarth * LIGHT_MIN_PER_AU, 1)} min</b>
+            Light time <b className="mono">{lightTimeFromAU(dEarth)}</b>
           </span>
         </div>
       )}
       <div className="side-item-meta">
         <span>
-          RA <b className="mono">{raToHMS(eq.raHours)}</b>
+          RA <b className="mono">{fmtRA(eq.ra / 15)}</b>
         </span>
         <span>
-          Dec <b className="mono">{decToDMS(eq.decDeg)}</b>
+          Dec <b className="mono">{fmtDec(eq.dec)}</b>
         </span>
       </div>
       <div className="side-item-meta">
@@ -151,15 +170,11 @@ function PlanetDetail({
           Radius <b className="mono">{fmtNum(P.radiusKm, 0)} km</b>
         </span>
         <span>
-          Orbit radius <b className="mono">{fmtNum(helio.a, 3)} AU</b>
+          Semi-major axis <b className="mono">{fmtNum(helio.a, 3)} AU</b>
         </span>
       </div>
       <div className="compare-actions" style={{ marginTop: 10 }}>
-        <button
-          type="button"
-          className="btn btn-sm"
-          onClick={() => onFocus(performance.now())}
-        >
+        <button type="button" className="btn btn-sm" onClick={onFocus}>
           Focus in the 3D model
         </button>
       </div>
@@ -170,47 +185,51 @@ function PlanetDetail({
 function ProbeDetail({ k }: { k: ProbeKey }) {
   const q = useQuery(horizonsProbeQuery(k));
   const anchor = PROBE_ANCHORS[k];
-  const live = q.data?.ok ? q.data.data : null;
+  const live = q.data?.telemetry ?? null;
   const fallbackAU = probeFallbackDistanceAU(k, new Date());
   const distKm = live ? live.distanceKm : fallbackAU ? fallbackAU * AU_KM : null;
 
   return (
     <>
-      {live ? (
+      {q.data ? (
         <div className="side-item-meta">
           <span>
-            Live telemetry <FreshnessBadge res={q.data!} />
+            Telemetry <FreshnessBadge res={q.data} />
           </span>
-          <span>
-            Range <b className="mono">{live.rangeAU.toFixed(4)} AU</b>
-          </span>
+          {live ? (
+            <span>
+              Range <b className="mono">{live.rangeAU.toFixed(4)} AU</b>
+            </span>
+          ) : null}
         </div>
-      ) : (
+      ) : null}
+      {!live && (
         <p className="detail-note" style={{ marginTop: 0 }}>
           Live telemetry temporarily unavailable. Distance shown is a labeled estimate.
         </p>
       )}
       <div className="side-item-meta">
         <span>
-          From Earth <b className="mono">{distKm ? `${fmtNum(distKm / 1e6, 2)}M km` : "--"}</b>
+          From Earth{" "}
+          <b className="mono">
+            {distKm ? `${fmtNum(distKm / 1e6, 2)}M km${live ? "" : " (est.)"}` : "--"}
+          </b>
         </span>
         <span>
           Speed{" "}
           <b className="mono">
-            {live ? `${fmtNum(live.speedKmS, 2)} km/s` : anchor.kind === "recession" ? `~${anchor.speedKmS} km/s` : "--"}
+            {live
+              ? `${fmtNum(live.speedKmS, 2)} km/s`
+              : anchor.kind === "recession"
+                ? `~${anchor.speedKmS} km/s (est.)`
+                : "--"}
           </b>
         </span>
       </div>
       <div className="side-item-meta">
         <span>
           One-way light time{" "}
-          <b className="mono">
-            {live
-              ? live.oneWayLightMinutes > 120
-                ? `${fmtNum(live.oneWayLightMinutes / 60, 1)} h`
-                : `${fmtNum(live.oneWayLightMinutes, 1)} min`
-              : "--"}
-          </b>
+          <b className="mono">{distKm ? lightTimeFromKm(distKm) : "--"}</b>
         </span>
         <span>
           Launched{" "}
@@ -235,30 +254,26 @@ function DeepSpacePage() {
   const [mounted, setMounted] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(3); // days per second
-  const [sel, setSel] = useState<Selection>({ kind: "planet", key: "earth" });
-  const [focus, setFocus] = useState<{ key: string; ticks: number }>({
-    key: "overview",
-    ticks: 0,
+  const [sel, setSel] = useState<SceneSelection>({ kind: "planet", key: "earth" });
+  const [focus, setFocus] = useState<{ key: string | null; nonce: number }>({
+    key: "earth",
+    nonce: 0,
   });
+  const [simJd, setSimJd] = useState<number | null>(null);
   const [isFs, setIsFs] = useState(false);
   const [pseudoFs, setPseudoFs] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
   const catalogRef = useRef<HTMLUListElement>(null);
   useEffect(() => setMounted(true), []);
 
-  const now = useNow(1000);
-  const jd = julianDateUTC(now);
+  const now = useNow(60_000);
+  const jd = julianDateUTC(now ?? new Date());
 
-  // Keep probe distances warm so the 3D scene reflects live data when it arrives.
+  // Keep Voyager 1 telemetry warm so the detail card reflects live data quickly.
   useQuery(horizonsProbeQuery("voyager1"));
 
-  const focusRequest = useMemo(
-    () => (sel.kind === "sun" ? { key: "sun", ticks: focus.ticks } : { key: sel.key, ticks: focus.ticks }),
-    [sel, focus.ticks]
-  );
-
-  const requestFocus = (ticks: number) => {
-    setFocus((f) => ({ key: selectionId(sel), ticks: Math.max(ticks, f.ticks + 1) }));
+  const requestFocus = () => {
+    setFocus((f) => ({ key: focusKey(sel), nonce: f.nonce + 1 }));
   };
 
   // Fullscreen: use the Fullscreen API where available (with a landscape
@@ -339,13 +354,6 @@ function DeepSpacePage() {
     items[next]?.focus();
   };
 
-  const selName =
-    sel.kind === "sun"
-      ? "The Sun"
-      : sel.kind === "planet"
-        ? PLANET_ELEMENTS[sel.key].name
-        : PROBE_ANCHORS[sel.key].name;
-
   return (
     <main className="page-main">
       <section className="page-hero">
@@ -355,8 +363,8 @@ function DeepSpacePage() {
           <p className="tagline">
             A to-scale model of the solar system. Planets sit at their true positions from
             JPL orbital elements, and deep-space probes report live distances from JPL
-            Horizons. Press play to watch the system move, click any body for details,
-            or open an object's full profile.
+            Horizons. Press play to watch the system move, click any body for a summary,
+            or open its full profile.
           </p>
         </div>
       </section>
@@ -375,14 +383,12 @@ function DeepSpacePage() {
                   <SolarSystemScene
                     playing={playing}
                     daysPerSecond={speed}
-                    selected={focusRequest.key}
-                    focusRequest={focusRequest}
-                    onSelect={(key) => {
-                      if (key === "sun") setSel({ kind: "sun" });
-                      else if ((PLANET_ORDER as string[]).includes(key))
-                        setSel({ kind: "planet", key: key as PlanetKey });
-                      else setSel({ kind: "probe", key: key as ProbeKey });
+                    selected={sel}
+                    focusRequest={focus}
+                    onSelect={(s) => {
+                      if (s) setSel(s);
                     }}
+                    onTick={(jdNow) => setSimJd(jdNow)}
                   />
                 </Suspense>
               ) : null}
@@ -415,13 +421,15 @@ function DeepSpacePage() {
                   type="button"
                   className="chip"
                   aria-label="Reset the camera to the overview position"
-                  onClick={() => setFocus((f) => ({ key: "overview", ticks: f.ticks + 1 }))}
+                  onClick={() => setFocus((f) => ({ key: null, nonce: f.nonce + 1 }))}
                 >
                   Reset view
                 </button>
                 <span className="scene-hud-spacer" />
                 <span className="scene-pill" aria-label="Current simulated date">
-                  <span className="mono">{jdToDateUTC(jd)}</span>
+                  <span className="mono">
+                    {simJd ? utcDateStr(jdToUTCDate(simJd)) : utcDateStr(jdToUTCDate(jd))}
+                  </span>
                 </span>
                 <button
                   type="button"
@@ -452,9 +460,9 @@ function DeepSpacePage() {
             <aside className="scene-side">
               <div className="glass glass-card side-card">
                 <div className="side-item-top">
-                  <h3 aria-live="polite">{selName}</h3>
+                  <h3 aria-live="polite">{objectDisplayName(sel)}</h3>
                 </div>
-                {sel.kind === "sun" && <SunCard />}
+                {sel.kind === "sun" && <SunCard onFocus={requestFocus} />}
                 {sel.kind === "planet" && (
                   <PlanetDetail pk={sel.key} jd={jd} onFocus={requestFocus} />
                 )}
@@ -477,8 +485,7 @@ function DeepSpacePage() {
                   ref={catalogRef}
                   onKeyDown={onCatalogKeyDown}
                   role="listbox"
-                  aria-label="Solar system objects. Use arrow keys to move through the list."
-                  aria-activedescendant={undefined}
+                  aria-label="Solar system objects. Use the arrow keys to move through the list."
                 >
                   <li className="side-title" aria-hidden="true">
                     Planets
@@ -498,19 +505,14 @@ function DeepSpacePage() {
                         >
                           <span className="side-item-name">
                             <span className="legend-dot" style={{ background: P.color }} />
-                            <span>{P.name}</span>
+                            <span>{pk.charAt(0).toUpperCase() + pk.slice(1)}</span>
                           </span>
                           <span className="side-item-meta">
                             <span>
-                              Orbit <b className="mono">{fmtNum(P.a, 2)} AU</b>
+                              Orbit <b className="mono">{fmtNum(P.a[0], 2)} AU</b>
                             </span>
                             <span>
-                              Period{" "}
-                              <b className="mono">
-                                {P.periodDays > 800
-                                  ? `${fmtNum(P.periodDays / 365.25, 1)} yr`
-                                  : `${fmtNum(P.periodDays, 0)} d`}
-                              </b>
+                              Radius <b className="mono">{fmtNum(P.radiusKm, 0)} km</b>
                             </span>
                           </span>
                         </button>
