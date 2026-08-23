@@ -25,11 +25,14 @@ export const getKpIndex = createServerFn({ method: "GET" }).handler(async () => 
 });
 
 // ----------------------------- NOAA: solar wind ---------------------------
+// NOAA's real-time solar wind feeds (DSCOVR, falling back to ACE). These are
+// arrays of objects with named fields: proton_speed, proton_density,
+// proton_temperature (plasma) and bt, bx_gsm, by_gsm, bz_gsm (mag).
 export const getSolarWind = createServerFn({ method: "GET" }).handler(async () => {
-  return cached("solar-wind", {}, 300, async () => {
+  return cached("solar-wind-v2", {}, 300, async () => {
     const [plasma, mag] = await Promise.all([
-      fetchJson("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json", { timeoutMs: 12000 }),
-      fetchJson("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json", { timeoutMs: 12000 }),
+      fetchJson("https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json", { timeoutMs: 12000 }),
+      fetchJson("https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json", { timeoutMs: 12000 }),
     ]);
     return { plasma, mag };
   });

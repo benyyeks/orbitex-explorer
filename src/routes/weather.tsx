@@ -74,10 +74,12 @@ function parseKp(raw: unknown): KpRow[] {
   return out;
 }
 
-function lastValid(rows: unknown, col: number): number | null {
+// NOAA rtsw feeds are arrays of objects with named numeric fields; scan from
+// the end for the most recent non-null reading of a field.
+function lastValidField(rows: unknown, field: string): number | null {
   if (!Array.isArray(rows)) return null;
-  for (let i = rows.length - 1; i > 0; i--) {
-    const cell = (rows as any[])[i]?.[col];
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const cell = (rows as any[])[i]?.[field];
     if (cell === null || cell === undefined) continue;
     const v = Number(cell);
     if (Number.isFinite(v)) return v;
@@ -86,9 +88,9 @@ function lastValid(rows: unknown, col: number): number | null {
 }
 
 function lastTimeTag(rows: unknown): string {
-  if (!Array.isArray(rows) || rows.length < 2) return "";
+  if (!Array.isArray(rows) || rows.length === 0) return "";
   const last = (rows as any[])[rows.length - 1];
-  return String(last?.[0] ?? "");
+  return String(last?.time_tag ?? "");
 }
 
 // GOES class from flux in W/m². A: 1e-8..1e-7, B: ..1e-6, C: ..1e-5, M: ..1e-4, X: above.
