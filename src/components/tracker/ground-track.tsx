@@ -1,7 +1,7 @@
 // 2D equirectangular ground track: the satellite's subpoint over the next two
 // orbital periods, drawn on a graticule with the equator and prime meridian.
 // Shared by the object detail page and the tracker compare panel.
-import { cos, toRad } from "@/lib/astronomy";
+import { DEG } from "@/lib/astronomy";
 import { propagateSat, type TLE } from "@/lib/satellite";
 
 const W = 720;
@@ -70,13 +70,13 @@ export function GroundTrack({ tle, now }: { tle: TLE; now: Date }) {
       {(() => {
         const d0 = new Date(Date.UTC(now.getUTCFullYear(), 0, 0));
         const doy = (now.getTime() - d0.getTime()) / 86400000;
-        const decl = -23.44 * cos(toRad((360 / 365) * (doy + 10)));
+        const decl = -23.44 * Math.cos((360 / 365) * (doy + 10) * DEG);
         const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
         const subsLon = 180 - utcH * 15;
         const ptsT: [number, number][] = [];
         for (let lo = -180; lo <= 180; lo += 4) {
-          const hourAngle = toRad(lo - subsLon);
-          const latT = (Math.atan(-Math.cos(hourAngle) / Math.tan(toRad(decl))) * 180) / Math.PI;
+          const hourAngle = (lo - subsLon) * DEG;
+          const latT = (Math.atan(-Math.cos(hourAngle) / Math.tan(decl * DEG)) * 180) / Math.PI;
           ptsT.push(project(Math.max(-88, Math.min(88, latT)), lo));
         }
         let dT = "";

@@ -1,11 +1,17 @@
 // Observer location controls and pass forecast list for the orbit tracker.
 import { useMemo, useState, type FormEvent } from "react";
 import type { TLE } from "@/lib/satellite";
-import { fmtDay, fmtNum, utcClock } from "@/lib/format";
+import { fmtNum, pad2, utcClock } from "@/lib/format";
 import { predictPasses } from "@/lib/passes";
 import type { ObserverLocation, useObserverLocation } from "@/lib/location";
 
 type LocationController = ReturnType<typeof useObserverLocation>;
+
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function dayLabel(d: Date): string {
+  return `${pad2(d.getUTCDate())} ${MONTHS[d.getUTCMonth()]}`;
+}
 
 export function ObserverLocationControls({ loc }: { loc: LocationController }) {
   const [latText, setLatText] = useState("");
@@ -139,7 +145,7 @@ export function PassForecast({ tle, location }: { tle: TLE; location: ObserverLo
           <li key={p.rise.getTime()} className="pass-item">
             <div className="pass-item-top">
               <span>
-                {fmtDay(p.rise)}, {utcClock(p.rise)} UTC
+                {dayLabel(p.rise)}, {utcClock(p.rise)} UTC
               </span>
               <span className="mono">max {fmtNum(p.maxElevation, 0)}°</span>
             </div>

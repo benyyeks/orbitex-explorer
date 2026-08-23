@@ -16,17 +16,20 @@ export function ComparePanel({ a, b }: { a: TLE | null; b: TLE | null }) {
 
   const fmt = (v: number | null, digits: number, unit: string) =>
     v == null ? "--" : `${fmtNum(v, digits)}${unit ? ` ${unit}` : ""}`;
-  const delta = (va: number | null, vb: number | null, digits: number, unit: string) =>
-    va == null || vb == null ? "--" : `${fmtNum(vb - va, digits, { sign: true })}${unit ? ` ${unit}` : ""}`;
+  const delta = (va: number | null, vb: number | null, digits: number, unit: string) => {
+    if (va == null || vb == null) return "--";
+    const d = vb - va;
+    return `${d > 0 ? "+" : ""}${fmtNum(d, digits)}${unit ? ` ${unit}` : ""}`;
+  };
 
   const rows: { label: string; va: number | null; vb: number | null; digits: number; unit: string }[] = [
     { label: "Mean altitude", va: a ? meanAlt(a) : null, vb: b ? meanAlt(b) : null, digits: 0, unit: "km" },
     { label: "Current speed", va: sa?.speed ?? null, vb: sb?.speed ?? null, digits: 2, unit: "km/s" },
     { label: "Orbital period", va: a?.periodMin ?? null, vb: b?.periodMin ?? null, digits: 1, unit: "min" },
-    { label: "Inclination", va: a?.inclination ?? null, vb: b?.inclination ?? null, digits: 2, unit: "°" },
+    { label: "Inclination", va: a?.inc ?? null, vb: b?.inc ?? null, digits: 2, unit: "°" },
     { label: "Apogee", va: a?.apogeeAlt ?? null, vb: b?.apogeeAlt ?? null, digits: 0, unit: "km" },
     { label: "Perigee", va: a?.perigeeAlt ?? null, vb: b?.perigeeAlt ?? null, digits: 0, unit: "km" },
-    { label: "Eccentricity", va: a?.eccentricity ?? null, vb: b?.eccentricity ?? null, digits: 4, unit: "" },
+    { label: "Eccentricity", va: a?.ecc ?? null, vb: b?.ecc ?? null, digits: 4, unit: "" },
   ];
 
   return (
