@@ -5,6 +5,7 @@ import { getLaunches } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText, pad2 } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { SkeletonImage } from "@/components/site/skeleton-image";
 
 export const Route = createFileRoute("/launches")({
   head: () => ({
