@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useSuspenseQuery, queryOptions, useServerFn } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import {
   getLatestNews,
   getCompetitions,
@@ -133,12 +134,12 @@ function parseLaunchBriefs(payload: unknown): LaunchBrief[] {
   return results
     .map((raw) => {
       const l = raw as Record<string, unknown>;
-      const name = typeof l.name === "string" ? l.name : "";
+      const name = typeof l["name"] === "string" ? l["name"] : "";
       if (!name) return null;
-      const net = typeof l.net === "string" ? l.net : null;
-      const image = typeof l.image === "string" ? l.image : null;
+      const net = typeof l["net"] === "string" ? l["net"] : null;
+      const image = typeof l["image"] === "string" ? l["image"] : null;
       const provider =
-        (l.launch_service_provider as { name?: string } | null)?.name ?? "";
+        (l["launch_service_provider"] as { name?: string } | null)?.name ?? "";
       return { name, net, image, provider };
     })
     .filter((l): l is LaunchBrief => l !== null);
