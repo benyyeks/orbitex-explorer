@@ -1066,3 +1066,27 @@ select.hud-pill option { color: #111; }
   line-height: 1.55;
   color: var(--ink-faint);
 }
+
+/* Scene-side list rows: name above metadata, no overlap */
+.side-item { flex-direction: column; align-items: stretch; gap: 3px; }
+.side-item.side-item-active { background: var(--color-accent-soft); border-color: color-mix(in srgb, var(--color-accent) 35%, transparent); }
+.side-item-meta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  color: var(--color-text-faint);
+}
+.side-item-meta b { color: var(--color-text); font-weight: 600; }
+
+/* Controls floating over the dark 3D scene */
+.scene-hud .chip {
+  background: rgba(9, 14, 28, 0.6);
+  color: #dfe6f3;
+  border-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+}
+.scene-hud .chip:hover { border-color: rgba(255, 212, 137, 0.55); color: #ffd489; }
+.scene-hud .chip.chip-active { background: rgba(255, 212, 137, 0.16); color: #ffd489; border-color: rgba(255, 212, 137, 0.5); }
+.scene-hud .scene-pill { pointer-events: auto; }
