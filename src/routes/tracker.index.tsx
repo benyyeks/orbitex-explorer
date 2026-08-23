@@ -1,11 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, queryOptions } from "@tanstack/react-query";
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { getSatellites } from "@/lib/orbitex-data.functions";
 import { parseOMMArray, propagateSat, type TLE } from "@/lib/satellite";
 import { fmtNum, timeAgo } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state";
+import { useFavorites } from "@/lib/favorites";
+import { useObserverLocation } from "@/lib/location";
+import { ObserverLocationControls, PassForecast } from "@/components/tracker/observer-location";
+import { FavButton } from "@/components/tracker/fav-button";
+import { ComparePanel } from "@/components/tracker/compare-panel";
 
 // three.js is browser-only; the globe mounts after hydration.
 const TrackerGlobe = lazy(() => import("@/components/tracker/tracker-globe"));
@@ -162,7 +167,13 @@ function TrackerPage() {
   const [filter, setFilter] = useState("");
   const [isFs, setIsFs] = useState(false);
   const [pseudoFs, setPseudoFs] = useState(false);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareIds, setCompareIds] = useState<[string | null, string | null]>([null, null]);
+  const [compareNote, setCompareNote] = useState("");
   const shellRef = useRef<HTMLDivElement>(null);
+  const catalogRef = useRef<HTMLUListElement>(null);
+  const favorites = useFavorites();
+  const loc = useObserverLocation();
   useEffect(() => setMounted(true), []);
 
   const query = useQuery(satQuery(group));
@@ -184,6 +195,63 @@ function TrackerPage() {
     () => tles.find((t) => t.noradId === selectedId) ?? null,
     [tles, selectedId]
   );
+
+  const compareA = useMemo(
+    () => (compareIds[0] ? tles.find((t) => t.noradId === compareIds[0]) ?? null : null),
+    [tles, compareIds]
+  );
+  const compareB = useMemo(
+    () => (compareIds[1] ? tles.find((t) => t.noradId === compareIds[1]) ?? null : null),
+    [tles, compareIds]
+  );
+
+  const assignCompare = (t: TLE) => {
+    const [a, b] = compareIds;
+    if (a === t.noradId) {
+      setCompareIds([null, b]);
+      setCompareNote(`${t.name} removed from the comparison.`);
+    } else if (b === t.noradId) {
+      setCompareIds([a, null]);
+      setCompareNote(`${t.name} removed from the comparison.`);
+    } else if (!a) {
+      setCompareIds([t.noradId, b]);
+      setCompareNote(`${t.name} selected as object A.`);
+    } else if (!b) {
+      setCompareIds([a, t.noradId]);
+      setCompareNote(`${t.name} selected as object B.`);
+    } else {
+      setCompareIds([b, t.noradId]);
+      setCompareNote(`${t.name} selected as object B, replacing the previous object A.`);
+    }
+  };
+
+  const handlePick = (t: TLE) => {
+    if (compareMode) assignCompare(t);
+    else setSelectedId(t.noradId);
+  };
+
+  const exitCompare = () => {
+    setCompareMode(false);
+    setCompareIds([null, null]);
+    setCompareNote("Compare mode off.");
+  };
+
+  // Arrow-key navigation for the catalog list.
+  const onCatalogKeyDown = (e: KeyboardEvent<HTMLUListElement>) => {
+    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key)) return;
+    const items = Array.from(
+      catalogRef.current?.querySelectorAll<HTMLElement>("[data-catalog-item]") ?? []
+    );
+    if (items.length === 0) return;
+    e.preventDefault();
+    const current = items.indexOf(document.activeElement as HTMLElement);
+    let next: number;
+    if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = items.length - 1;
+    else if (e.key === "ArrowDown") next = current < 0 ? 0 : (current + 1) % items.length;
+    else next = current <= 0 ? items.length - 1 : current - 1;
+    items[next]?.focus();
+  };
 
   // Fullscreen: use the Fullscreen API where available (with a landscape
   // orientation lock on touch devices); fall back to a fixed-position
@@ -212,7 +280,7 @@ function TrackerPage() {
     if (!pseudoFs) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") setPseudoFs(false);
     };
     window.addEventListener("keydown", onKey);
@@ -269,7 +337,8 @@ function TrackerPage() {
           <p className="tagline">
             Every satellite you see is positioned from its latest published orbital
             elements, propagated in real time with a Kepler solver corrected for Earth's
-            oblateness. Click any satellite for live telemetry.
+            oblateness. Click any satellite for live telemetry, save favorites, or compare
+            two orbits side by side.
           </p>
         </div>
       </section>
@@ -280,6 +349,8 @@ function TrackerPage() {
             <div
               ref={shellRef}
               className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
+              role="region"
+              aria-label="Interactive 3D globe showing live satellite positions"
             >
               {mounted && tles.length > 0 ? (
                 <Suspense fallback={null}>
@@ -288,39 +359,64 @@ function TrackerPage() {
                     color={groupMeta.color}
                     selected={selected}
                     autoRotate={autoRotate}
-                    onSelect={(t) => setSelectedId(t ? t.noradId : null)}
+                    onSelect={(t) => {
+                      if (!t) return;
+                      handlePick(tles.find((x) => x.noradId === t.noradId) ?? t);
+                    }}
                   />
                 </Suspense>
               ) : null}
 
-              <div className="scene-hud">
-                {GROUPS.map((g) => (
-                  <button
-                    key={g.id}
-                    type="button"
-                    className={`chip ${group === g.id ? "chip-active" : ""}`}
-                    onClick={() => {
-                      setGroup(g.id);
-                      setFilter("");
-                    }}
-                  >
-                    {g.label}
-                  </button>
-                ))}
+              <div className="scene-hud" role="toolbar" aria-label="Tracker controls">
+                <div className="scene-hud-group" role="group" aria-label="Satellite groups">
+                  {GROUPS.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      className={`chip ${group === g.id ? "chip-active" : ""}`}
+                      aria-pressed={group === g.id}
+                      onClick={() => {
+                        setGroup(g.id);
+                        setFilter("");
+                        setCompareIds([null, null]);
+                      }}
+                    >
+                      {g.label}
+                    </button>
+                  ))}
+                </div>
                 <button
                   type="button"
                   className={`chip ${autoRotate ? "chip-active" : ""}`}
+                  aria-pressed={autoRotate}
+                  aria-label="Toggle globe rotation"
                   onClick={() => setAutoRotate((v) => !v)}
-                  title="Toggle globe rotation"
                 >
                   Rotate
+                </button>
+                <button
+                  type="button"
+                  className={`chip ${compareMode ? "chip-active" : ""}`}
+                  aria-pressed={compareMode}
+                  aria-label="Toggle satellite compare mode"
+                  onClick={() => {
+                    if (compareMode) {
+                      exitCompare();
+                    } else {
+                      setCompareMode(true);
+                      setCompareNote("Compare mode on. Pick two objects to compare them side by side.");
+                    }
+                  }}
+                >
+                  Compare
                 </button>
                 <span className="scene-hud-spacer" />
                 <button
                   type="button"
                   className={`chip ${expanded ? "chip-active" : ""}`}
+                  aria-pressed={expanded}
+                  aria-label={expanded ? "Exit fullscreen tracker view" : "Expand the tracker to fill the screen"}
                   onClick={toggleFullscreen}
-                  title={expanded ? "Return to the embedded view" : "Expand the tracker to fill the screen"}
                 >
                   {expanded ? "Exit fullscreen" : "Fullscreen"}
                 </button>
@@ -336,8 +432,16 @@ function TrackerPage() {
               )}
 
               {tles.length > 0 && (
-                <div className="scene-hint">Drag to rotate · scroll to zoom · click a satellite</div>
+                <div className="scene-hint">
+                  {compareMode
+                    ? "Click satellites to fill compare slots A and B"
+                    : "Drag to rotate · scroll to zoom · click a satellite"}
+                </div>
               )}
+
+              <p className="sr-only" role="status">
+                {compareNote}
+              </p>
 
               {!mounted || query.isPending ? (
                 <div className="scene-overlay">
@@ -364,41 +468,111 @@ function TrackerPage() {
             </div>
 
             <aside className="scene-side">
+              {compareMode ? (
+                <div className="glass glass-card side-card" aria-label="Comparison selection">
+                  <div className="side-item-top">
+                    <h3>Compare objects</h3>
+                  </div>
+                  <p className="detail-note" style={{ marginTop: 0 }}>
+                    Pick two objects from the globe or the catalog to compare their orbits
+                    side by side.
+                  </p>
+                  <div className="compare-slots">
+                    {([0, 1] as const).map((i) => {
+                      const t = i === 0 ? compareA : compareB;
+                      const label = i === 0 ? "A" : "B";
+                      return (
+                        <div className="compare-slot" key={label}>
+                          <span className="compare-badge" aria-hidden="true">
+                            {label}
+                          </span>
+                          <span className="compare-slot-name">
+                            {t ? t.name : `Object ${label}: not selected`}
+                          </span>
+                          {t ? (
+                            <button
+                              type="button"
+                              className="compare-slot-clear"
+                              aria-label={`Clear object ${label} (${t.name})`}
+                              onClick={() => {
+                                setCompareIds((prev) => {
+                                  const next: [string | null, string | null] = [...prev];
+                                  next[i] = null;
+                                  return next;
+                                });
+                                setCompareNote(`${t.name} removed from the comparison.`);
+                              }}
+                            >
+                              ×
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <button type="button" className="btn btn-sm" onClick={exitCompare}>
+                    Exit compare mode
+                  </button>
+                </div>
+              ) : (
+                <div className="glass glass-card side-card">
+                  <div className="side-item-top">
+                    <h3 aria-live="polite">{selected ? selected.name : "Live constellation"}</h3>
+                    <span className="side-item-actions">
+                      {selected ? (
+                        <FavButton
+                          isFav={favorites.isFavorite(selected.noradId)}
+                          name={selected.name}
+                          onToggle={() =>
+                            favorites.toggle({ noradId: selected.noradId, name: selected.name })
+                          }
+                        />
+                      ) : null}
+                      {query.data ? <FreshnessBadge res={query.data} /> : null}
+                    </span>
+                  </div>
+                  {selected ? (
+                    <>
+                      <SatelliteDetail key={selected.noradId} tle={selected} />
+                      <div className="side-title" style={{ marginTop: 14 }}>
+                        Next passes from your location
+                      </div>
+                      <PassForecast tle={selected} location={loc.location} />
+                      <Link
+                        to="/tracker/$noradId"
+                        params={{ noradId: selected.noradId }}
+                        className="detail-link"
+                      >
+                        View full object details
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <p className="detail-note" style={{ marginTop: 0 }}>
+                        {groupMeta.blurb}
+                      </p>
+                      <div className="side-item-meta">
+                        <span>
+                          Tracked <b className="mono">{fmtNum(tles.length)}</b>
+                        </span>
+                        <span>
+                          Group <b className="mono">{groupMeta.label}</b>
+                        </span>
+                      </div>
+                      <p className="detail-note">
+                        Select any point on the globe for live position, altitude, and
+                        velocity.
+                      </p>
+                    </>
+                  )}
+                </div>
+              )}
+
               <div className="glass glass-card side-card">
                 <div className="side-item-top">
-                  <h3>{selected ? selected.name : "Live constellation"}</h3>
-                  {query.data ? <FreshnessBadge res={query.data} /> : null}
+                  <h3>Your location</h3>
                 </div>
-                {selected ? (
-                  <>
-                    <SatelliteDetail key={selected.noradId} tle={selected} />
-                    <Link
-                      to="/tracker/$noradId"
-                      params={{ noradId: selected.noradId }}
-                      className="detail-link"
-                    >
-                      View full object details
-                    </Link>
-                  </>
-                ) : (
-                  <>
-                    <p className="detail-note" style={{ marginTop: 0 }}>
-                      {groupMeta.blurb}
-                    </p>
-                    <div className="side-item-meta">
-                      <span>
-                        Tracked <b className="mono">{fmtNum(tles.length)}</b>
-                      </span>
-                      <span>
-                        Group <b className="mono">{groupMeta.label}</b>
-                      </span>
-                    </div>
-                    <p className="detail-note">
-                      Select any point on the globe for live position, altitude, and
-                      velocity.
-                    </p>
-                  </>
-                )}
+                <ObserverLocationControls loc={loc} />
               </div>
 
               {tles.length > 0 && (
@@ -409,6 +583,64 @@ function TrackerPage() {
                       {catalogNote}
                     </span>
                   </div>
+
+                  {favorites.favorites.length > 0 ? (
+                    <div className="fav-block">
+                      <div className="side-title">Saved objects</div>
+                      <ul className="side-list" aria-label="Saved objects">
+                        {favorites.favorites.map((f) => {
+                          const inCatalog = tles.find((t) => t.noradId === f.noradId) ?? null;
+                          return (
+                            <li key={f.noradId}>
+                              <div className="side-item-row">
+                                {inCatalog ? (
+                                  <button
+                                    type="button"
+                                    className={`side-item ${!compareMode && selectedId === f.noradId ? "side-item-active" : ""}`}
+                                    onClick={() => handlePick(inCatalog)}
+                                  >
+                                    <span className="side-item-name">
+                                      <span>{f.name}</span>
+                                    </span>
+                                    <span className="side-item-meta">
+                                      <span>
+                                        Alt{" "}
+                                        <b className="mono">
+                                          {fmtNum((inCatalog.apogeeAlt + inCatalog.perigeeAlt) / 2, 0)} km
+                                        </b>
+                                      </span>
+                                      <span>
+                                        Period <b className="mono">{fmtNum(inCatalog.periodMin, 0)} min</b>
+                                      </span>
+                                    </span>
+                                  </button>
+                                ) : (
+                                  <Link
+                                    to="/tracker/$noradId"
+                                    params={{ noradId: f.noradId }}
+                                    className="side-item"
+                                  >
+                                    <span className="side-item-name">
+                                      <span>{f.name}</span>
+                                    </span>
+                                    <span className="side-item-meta">
+                                      <span>Open full details</span>
+                                    </span>
+                                  </Link>
+                                )}
+                                <FavButton
+                                  isFav
+                                  name={f.name}
+                                  onToggle={() => favorites.toggle({ noradId: f.noradId, name: f.name })}
+                                />
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  ) : null}
+
                   <input
                     type="search"
                     className="catalog-search"
@@ -418,26 +650,52 @@ function TrackerPage() {
                     aria-label="Search satellites in this group"
                   />
                   {visibleCatalog.length > 0 ? (
-                    <ul className="side-list" style={{ maxHeight: 260, overflowY: "auto" }}>
-                      {visibleCatalog.map((t) => (
-                        <li key={t.noradId}>
-                          <button
-                            type="button"
-                            className={`side-item ${selectedId === t.noradId ? "side-item-active" : ""}`}
-                            onClick={() => setSelectedId(t.noradId)}
-                          >
-                            <span className="side-item-name">{t.name}</span>
-                            <span className="side-item-meta">
-                              <span>
-                                Alt <b className="mono">{fmtNum((t.apogeeAlt + t.perigeeAlt) / 2, 0)} km</b>
-                              </span>
-                              <span>
-                                Period <b className="mono">{fmtNum(t.periodMin, 0)} min</b>
-                              </span>
-                            </span>
-                          </button>
-                        </li>
-                      ))}
+                    <ul
+                      ref={catalogRef}
+                      className="side-list"
+                      style={{ maxHeight: 260, overflowY: "auto" }}
+                      aria-label="Satellite catalog"
+                      onKeyDown={onCatalogKeyDown}
+                    >
+                      {visibleCatalog.map((t) => {
+                        const slot =
+                          compareIds[0] === t.noradId ? "A" : compareIds[1] === t.noradId ? "B" : null;
+                        return (
+                          <li key={t.noradId}>
+                            <div className="side-item-row">
+                              <button
+                                type="button"
+                                data-catalog-item
+                                className={`side-item ${!compareMode && selectedId === t.noradId ? "side-item-active" : ""} ${slot ? "side-item-compare" : ""}`}
+                                aria-current={!compareMode && selectedId === t.noradId ? "true" : undefined}
+                                onClick={() => handlePick(t)}
+                              >
+                                <span className="side-item-name">
+                                  {slot ? (
+                                    <span className="compare-badge" aria-hidden="true">
+                                      {slot}
+                                    </span>
+                                  ) : null}
+                                  <span>{t.name}</span>
+                                </span>
+                                <span className="side-item-meta">
+                                  <span>
+                                    Alt <b className="mono">{fmtNum((t.apogeeAlt + t.perigeeAlt) / 2, 0)} km</b>
+                                  </span>
+                                  <span>
+                                    Period <b className="mono">{fmtNum(t.periodMin, 0)} min</b>
+                                  </span>
+                                </span>
+                              </button>
+                              <FavButton
+                                isFav={favorites.isFavorite(t.noradId)}
+                                name={t.name}
+                                onToggle={() => favorites.toggle({ noradId: t.noradId, name: t.name })}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : (
                     <p className="detail-note">No objects in this group match that search.</p>
@@ -446,6 +704,8 @@ function TrackerPage() {
               )}
             </aside>
           </div>
+
+          {compareMode && (compareA || compareB) ? <ComparePanel a={compareA} b={compareB} /> : null}
 
           <p className="scaffold-note" style={{ marginTop: 18 }}>
             Elements source: CelesTrak, refreshed regularly. Positions are computed, not
