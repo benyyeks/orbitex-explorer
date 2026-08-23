@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useQuery, queryOptions } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getMarsImagery, type DataResult } from "@/lib/orbitex-data.functions";
 import {
@@ -33,13 +33,6 @@ export const Route = createFileRoute("/mars")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  loader: async ({ context }) => {
-    // Best effort: if the feed is down during SSR, the client retries.
-    await Promise.allSettled([
-      context.queryClient.ensureQueryData(imageryQuery("perseverance")),
-      context.queryClient.ensureQueryData(imageryQuery("curiosity")),
-    ]);
-  },
   errorComponent: MarsError,
   component: MarsPage,
 });
