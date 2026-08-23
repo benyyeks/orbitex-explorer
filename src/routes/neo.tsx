@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getNEO } from "@/lib/orbitex-data.functions";
 import { fmtNum, timeAgo, safeText } from "@/lib/format";
 
@@ -167,9 +167,7 @@ function NeoPage() {
           </div>
 
           <div className="freshness-row">
-            <span className={`badge ${neo.isStale ? "badge-warning" : "badge-success"}`}>
-              {neo.isStale ? "Stale cache" : "Live"} · {timeAgo(new Date(neo.fetchedAt))}
-            </span>
+            <FreshnessBadge res={neo} />
             <span className="freshness-note">
               Sizes are telescope estimates and carry real uncertainty; read them as ranges.
             </span>

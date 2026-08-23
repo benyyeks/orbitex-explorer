@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { getKpIndex, getSolarWind, getXrayFlux, getDONKI } from "@/lib/orbitex-data.functions";
 import { fmtNum, timeAgo, safeText } from "@/lib/format";
 
@@ -151,9 +152,14 @@ function parseDonki(raw: unknown): DonkiAlert[] {
 // ------------------------------ Components ---------------------------------
 
 function FreshnessBadge({ res }: { res: { isStale: boolean; fetchedAt: string } }) {
+  // The age string is clock-dependent; render it only after hydration to
+  // avoid a server/client text mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   return (
     <span className={`badge ${res.isStale ? "badge-warning" : "badge-success"}`}>
-      {res.isStale ? "Stale cache" : "Live"} · {timeAgo(new Date(res.fetchedAt))}
+      {res.isStale ? "Stale cache" : "Live"}
+      {mounted ? ` · ${timeAgo(new Date(res.fetchedAt))}` : ""}
     </span>
   );
 }
