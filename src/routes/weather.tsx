@@ -1,19 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { getKpIndex, getSolarWind, getXrayFlux, getDONKI } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
+import { FeedError, EmptyState } from "@/components/site/data-state";
 
 export const Route = createFileRoute("/weather")({
   head: () => ({
     meta: [
-      { title: "Space Weather — ORBITEX" },
+      { title: "Space Weather - ORBITEX" },
       {
         name: "description",
         content:
           "Live solar wind speed and density, the planetary Kp index, GOES X-ray flux class, and the last 7 days of space weather alerts from NOAA SWPC and NASA DONKI.",
       },
-      { property: "og:title", content: "Space Weather — ORBITEX" },
+      { property: "og:title", content: "Space Weather - ORBITEX" },
       {
         property: "og:description",
         content: "Live solar wind, Kp index, X-ray flux, and space weather alerts from NOAA and NASA.",
@@ -170,18 +171,20 @@ function KpDial({ kp }: { kp: number | null }) {
   );
 }
 
-function WeatherError() {
+function WeatherError({ reset }: { reset: () => void }) {
+  const router = useRouter();
   return (
     <main className="page-main">
       <section>
         <div className="container">
-          <div className="glass glass-card scaffold-card">
-            <h1>Space weather temporarily unavailable</h1>
-            <p>
-              The NOAA and NASA feeds did not respond. This usually clears within a few
-              minutes. Please check back shortly.
-            </p>
-          </div>
+          <FeedError
+            title="Space weather is temporarily unavailable"
+            source="NOAA's Space Weather Prediction Center and NASA's DONKI service"
+            onRetry={() => {
+              router.invalidate();
+              reset();
+            }}
+          />
         </div>
       </section>
     </main>
@@ -296,9 +299,10 @@ function WeatherPage() {
               Information) network, newest first.
             </p>
             {alerts.length === 0 ? (
-              <p className="scaffold-note">
-                No notifications in the past 7 days. The Sun has been quiet.
-              </p>
+              <EmptyState
+                title="No alerts in the past 7 days"
+                message="The Sun has been quiet; NASA's notification network has issued no new space weather alerts in this window."
+              />
             ) : (
               <div>
                 {alerts.map((a) => (

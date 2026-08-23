@@ -16,13 +16,13 @@ import { fmtAU, fmtNum, utcClock, lightTimeFromAU } from "@/lib/format";
 export const Route = createFileRoute("/sky")({
   head: () => ({
     meta: [
-      { title: "Sky Tonight — ORBITEX" },
+      { title: "Sky Tonight - ORBITEX" },
       {
         name: "description",
         content:
           "Live moon phase, visible planets, and current altitudes for your location, computed from verified JPL elements.",
       },
-      { property: "og:title", content: "Sky Tonight — ORBITEX" },
+      { property: "og:title", content: "Sky Tonight - ORBITEX" },
       {
         property: "og:description",
         content: "Live moon phase and visible-planet altitudes for your location.",

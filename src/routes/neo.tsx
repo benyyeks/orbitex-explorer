@@ -1,20 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { getNEO } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
+import { FeedError, EmptyState } from "@/components/site/data-state";
 
 export const Route = createFileRoute("/neo")({
   head: () => ({
     meta: [
-      { title: "Asteroid Watch — ORBITEX" },
+      { title: "Asteroid Watch - ORBITEX" },
       {
         name: "description",
         content:
           "Near-Earth objects making close approaches this week: size, velocity, and miss distance in lunar distances, from NASA's NeoWs feed.",
       },
-      { property: "og:title", content: "Asteroid Watch — ORBITEX" },
+      { property: "og:title", content: "Asteroid Watch - ORBITEX" },
       {
         property: "og:description",
         content: "This week's near-Earth asteroid approaches with verified size, speed, and miss distance from NASA NeoWs.",
@@ -101,18 +102,20 @@ function formatDiameter(minM: number, maxM: number): string {
   return `${fmt(minM)} - ${fmt(maxM)}`;
 }
 
-function NeoError() {
+function NeoError({ reset }: { reset: () => void }) {
+  const router = useRouter();
   return (
     <main className="page-main">
       <section>
         <div className="container">
-          <div className="glass glass-card scaffold-card">
-            <h1>Asteroid feed temporarily unavailable</h1>
-            <p>
-              NASA's close-approach service did not respond. This usually clears within a
-              few minutes. Please check back shortly.
-            </p>
-          </div>
+          <FeedError
+            title="Asteroid watch is temporarily unavailable"
+            source="NASA's Near Earth Object Web Service"
+            onRetry={() => {
+              router.invalidate();
+              reset();
+            }}
+          />
         </div>
       </section>
     </main>
@@ -210,7 +213,10 @@ function NeoPage() {
               Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
             </p>
             {sorted.length === 0 ? (
-              <p className="scaffold-note">No close approaches in the feed window.</p>
+              <EmptyState
+                title="No close approaches in this window"
+                message="No cataloged objects are approaching within the next 7 days. The table fills automatically as new approaches are confirmed."
+              />
             ) : (
               <div className="source-table-wrap">
                 <table className="data-table">
