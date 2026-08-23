@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, queryOptions } from "@tanstack/react-query";
-import { Suspense, lazy, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { getSatellites } from "@/lib/orbitex-data.functions";
 import { parseOMMArray, propagateSat, type TLE } from "@/lib/satellite";
-import { fmtNum, pad2, timeAgo } from "@/lib/format";
+import { fmtNum, timeAgo } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state";
 
@@ -32,9 +32,9 @@ export const Route = createFileRoute("/tracker")({
   component: TrackerPage,
 });
 
-type SatGroup = "stations" | "active" | "starlink" | "gps";
+type SatGroup = "stations" | "active" | "starlink" | "gps-ops" | "iridium-NEXT" | "resource" | "weather" | "science";
 
-const GROUPS: { id: SatGroup; label: string; color: string; blurb: string }[] = [
+const GROUPS: { id: SatGroup; label: string; color: string; blurb: string; cap?: number }[] = [
   {
     id: "stations",
     label: "Space stations",
@@ -42,22 +42,48 @@ const GROUPS: { id: SatGroup; label: string; color: string; blurb: string }[] = 
     blurb: "Crewed outposts: the ISS, Tiangong, and company.",
   },
   {
-    id: "active",
-    label: "Active satellites",
-    color: "#9fc2f2",
-    blurb: "A cross-section of the active catalog: imaging, science, and communications craft.",
-  },
-  {
     id: "starlink",
     label: "Starlink",
     color: "#9ee8c1",
     blurb: "SpaceX's broadband constellation, the largest fleet ever flown.",
+    cap: 500,
   },
   {
-    id: "gps",
+    id: "iridium-NEXT",
+    label: "Communications",
+    color: "#e3b5f5",
+    blurb: "Iridium's low-orbit voice and data relay network, 66 satellites strong.",
+  },
+  {
+    id: "resource",
+    label: "Earth observation",
+    color: "#a8e6e1",
+    blurb: "Landsat-class imagers mapping crops, coastlines, ice, and cities.",
+  },
+  {
+    id: "gps-ops",
     label: "GPS",
     color: "#f2a9a9",
     blurb: "The US navigation constellation, orbiting twice a day at 20,000 km.",
+  },
+  {
+    id: "weather",
+    label: "Weather",
+    color: "#f5c9a8",
+    blurb: "Meteorological satellites watching clouds, storms, and climate.",
+  },
+  {
+    id: "science",
+    label: "Science",
+    color: "#b8b5ff",
+    blurb: "Research craft in Earth orbit: telescopes, experiments, and pathfinders.",
+  },
+  {
+    id: "active",
+    label: "Active satellites",
+    color: "#9fc2f2",
+    blurb: "A cross-section of the active catalog: imaging, science, and communications craft.",
+    cap: 1500,
   },
 ];
 
@@ -133,15 +159,20 @@ function TrackerPage() {
   const [group, setGroup] = useState<SatGroup>("stations");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
+  const [filter, setFilter] = useState("");
+  const [isFs, setIsFs] = useState(false);
+  const [pseudoFs, setPseudoFs] = useState(false);
+  const shellRef = useRef<HTMLDivElement>(null);
   useEffect(() => setMounted(true), []);
 
   const query = useQuery(satQuery(group));
+  const groupMeta = GROUPS.find((g) => g.id === group) ?? GROUPS[0]!;
 
   const tles = useMemo(() => {
     if (!query.data?.data) return [];
     const parsed = parseOMMArray(query.data.data);
-    return group === "starlink" ? parsed.slice(0, 500) : parsed;
-  }, [query.data, group]);
+    return groupMeta.cap ? parsed.slice(0, groupMeta.cap) : parsed;
+  }, [query.data, groupMeta]);
 
   // Default the selection to the ISS whenever the group changes.
   useEffect(() => {
@@ -154,7 +185,79 @@ function TrackerPage() {
     [tles, selectedId]
   );
 
-  const groupMeta = GROUPS.find((g) => g.id === group) ?? GROUPS[0]!;
+  // Fullscreen: use the Fullscreen API where available (with a landscape
+  // orientation lock on touch devices); fall back to a fixed-position
+  // pseudo-fullscreen on browsers that lack element fullscreen (iOS Safari).
+  useEffect(() => {
+    const onChange = () => {
+      const active = document.fullscreenElement === shellRef.current;
+      setIsFs(active);
+      const coarse = window.matchMedia("(pointer: coarse)").matches;
+      const orientation = screen.orientation as unknown as
+        | { lock?: (o: string) => Promise<void>; unlock?: () => void }
+        | undefined;
+      if (active && coarse) {
+        orientation?.lock?.("landscape").catch(() => {
+          /* orientation lock requires support + user gesture */
+        });
+      } else {
+        orientation?.unlock?.();
+      }
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  useEffect(() => {
+    if (!pseudoFs) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setPseudoFs(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [pseudoFs]);
+
+  const expanded = isFs || pseudoFs;
+
+  const toggleFullscreen = async () => {
+    const el = shellRef.current;
+    if (!el) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+      return;
+    }
+    if (pseudoFs) {
+      setPseudoFs(false);
+      return;
+    }
+    if (typeof el.requestFullscreen === "function") {
+      try {
+        await el.requestFullscreen();
+        return;
+      } catch {
+        /* fall through to pseudo-fullscreen */
+      }
+    }
+    setPseudoFs(true);
+  };
+
+  const visibleCatalog = useMemo(() => {
+    const f = filter.trim().toLowerCase();
+    const list = f ? tles.filter((t) => t.name.toLowerCase().includes(f)) : tles;
+    return list.slice(0, 12);
+  }, [tles, filter]);
+
+  const catalogNote = filter.trim()
+    ? `${visibleCatalog.length} of ${fmtNum(tles.length)}`
+    : tles.length > 12
+      ? "first 12 shown"
+      : `${tles.length} objects`;
+
   const failed = query.isError || (query.isSuccess && !query.data.data);
 
   return (
@@ -174,7 +277,10 @@ function TrackerPage() {
       <section>
         <div className="container">
           <div className="scene-layout">
-            <div className="scene-shell">
+            <div
+              ref={shellRef}
+              className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
+            >
               {mounted && tles.length > 0 ? (
                 <Suspense fallback={null}>
                   <TrackerGlobe
@@ -193,7 +299,10 @@ function TrackerPage() {
                     key={g.id}
                     type="button"
                     className={`chip ${group === g.id ? "chip-active" : ""}`}
-                    onClick={() => setGroup(g.id)}
+                    onClick={() => {
+                      setGroup(g.id);
+                      setFilter("");
+                    }}
                   >
                     {g.label}
                   </button>
@@ -205,6 +314,15 @@ function TrackerPage() {
                   title="Toggle globe rotation"
                 >
                   Rotate
+                </button>
+                <span className="scene-hud-spacer" />
+                <button
+                  type="button"
+                  className={`chip ${expanded ? "chip-active" : ""}`}
+                  onClick={toggleFullscreen}
+                  title={expanded ? "Return to the embedded view" : "Expand the tracker to fill the screen"}
+                >
+                  {expanded ? "Exit fullscreen" : "Fullscreen"}
                 </button>
               </div>
 
@@ -252,7 +370,16 @@ function TrackerPage() {
                   {query.data ? <FreshnessBadge res={query.data} /> : null}
                 </div>
                 {selected ? (
-                  <SatelliteDetail key={selected.noradId} tle={selected} />
+                  <>
+                    <SatelliteDetail key={selected.noradId} tle={selected} />
+                    <Link
+                      to="/tracker/$noradId"
+                      params={{ noradId: selected.noradId }}
+                      className="detail-link"
+                    >
+                      View full object details
+                    </Link>
+                  </>
                 ) : (
                   <>
                     <p className="detail-note" style={{ marginTop: 0 }}>
@@ -279,30 +406,42 @@ function TrackerPage() {
                   <div className="side-item-top">
                     <h3>Catalog</h3>
                     <span className="mono" style={{ fontSize: "0.75rem", color: "var(--ink-faint)" }}>
-                      {tles.length > 12 ? "first 12 shown" : `${tles.length} objects`}
+                      {catalogNote}
                     </span>
                   </div>
-                  <ul className="side-list" style={{ maxHeight: 260, overflowY: "auto" }}>
-                    {tles.slice(0, 12).map((t) => (
-                      <li key={t.noradId}>
-                        <button
-                          type="button"
-                          className={`side-item ${selectedId === t.noradId ? "side-item-active" : ""}`}
-                          onClick={() => setSelectedId(t.noradId)}
-                        >
-                          <span className="side-item-name">{t.name}</span>
-                          <span className="side-item-meta">
-                            <span>
-                              Alt <b className="mono">{fmtNum((t.apogeeAlt + t.perigeeAlt) / 2, 0)} km</b>
+                  <input
+                    type="search"
+                    className="catalog-search"
+                    placeholder={`Search ${fmtNum(tles.length)} objects`}
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    aria-label="Search satellites in this group"
+                  />
+                  {visibleCatalog.length > 0 ? (
+                    <ul className="side-list" style={{ maxHeight: 260, overflowY: "auto" }}>
+                      {visibleCatalog.map((t) => (
+                        <li key={t.noradId}>
+                          <button
+                            type="button"
+                            className={`side-item ${selectedId === t.noradId ? "side-item-active" : ""}`}
+                            onClick={() => setSelectedId(t.noradId)}
+                          >
+                            <span className="side-item-name">{t.name}</span>
+                            <span className="side-item-meta">
+                              <span>
+                                Alt <b className="mono">{fmtNum((t.apogeeAlt + t.perigeeAlt) / 2, 0)} km</b>
+                              </span>
+                              <span>
+                                Period <b className="mono">{fmtNum(t.periodMin, 0)} min</b>
+                              </span>
                             </span>
-                            <span>
-                              Period <b className="mono">{fmtNum(t.periodMin, 0)} min</b>
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="detail-note">No objects in this group match that search.</p>
+                  )}
                 </div>
               )}
             </aside>

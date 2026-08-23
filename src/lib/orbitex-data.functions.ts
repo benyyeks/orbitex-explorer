@@ -93,7 +93,7 @@ export const getMarsManifest = createServerFn({ method: "GET" })
   });
 
 // --------------------------- CelesTrak: satellites ------------------------
-const SAT_GROUPS = ["stations", "visual", "gps-ops", "weather", "starlink", "science", "active"] as const;
+const SAT_GROUPS = ["stations", "visual", "gps-ops", "weather", "starlink", "science", "active", "iridium-NEXT", "resource"] as const;
 const SatInput = z.object({ group: z.enum(SAT_GROUPS).default("stations") });
 
 export const getSatellites = createServerFn({ method: "GET" })
@@ -101,6 +101,17 @@ export const getSatellites = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const url = `https://celestrak.org/NORAD/elements/gp.php?GROUP=${data.group}&FORMAT=json`;
     return cached("satellites", { group: data.group }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
+  });
+
+// Single-object lookup by NORAD catalog number, used by the satellite
+// detail template page.
+const SatIdInput = z.object({ noradId: z.string().regex(/^\d{1,6}$/) });
+
+export const getSatellite = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => SatIdInput.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    const url = `https://celestrak.org/NORAD/elements/gp.php?CATNR=${data.noradId}&FORMAT=json`;
+    return cached("satellite", { id: data.noradId }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 // ------------------------- wheretheiss: ISS position ---------------------
