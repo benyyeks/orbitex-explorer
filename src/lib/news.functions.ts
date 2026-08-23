@@ -5,6 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
 export type NewsItem = Database["public"]["Tables"]["space_news"]["Row"];
