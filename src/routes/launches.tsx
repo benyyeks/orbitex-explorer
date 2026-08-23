@@ -5,6 +5,7 @@ import { getLaunches } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText, pad2 } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { SkeletonImage } from "@/components/site/skeleton-image";
 
 export const Route = createFileRoute("/launches")({
   head: () => ({
@@ -101,22 +102,11 @@ function fmtNet(net: string): string {
 
 // ------------------------------ Components ---------------------------------
 
-// Mission imagery from the launch provider feed. Renders nothing when the
-// feed has no image or the remote file fails to load, so cards never show
-// a broken frame.
-function LaunchImage({ src, className }: { src: string | null; className: string }) {
-  const [failed, setFailed] = useState(false);
-  if (!src || failed) return null;
-  return (
-    <img
-      className={className}
-      src={src}
-      alt=""
-      loading="lazy"
-      referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
-    />
-  );
+// Mission imagery from the launch provider feed. Renders a skeleton while
+// loading and a neutral placeholder when the source is missing or fails, so
+// cards reserve their space and never show a broken frame.
+function LaunchImage({ src, className, eager = false }: { src: string | null; className: string; eager?: boolean }) {
+  return <SkeletonImage src={src} className={className} eager={eager} />;
 }
 
 // Ticking countdown; clock-dependent, so it renders only after hydration.
@@ -249,7 +239,7 @@ function LaunchesPage() {
             <article className="glass glass-card next-launch" aria-label="Next launch">
               {next.image && (
                 <div className="next-launch-media">
-                  <LaunchImage src={next.image} className="next-launch-img" />
+                  <LaunchImage src={next.image} className="next-launch-img" eager />
                 </div>
               )}
               <div className="next-launch-body">

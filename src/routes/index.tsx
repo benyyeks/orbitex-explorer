@@ -12,6 +12,7 @@ import {
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
 import { timeAgo, safeText, pad2 } from "@/lib/format";
 import { EmptyState } from "@/components/site/data-state";
+import { SkeletonImage } from "@/components/site/skeleton-image";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -350,20 +351,7 @@ function NewsCard({ item }: { item: NewsItem }) {
   const published = item.published_at ? new Date(item.published_at) : null;
   return (
     <a className="news-card interactive" href={item.url} target="_blank" rel="noopener noreferrer">
-      {item.image_url ? (
-        <img
-          className="news-img"
-          src={item.image_url}
-          alt=""
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
-        <div className="news-img" />
-      )}
+      <SkeletonImage src={item.image_url} className="news-img" />
       <div className="news-body">
         <span className="badge badge-accent">{newsTypeLabel(item.content_type)}</span>
         <h3>{safeText(item.title, 110)}</h3>
@@ -385,20 +373,7 @@ function LaunchCard({ launch }: { launch: LaunchBrief }) {
     : "Date TBD";
   return (
     <Link className="news-card launch-card interactive" to="/launches">
-      {launch.image ? (
-        <img
-          className="news-img"
-          src={launch.image}
-          alt=""
-          loading="lazy"
-          referrerPolicy="no-referrer"
-          onError={(e) => {
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      ) : (
-        <div className="news-img" />
-      )}
+      <SkeletonImage src={launch.image} className="news-img" />
       <div className="news-body">
         <span className="badge badge-warning">Launch</span>
         <h3>{safeText(launch.name, 90)}</h3>
