@@ -279,7 +279,7 @@ function CameraRig({
     const controls = controlsRef.current;
     if (!pending || !controls) return;
     if (pending.key === null) {
-      camera.position.set(0, 150, 340);
+      camera.position.set(0, 85, 210);
       controls.target.set(0, 0, 0);
       controls.update();
       pendingRef.current = null;
@@ -328,7 +328,7 @@ export default function SolarSystemScene({
 
   return (
     <Canvas
-      camera={{ position: [0, 150, 340], fov: 40, near: 0.5, far: 15000 }}
+      camera={{ position: [0, 85, 210], fov: 40, near: 0.5, far: 15000 }}
       dpr={[1, 2]}
       gl={{ antialias: true, preserveDrawingBuffer: true }}
       onPointerMissed={() => onSelect(null)}

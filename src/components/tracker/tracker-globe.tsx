@@ -150,7 +150,7 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.055}
+        size={0.075}
         sizeAttenuation
         map={sprite}
         color={selectedId ? color : color}
@@ -231,8 +231,8 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
       onPointerMissed={() => onSelect(null)}
     >
       <color attach="background" args={["#04060d"]} />
-      <ambientLight intensity={0.38} />
-      <directionalLight position={[9, 4, 6]} intensity={2.3} />
+      <ambientLight intensity={0.55} />
+      <directionalLight position={[6, 3, 8]} intensity={2.6} />
       <Stars radius={90} depth={50} count={4200} factor={3.2} saturation={0} fade speed={0.4} />
       <Suspense fallback={null}>
         <Earth />
