@@ -47,7 +47,7 @@ export function parseHorizonsVectors(text: string): ProbeTelemetry | null {
     rangeAU: distanceKm / AU_KM,
     speedKmS,
     oneWayLightMinutes: distanceKm / LIGHT_SPEED_KM_S / 60,
-    epoch: tokens[1] ?? "",
+    epoch: (tokens[1] ?? "").replace(/^A\.D\.\s*/, "").replace(/\.0+$/, ""),
   };
 }
 

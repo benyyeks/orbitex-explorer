@@ -216,7 +216,7 @@ function ProbeDetail({ k }: { k: ProbeKey }) {
           </b>
         </span>
         <span>
-          Speed{" "}
+          {live ? "Speed rel. Earth " : "Cruise speed "}
           <b className="mono">
             {live
               ? `${fmtNum(live.speedKmS, 2)} km/s`

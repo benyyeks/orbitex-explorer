@@ -260,7 +260,7 @@ function ProbeProfile({ k }: { k: ProbeKey }) {
               value={distKm ? `${fmtNum(distKm / AU_KM, 4)} AU` : "--"}
             />
             <Cell
-              label="Speed"
+              label={live ? "Speed relative to Earth" : "Cruise speed"}
               value={
                 live
                   ? `${fmtNum(live.speedKmS, 2)} km/s`
