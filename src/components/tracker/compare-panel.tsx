@@ -69,16 +69,16 @@ export function ComparePanel({ a, b }: { a: TLE | null; b: TLE | null }) {
         </table>
       </div>
       <div className="compare-grid">
-        {a ? (
+        {now && a ? (
           <figure>
             <GroundTrack tle={a} now={now} />
-            <figcaption>{a.name}: next two orbits</figcaption>
+            <figcaption>{a.name}: current orbit in context</figcaption>
           </figure>
         ) : null}
-        {b ? (
+        {now && b ? (
           <figure>
             <GroundTrack tle={b} now={now} />
-            <figcaption>{b.name}: next two orbits</figcaption>
+            <figcaption>{b.name}: current orbit in context</figcaption>
           </figure>
         ) : null}
       </div>
