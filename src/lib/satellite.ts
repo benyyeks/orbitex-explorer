@@ -399,11 +399,12 @@ export function parseOMMArray(json: unknown): TLE[] {
   return out;
 }
 
-// Human-readable orbital regime from the mean orbital altitude and period.
+// Human-readable orbital regime from the mean orbital altitude and shape.
 export function orbitRegime(tle: TLE): string {
   const meanAlt = (tle.apogeeAlt + tle.perigeeAlt) / 2;
-  if (tle.periodMin > 1400 && tle.periodMin < 1480 && meanAlt > 35000) return "Geosynchronous orbit";
-  if (meanAlt < 2000) return "Low Earth orbit";
-  if (meanAlt < 35786) return "Medium Earth orbit";
+  if (tle.ecc > 0.25 && tle.apogeeAlt > 20000) return "Highly elliptical (HEO)";
+  if (meanAlt < 2000) return "Low Earth orbit (LEO)";
+  if (meanAlt < 34000) return "Medium Earth orbit (MEO)";
+  if (meanAlt < 37000) return "Geosynchronous (GEO)";
   return "High Earth orbit";
 }

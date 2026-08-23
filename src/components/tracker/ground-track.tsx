@@ -1,101 +1,85 @@
-// 2D equirectangular ground track: the satellite's subpoint over the next two
-// orbital periods, drawn on a graticule with the equator and prime meridian.
+// Equirectangular ground track: one full past orbit plus half an orbit ahead,
+// drawn over the Blue Marble map (same projection), with a marker at the
+// current subpoint. Polylines break at the antimeridian to avoid streaks.
 // Shared by the object detail page and the tracker compare panel.
-import { DEG } from "@/lib/astronomy";
+import { useMemo } from "react";
 import { propagateSat, type TLE } from "@/lib/satellite";
 
-const W = 720;
-const H = 360;
-
-function project(lat: number, lon: number): [number, number] {
-  return [((lon + 180) / 360) * W, ((90 - lat) / 180) * H];
-}
-
 export function GroundTrack({ tle, now }: { tle: TLE; now: Date }) {
-  const pts: [number, number][] = [];
-  const periodMs = tle.periodMin * 60_000;
-  const steps = 180;
-  for (let i = 0; i <= steps; i++) {
-    const t = new Date(now.getTime() + (i / steps) * periodMs * 2);
-    const s = propagateSat(tle, t);
-    pts.push(project(s.lat, s.lon));
-  }
-  const segments: string[] = [];
-  let d = "";
-  for (let i = 0; i < pts.length; i++) {
-    const [x, y] = pts[i]!;
-    if (i === 0 || Math.abs(x - pts[i - 1]![0]) > W / 2) {
-      if (d) segments.push(d);
-      d = `M${x.toFixed(1)},${y.toFixed(1)}`;
-    } else {
-      d += ` L${x.toFixed(1)},${y.toFixed(1)}`;
+  const W = 720;
+  const H = 360;
+
+  const tracks = useMemo(() => {
+    const n = 260;
+    const start = now.getTime() - tle.periodMin * 60_000;
+    const span = tle.periodMin * 1.5 * 60_000;
+    const lines: string[] = [];
+    let cur: [number, number][] = [];
+    let prevX: number | null = null;
+    const flush = () => {
+      if (cur.length > 1) {
+        lines.push(cur.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" "));
+      }
+      cur = [];
+    };
+    for (let k = 0; k <= n; k++) {
+      const t = new Date(start + (k / n) * span);
+      const s = propagateSat(tle, t);
+      const x = ((s.lon + 180) / 360) * W;
+      const y = ((90 - s.lat) / 180) * H;
+      if (prevX !== null && Math.abs(x - prevX) > W / 2) flush();
+      cur.push([x, y]);
+      prevX = x;
     }
-  }
-  if (d) segments.push(d);
+    flush();
+    return lines;
+  }, [tle, now]);
 
-  const cur = propagateSat(tle, now);
-  const [cx, cy] = project(cur.lat, cur.lon);
+  const s = propagateSat(tle, now);
+  const cx = ((s.lon + 180) / 360) * W;
+  const cy = ((90 - s.lat) / 180) * H;
 
-  const lats = [-60, -30, 0, 30, 60];
-  const lons = [-120, -60, 0, 60, 120];
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
       className="ground-track"
       role="img"
-      aria-label={`Projected ground track of ${tle.name} over the next two orbits`}
+      aria-label={`Ground track of ${tle.name}`}
     >
-      <rect width={W} height={H} fill="transparent" />
-      {lats.map((la) => {
-        const [, y] = project(la, 0);
-        return (
-          <line
-            key={`la${la}`}
-            x1={0}
-            x2={W}
-            y1={y}
-            y2={y}
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={la === 0 ? 1.4 : 0.7}
-          />
-        );
-      })}
-      {lons.map((lo) => {
-        const [x] = project(0, lo);
-        return (
-          <line key={`lo${lo}`} x1={x} x2={x} y1={0} y2={H} stroke="rgba(255,255,255,0.08)" strokeWidth={0.7} />
-        );
-      })}
-      {/* day/night terminator approximation */}
-      {(() => {
-        const d0 = new Date(Date.UTC(now.getUTCFullYear(), 0, 0));
-        const doy = (now.getTime() - d0.getTime()) / 86400000;
-        const decl = -23.44 * Math.cos((360 / 365) * (doy + 10) * DEG);
-        const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
-        const subsLon = 180 - utcH * 15;
-        const ptsT: [number, number][] = [];
-        for (let lo = -180; lo <= 180; lo += 4) {
-          const hourAngle = (lo - subsLon) * DEG;
-          const latT = (Math.atan(-Math.cos(hourAngle) / Math.tan(decl * DEG)) * 180) / Math.PI;
-          ptsT.push(project(Math.max(-88, Math.min(88, latT)), lo));
-        }
-        let dT = "";
-        const segsT: string[] = [];
-        ptsT.forEach(([x, y], i) => {
-          if (i === 0 || Math.abs(x - ptsT[i - 1]![0]) > W / 2) {
-            if (dT) segsT.push(dT);
-            dT = `M${x.toFixed(1)},${y.toFixed(1)}`;
-          } else dT += ` L${x.toFixed(1)},${y.toFixed(1)}`;
-        });
-        if (dT) segsT.push(dT);
-        return segsT.map((dd, i) => (
-          <path key={`t${i}`} d={dd} fill="none" stroke="rgba(255,212,137,0.35)" strokeWidth="1" strokeDasharray="4 4" />
-        ));
-      })()}
-      {segments.map((dd, i) => (
-        <path key={i} d={dd} fill="none" stroke="#7fb4ff" strokeWidth="1.6" />
+      <image
+        href="/textures/earth-blue-marble.jpg"
+        x={0}
+        y={0}
+        width={W}
+        height={H}
+        preserveAspectRatio="none"
+      />
+      {Array.from({ length: 11 }, (_, i) => (i + 1) * 30).map((lon) => (
+        <line
+          key={`v${lon}`}
+          x1={(lon / 360) * W}
+          y1={0}
+          x2={(lon / 360) * W}
+          y2={H}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={1}
+        />
       ))}
-      <circle cx={cx} cy={cy} r={5} fill="#ffd489" stroke="#04060d" strokeWidth="1.5" />
+      {[30, 60, 90, 120, 150].map((lat) => (
+        <line
+          key={`h${lat}`}
+          x1={0}
+          y1={(lat / 180) * H}
+          x2={W}
+          y2={(lat / 180) * H}
+          stroke="rgba(255,255,255,0.08)"
+          strokeWidth={1}
+        />
+      ))}
+      {tracks.map((pts, i) => (
+        <polyline key={i} points={pts} fill="none" stroke="#f0b35e" strokeWidth={1.6} opacity={0.9} />
+      ))}
+      <circle cx={cx} cy={cy} r={5.5} fill="#ffd489" stroke="#04060d" strokeWidth={1.5} />
     </svg>
   );
 }

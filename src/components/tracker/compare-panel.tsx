@@ -11,8 +11,8 @@ function meanAlt(t: TLE): number {
 
 export function ComparePanel({ a, b }: { a: TLE | null; b: TLE | null }) {
   const now = useNow(1000);
-  const sa = a ? propagateSat(a, now) : null;
-  const sb = b ? propagateSat(b, now) : null;
+  const sa = now && a ? propagateSat(a, now) : null;
+  const sb = now && b ? propagateSat(b, now) : null;
 
   const fmt = (v: number | null, digits: number, unit: string) =>
     v == null ? "--" : `${fmtNum(v, digits)}${unit ? ` ${unit}` : ""}`;
