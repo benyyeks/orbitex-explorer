@@ -178,8 +178,8 @@ function WeatherError() {
           <div className="glass glass-card scaffold-card">
             <h1>Space weather temporarily unavailable</h1>
             <p>
-              The NOAA and NASA feeds did not respond and no cached copy exists yet.
-              Please try again in a minute; the cache fills on the first successful fetch.
+              The NOAA and NASA feeds did not respond. This usually clears within a few
+              minutes. Please check back shortly.
             </p>
           </div>
         </div>
@@ -222,9 +222,9 @@ function WeatherPage() {
             <span className="eyebrow">NOAA SWPC · NASA DONKI</span>
             <h1>Space weather</h1>
             <p className="tagline">
-              Solar wind, geomagnetic conditions, and solar X-ray activity, fetched live from
-              NOAA's Space Weather Prediction Center and NASA's DONKI alert service. Values
-              refresh every few minutes through the ORBITEX cache.
+              Solar wind, geomagnetic conditions, and solar X-ray activity, live from
+              NOAA's Space Weather Prediction Center and NASA's DONKI alert service.
+              Readings are refreshed every few minutes.
             </p>
           </div>
 

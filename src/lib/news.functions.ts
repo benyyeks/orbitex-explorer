@@ -5,6 +5,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
 export type NewsItem = Database["public"]["Tables"]["space_news"]["Row"];
@@ -44,10 +45,64 @@ export const getLatestNews = createServerFn({ method: "GET" }).handler(async () 
     .from("space_news")
     .select("id,content_type,title,summary,url,image_url,news_site,published_at,fetched_at")
     .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(6);
+    .limit(14);
 
   if (error) {
     return { items: [], error: "Could not reach the news service." } satisfies NewsResult;
   }
   return { items: (data ?? []) as NewsItem[], error: null } satisfies NewsResult;
 });
+
+// ---------------------------- Competitions ---------------------------------
+export type CompetitionItem = Database["public"]["Tables"]["competitions"]["Row"];
+export type CompetitionsResult = { items: CompetitionItem[]; error: string | null };
+
+export const getCompetitions = createServerFn({ method: "GET" }).handler(async () => {
+  const supabase = publishableClient();
+  const { data, error } = await supabase
+    .from("competitions")
+    .select("id,name,organizer,description,url,category,opens_at,deadline,is_active,created_at")
+    .eq("is_active", true)
+    .order("deadline", { ascending: true, nullsFirst: false })
+    .limit(6);
+
+  if (error) {
+    return { items: [], error: "Competitions are unavailable right now." } satisfies CompetitionsResult;
+  }
+  return { items: (data ?? []) as CompetitionItem[], error: null } satisfies CompetitionsResult;
+});
+
+// ------------------------------ Feedback ------------------------------------
+export type FeedbackResult = { ok: boolean; error: string | null };
+
+export const submitFeedback = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        name: z.string().max(80).optional().default(""),
+        email: z.string().max(120).optional().default(""),
+        type: z.enum(["suggestion", "bug", "data", "other"]).default("suggestion"),
+        message: z.string().min(3).max(2000),
+        // Honeypot: real users never see or fill this field.
+        company: z.string().max(200).optional().default(""),
+      })
+      .parse(input ?? {})
+  )
+  .handler(async ({ data }): Promise<FeedbackResult> => {
+    // Honeypot tripped: pretend success and store nothing.
+    if (data.company) return { ok: true, error: null };
+    if (data.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) {
+      return { ok: false, error: "That email address does not look valid." };
+    }
+    const supabase = publishableClient();
+    const { error } = await supabase.from("feedback").insert({
+      name: data.name || null,
+      email: data.email || null,
+      type: data.type,
+      message: data.message,
+    });
+    if (error) {
+      return { ok: false, error: "Your message could not be sent. Please try again." };
+    }
+    return { ok: true, error: null };
+  });

@@ -109,9 +109,8 @@ function NeoError() {
           <div className="glass glass-card scaffold-card">
             <h1>Asteroid feed temporarily unavailable</h1>
             <p>
-              NASA's NeoWs service did not respond and no cached copy exists yet. The free
-              demo key is rate limited to 30 requests per hour, so this can happen on a busy
-              hour. Please try again shortly.
+              NASA's close-approach service did not respond. This usually clears within a
+              few minutes. Please check back shortly.
             </p>
           </div>
         </div>
