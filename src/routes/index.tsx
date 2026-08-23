@@ -1,16 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { getLatestNews, type NewsItem } from "@/lib/news.functions";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useSuspenseQuery, queryOptions, useServerFn } from "@tanstack/react-query";
 import {
-  julianDateUTC,
-  moonPhase,
-  heliocentricEcliptic,
-  interplanetDistanceAU,
-  PLANET_ORDER,
-} from "@/lib/astronomy";
-import { fmtAU, fmtNum, lightTimeFromAU, utcClock, utcDateStr, timeAgo, safeText } from "@/lib/format";
+  getLatestNews,
+  getCompetitions,
+  submitFeedback,
+  type NewsItem,
+  type CompetitionItem,
+} from "@/lib/news.functions";
+import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
+import { timeAgo, safeText, pad2 } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,8 +30,12 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(newsQueryOptions),
+  loader: async ({ context }) => {
+    await Promise.allSettled([
+      context.queryClient.ensureQueryData(newsQueryOptions),
+      context.queryClient.ensureQueryData(competitionsQueryOptions),
+    ]);
+  },
   component: LandingPage,
 });
 
@@ -41,13 +44,13 @@ const newsQueryOptions = queryOptions({
   queryFn: () => getLatestNews(),
 });
 
+const competitionsQueryOptions = queryOptions({
+  queryKey: ["orbitex", "competitions"],
+  queryFn: () => getCompetitions(),
+});
+
 // ----------------------------- Explore cards ------------------------------
-type ExploreCard = {
-  to: string;
-  icon: string;
-  title: string;
-  blurb: string;
-};
+type ExploreCard = { to: string; icon: string; title: string; blurb: string };
 const EXPLORE: ExploreCard[] = [
   { to: "/tracker", icon: "tracker", title: "Orbit Tracker", blurb: "Live 3D globe with satellites propagated from real NORAD element sets." },
   { to: "/deepspace", icon: "deepspace", title: "Deep Space", blurb: "Real planetary orbits and live distance tracking for active probes." },
@@ -86,97 +89,259 @@ const ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
-// --------------------------- Live stats (client) --------------------------
-// All values derive from the verified JPL Keplerian elements in
-// astronomy.ts. Computed client-side after mount to avoid SSR/client
-// hydration drift, since they depend on the current time.
-type LiveStats = {
-  utc: string;
-  date: string;
-  moonIllum: number;
-  moonName: string;
-  moonAgeDays: number;
-  jupiterAU: number;
-  jupiterLight: string;
-  marsAU: number;
-  marsLight: string;
-};
-
-function computeStats(now: Date): LiveStats {
-  const jd = julianDateUTC(now);
-  const mp = moonPhase(jd);
-  const earth = heliocentricEcliptic("earth", jd);
-  const jupiter = heliocentricEcliptic("jupiter", jd);
-  const mars = heliocentricEcliptic("mars", jd);
-  const jupAU = interplanetDistanceAU(earth, jupiter);
-  const marsAU = interplanetDistanceAU(earth, mars);
-  return {
-    utc: utcClock(now),
-    date: utcDateStr(now),
-    moonIllum: Math.round(mp.illumination * 100),
-    moonName: mp.name,
-    moonAgeDays: mp.ageDays,
-    jupiterAU: jupAU,
-    jupiterLight: lightTimeFromAU(jupAU),
-    marsAU: marsAU,
-    marsLight: lightTimeFromAU(marsAU),
-  };
-}
-
 // --------------------------- Hero orbit diagram ----------------------------
-// Projects the four inner planets onto the ecliptic plane using their live
-// heliocentric positions. Scale tuned so Mars (1.52 AU) sits inside the ring.
-const ORBIT_AU = { mercury: 0.387, venus: 0.723, earth: 1.0, mars: 1.524 };
-const ORBIT_SCALE = 26; // px per AU
-const CX = 100;
-const CY = 100;
+const ORBIT_AU = [0.387, 0.723, 1.0, 1.524];
+const ORBIT_SCALE = 26;
 
 function HeroOrbit() {
-  const [pts, setPts] = useState<{ x: number; y: number; key: string }[] | null>(null);
-  useEffect(() => {
-    const jd = julianDateUTC(new Date());
-    const keys = ["mercury", "venus", "earth", "mars"] as const;
-    setPts(
-      keys.map((k) => {
-        const h = heliocentricEcliptic(k, jd);
-        return { x: CX + h.x * ORBIT_SCALE, y: CY + h.y * ORBIT_SCALE, key: k };
-      })
-    );
-    const id = setInterval(() => {
-      const jd2 = julianDateUTC(new Date());
-      setPts(
-        keys.map((k) => {
-          const h = heliocentricEcliptic(k, jd2);
-          return { x: CX + h.x * ORBIT_SCALE, y: CY + h.y * ORBIT_SCALE, key: k };
-        })
-      );
-    }, 60000);
-    return () => clearInterval(id);
-  }, []);
-
   return (
     <div className="hero-orbit" aria-hidden="true">
       <svg viewBox="0 0 200 200">
-        {/* Orbit rings */}
-        {Object.values(ORBIT_AU).map((r, i) => (
-          <circle key={i} className="ring" cx={CX} cy={CY} r={r * ORBIT_SCALE} />
+        {ORBIT_AU.map((r, i) => (
+          <circle key={i} className="ring" cx={100} cy={100} r={r * ORBIT_SCALE} />
         ))}
-        {/* Sun */}
-        <circle className="body" cx={CX} cy={CY} r="5" />
-        {/* Planets */}
-        {pts?.map((p) => (
-          <circle key={p.key} className={p.key === "earth" ? "body" : "body-faint"} cx={p.x} cy={p.y} r={p.key === "earth" ? 3.4 : 2.6} />
-        ))}
-        {/* Labels */}
-        <text className="label" x={CX + 3} y={CY - 6}>SUN</text>
+        <circle className="body" cx={100} cy={100} r="5" />
+        <circle className="body-faint" cx={100 + 0.387 * ORBIT_SCALE} cy={100} r="2.6" />
+        <circle className="body-faint" cx={100 - 0.723 * ORBIT_SCALE} cy={100 - 8} r="2.6" />
+        <circle className="body" cx={100} cy={100 - 1.0 * ORBIT_SCALE} r="3.4" />
+        <circle className="body-faint" cx={100 - 1.524 * ORBIT_SCALE * 0.7} cy={100 + 1.524 * ORBIT_SCALE * 0.7} r="2.6" />
+        <text className="label" x={103} y={94}>SUN</text>
       </svg>
     </div>
   );
 }
 
-// ------------------------------- News card ---------------------------------
+// ------------------------------ UTC clock ----------------------------------
+function useUtcClock() {
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const tick = () => setNow(new Date());
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!now) return "-- : -- : -- UTC";
+  return `${pad2(now.getUTCHours())}:${pad2(now.getUTCMinutes())}:${pad2(now.getUTCSeconds())} UTC`;
+}
+
+// --------------------------- Overview strip --------------------------------
+type LaunchBrief = { name: string; net: string | null; image: string | null; provider: string };
+
+function parseLaunchBriefs(payload: unknown): LaunchBrief[] {
+  const results = (payload as { results?: unknown[] } | null)?.results;
+  if (!Array.isArray(results)) return [];
+  return results
+    .map((raw) => {
+      const l = raw as Record<string, unknown>;
+      const name = typeof l.name === "string" ? l.name : "";
+      if (!name) return null;
+      const net = typeof l.net === "string" ? l.net : null;
+      const image = typeof l.image === "string" ? l.image : null;
+      const provider =
+        (l.launch_service_provider as { name?: string } | null)?.name ?? "";
+      return { name, net, image, provider };
+    })
+    .filter((l): l is LaunchBrief => l !== null);
+}
+
+function OverviewStrip() {
+  const launchesQ = useQuery({
+    queryKey: ["orbitex", "launches", "overview"],
+    queryFn: () => getLaunches(),
+    staleTime: 5 * 60_000,
+  });
+  const neoQ = useQuery({
+    queryKey: ["orbitex", "neo", "overview"],
+    queryFn: () => getNEO(),
+    staleTime: 60 * 60_000,
+  });
+
+  const nextLaunch = useMemo(() => {
+    const briefs = parseLaunchBriefs(launchesQ.data?.data);
+    return briefs[0]?.name.split("|")[0]?.trim().slice(0, 22) ?? null;
+  }, [launchesQ.data]);
+
+  const neoCount = useMemo(() => {
+    const d = neoQ.data?.data as { element_count?: number; near_earth_objects?: Record<string, unknown[]> } | undefined;
+    if (!d) return null;
+    if (typeof d.element_count === "number") return d.element_count;
+    if (d.near_earth_objects) return Object.values(d.near_earth_objects).flat().length;
+    return null;
+  }, [neoQ.data]);
+
+  return (
+    <div className="overview-strip glass">
+      <div className="overview-item">
+        <span className="overview-value">9</span>
+        <span className="overview-label">Live data sources</span>
+      </div>
+      <div className="overview-item">
+        <span className="overview-value">10</span>
+        <span className="overview-label">Tools in one platform</span>
+      </div>
+      <div className="overview-item">
+        <span className="overview-value">{nextLaunch ?? "--"}</span>
+        <span className="overview-label">Next launch</span>
+      </div>
+      <div className="overview-item">
+        <span className="overview-value">{neoCount ?? "--"}</span>
+        <span className="overview-label">Near-Earth objects tracked this week</span>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------- Weather widget -------------------------------
+const WMO_DESCRIPTIONS: Record<number, string> = {
+  0: "Clear sky", 1: "Mainly clear", 2: "Partly cloudy", 3: "Overcast",
+  45: "Fog", 48: "Depositing rime fog",
+  51: "Light drizzle", 53: "Drizzle", 55: "Dense drizzle",
+  61: "Light rain", 63: "Rain", 65: "Heavy rain",
+  71: "Light snow", 73: "Snow", 75: "Heavy snow", 77: "Snow grains",
+  80: "Light showers", 81: "Showers", 82: "Violent showers",
+  95: "Thunderstorm", 96: "Thunderstorm with hail", 99: "Severe thunderstorm with hail",
+};
+
+function skyClarityNote(cloudCover: number | null): string {
+  if (cloudCover === null) return "";
+  if (cloudCover < 20) return "Excellent for stargazing tonight.";
+  if (cloudCover < 50) return "Decent breaks in the cloud for stargazing.";
+  if (cloudCover < 80) return "Mostly cloudy, stargazing will be difficult.";
+  return "Overcast, not a good night for stargazing.";
+}
+
+type CurrentWeather = {
+  temperature_2m?: number;
+  apparent_temperature?: number;
+  relative_humidity_2m?: number;
+  cloud_cover?: number;
+  weather_code?: number;
+  wind_speed_10m?: number;
+};
+
+type WeatherState =
+  | { status: "idle" }
+  | { status: "locating" }
+  | { status: "ok"; current: CurrentWeather }
+  | { status: "error"; message: string };
+
+function WeatherWidget() {
+  const fetchWeather = useServerFn(getEarthWeather);
+  const [state, setState] = useState<WeatherState>({ status: "idle" });
+  const coordsRef = useRef<{ lat: number; lon: number } | null>(null);
+
+  useEffect(() => {
+    if (!coordsRef.current) return;
+    const id = setInterval(async () => {
+      const c = coordsRef.current;
+      if (!c) return;
+      try {
+        const res = await fetchWeather({ data: c });
+        const current = (res?.data as { current?: CurrentWeather } | undefined)?.current;
+        if (res?.ok && current) setState({ status: "ok", current });
+      } catch {
+        /* keep last reading */
+      }
+    }, 5 * 60_000);
+    return () => clearInterval(id);
+  }, [fetchWeather, state.status]);
+
+  const requestLocation = () => {
+    if (!navigator.geolocation) {
+      setState({ status: "error", message: "Geolocation is not supported in this browser." });
+      return;
+    }
+    setState({ status: "locating" });
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+        coordsRef.current = coords;
+        try {
+          const res = await fetchWeather({ data: coords });
+          const current = (res?.data as { current?: CurrentWeather } | undefined)?.current;
+          if (res?.ok && current) {
+            setState({ status: "ok", current });
+          } else {
+            setState({ status: "error", message: "Conditions could not be loaded right now." });
+          }
+        } catch {
+          setState({ status: "error", message: "Conditions could not be loaded right now." });
+        }
+      },
+      (err) => {
+        setState({
+          status: "error",
+          message: err.code === 1 ? "Location permission denied." : "Could not get your location.",
+        });
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  };
+
+  return (
+    <div className="glass glass-card weather-widget">
+      {state.status !== "ok" ? (
+        <div className="weather-request">
+          <div>
+            <span className="eyebrow">Local conditions</span>
+            <h3>See the sky through today's weather</h3>
+            <p className="text-muted" style={{ marginBottom: 0 }}>
+              Cloud cover matters as much as clear skies. Share your location for current
+              conditions, refreshed every few minutes.
+            </p>
+            {state.status === "error" ? <p className="weather-error">{state.message}</p> : null}
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={requestLocation}
+            disabled={state.status === "locating"}
+          >
+            {state.status === "locating" ? "Locating..." : "Use my location"}
+          </button>
+        </div>
+      ) : (
+        <div className="weather-result">
+          <div className="weather-temp">{Math.round(state.current.temperature_2m ?? 0)}&deg;C</div>
+          <div className="weather-detail-grid">
+            <div>
+              {WMO_DESCRIPTIONS[state.current.weather_code ?? -1] ?? "Current conditions"}
+              <br />
+              <strong>{Math.round(state.current.cloud_cover ?? 0)}% cloud cover</strong>
+            </div>
+            <div>
+              Feels like
+              <br />
+              <strong>{Math.round(state.current.apparent_temperature ?? 0)}&deg;C</strong>
+            </div>
+            <div>
+              Wind
+              <br />
+              <strong>{Math.round(state.current.wind_speed_10m ?? 0)} km/h</strong>
+            </div>
+            <div>
+              Humidity
+              <br />
+              <strong>{Math.round(state.current.relative_humidity_2m ?? 0)}%</strong>
+            </div>
+            <div className="text-accent" style={{ alignSelf: "center" }}>
+              {skyClarityNote(state.current.cloud_cover ?? null)}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// --------------------------------- News -------------------------------------
+function normalizeType(type: string): string {
+  return type.endsWith("s") ? type.slice(0, -1) : type;
+}
+
 function newsTypeLabel(type: string): string {
-  return type === "article" ? "Article" : type === "blog" ? "Blog / Vlog" : type === "report" ? "Report" : "News";
+  const t = normalizeType(type);
+  return t === "article" ? "Article" : t === "blog" ? "Blog / Vlog" : t === "report" ? "Report" : "News";
 }
 
 function NewsCard({ item }: { item: NewsItem }) {
@@ -201,19 +366,239 @@ function NewsCard({ item }: { item: NewsItem }) {
   );
 }
 
-// ------------------------------ Landing page -------------------------------
-function LandingPage() {
-  const { data: newsResult } = useSuspenseQuery(newsQueryOptions);
-  const [stats, setStats] = useState<LiveStats | null>(null);
+function LaunchCard({ launch }: { launch: LaunchBrief }) {
+  const when = launch.net
+    ? new Date(launch.net).toLocaleString("en-US", {
+        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC",
+      }) + " UTC"
+    : "Date TBD";
+  return (
+    <Link className="news-card launch-card interactive" to="/launches">
+      {launch.image ? (
+        <img className="news-img" src={launch.image} alt="" loading="lazy" />
+      ) : (
+        <div className="news-img" />
+      )}
+      <div className="news-body">
+        <span className="badge badge-warning">Launch</span>
+        <h3>{safeText(launch.name, 90)}</h3>
+        <div className="launch-when">{when}</div>
+        <div className="news-foot">
+          <span>{safeText(launch.provider, 30)}</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
-  useEffect(() => {
-    const tick = () => setStats(computeStats(new Date()));
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
+const NEWS_FILTERS = [
+  { key: "", label: "All" },
+  { key: "article", label: "Articles" },
+  { key: "blog", label: "Blogs & vlogs" },
+  { key: "report", label: "Reports" },
+  { key: "launch", label: "Launches" },
+];
+
+function NewsSection() {
+  const { data: newsResult } = useSuspenseQuery(newsQueryOptions);
+  const launchesQ = useQuery({
+    queryKey: ["orbitex", "launches", "overview"],
+    queryFn: () => getLaunches(),
+    staleTime: 5 * 60_000,
+  });
+  const [filter, setFilter] = useState("");
 
   const newsItems = useMemo(() => newsResult.items ?? [], [newsResult]);
+  const launches = useMemo(() => parseLaunchBriefs(launchesQ.data?.data), [launchesQ.data]);
+
+  const visibleNews = useMemo(() => {
+    if (!filter || filter === "launch") return newsItems;
+    return newsItems.filter((n) => normalizeType(n.content_type) === filter);
+  }, [newsItems, filter]);
+
+  return (
+    <section id="news">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow">Updated daily</span>
+          <h2>Space news &amp; launches</h2>
+        </div>
+        <div className="news-filters" role="tablist" aria-label="News category">
+          {NEWS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              role="tab"
+              aria-selected={filter === f.key}
+              className={`glass-pill news-filter${filter === f.key ? " active" : ""}`}
+              onClick={() => setFilter(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {filter === "launch" ? (
+          launches.length > 0 ? (
+            <div className="news-grid">
+              {launches.slice(0, 9).map((l) => (
+                <LaunchCard key={l.name + (l.net ?? "")} launch={l} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted">No upcoming launches found.</p>
+          )
+        ) : visibleNews.length > 0 ? (
+          <div className="news-grid">
+            {!filter && launches[0] ? <LaunchCard key={launches[0].name} launch={launches[0]} /> : null}
+            {visibleNews.slice(0, 12).map((item) => (
+              <NewsCard key={item.id} item={item} />
+            ))}
+            {!filter && launches[1] ? <LaunchCard key={launches[1].name} launch={launches[1]} /> : null}
+          </div>
+        ) : (
+          <p className="text-muted">
+            {newsResult.error ?? "No stories in this category right now."}
+          </p>
+        )}
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------ Competitions ---------------------------------
+function CompetitionCard({ comp }: { comp: CompetitionItem }) {
+  const deadline = comp.deadline
+    ? new Date(comp.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+    : null;
+  return (
+    <a className="glass glass-card competition-card interactive" href={comp.url} target="_blank" rel="noopener noreferrer">
+      {comp.category ? <span className="badge badge-accent">{safeText(comp.category, 30)}</span> : null}
+      <h3>{safeText(comp.name, 80)}</h3>
+      <div className="competition-org">{safeText(comp.organizer ?? "", 60)}</div>
+      {comp.description ? <p>{safeText(comp.description, 160)}</p> : null}
+      <div className="competition-deadline">
+        {deadline ? `Deadline: ${deadline}` : "See site for current dates"}
+      </div>
+    </a>
+  );
+}
+
+function CompetitionsSection() {
+  const { data } = useSuspenseQuery(competitionsQueryOptions);
+  if (!data.items?.length) return null;
+  return (
+    <section className="tight">
+      <div className="container">
+        <div className="section-head">
+          <span className="eyebrow">Get involved</span>
+          <h2>Aerospace competitions &amp; hackathons</h2>
+        </div>
+        <div className="news-grid">
+          {data.items.map((c) => (
+            <CompetitionCard key={c.id} comp={c} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------ Feedback form --------------------------------
+type FormStatus = { kind: "success" | "error"; message: string } | null;
+
+function FeedbackSection() {
+  const submit = useServerFn(submitFeedback);
+  const [status, setStatus] = useState<FormStatus>(null);
+  const [sending, setSending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (sending) return;
+    const fd = new FormData(e.currentTarget);
+    setSending(true);
+    setStatus(null);
+    try {
+      const res = await submit({
+        data: {
+          name: String(fd.get("name") ?? ""),
+          email: String(fd.get("email") ?? ""),
+          type: String(fd.get("type") ?? "suggestion") as "suggestion" | "bug" | "data" | "other",
+          message: String(fd.get("message") ?? ""),
+          company: String(fd.get("company") ?? ""),
+        },
+      });
+      if (res.ok) {
+        setStatus({ kind: "success", message: "Thank you. Your message has been sent to the team." });
+        formRef.current?.reset();
+      } else {
+        setStatus({ kind: "error", message: res.error ?? "Your message could not be sent. Please try again." });
+      }
+    } catch {
+      setStatus({ kind: "error", message: "Your message could not be sent. Please try again." });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <section className="tight">
+      <div className="container">
+        <div className="glass glass-card suggestion-form-wrap">
+          <span className="eyebrow">Help shape ORBITEX</span>
+          <h2>Suggestions &amp; feedback</h2>
+          <p className="text-muted">
+            Found something wrong, or want a feature added? Tell us directly, it goes
+            straight to the team building this.
+          </p>
+          <form ref={formRef} className="suggestion-form" onSubmit={onSubmit}>
+            <p className="hp-field" aria-hidden="true">
+              <label>
+                Leave this empty: <input name="company" tabIndex={-1} autoComplete="off" />
+              </label>
+            </p>
+            <div className="form-row">
+              <label htmlFor="fb-name">Name <span className="text-faint">(optional)</span></label>
+              <input type="text" id="fb-name" name="name" maxLength={80} autoComplete="name" />
+            </div>
+            <div className="form-row">
+              <label htmlFor="fb-email">
+                Email <span className="text-faint">(optional, if you'd like a reply)</span>
+              </label>
+              <input type="email" id="fb-email" name="email" maxLength={120} autoComplete="email" />
+            </div>
+            <div className="form-row">
+              <label htmlFor="fb-type">Type</label>
+              <select id="fb-type" name="type" defaultValue="suggestion">
+                <option value="suggestion">Feature suggestion</option>
+                <option value="bug">Something's not working</option>
+                <option value="data">Data accuracy concern</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div className="form-row">
+              <label htmlFor="fb-message">Message</label>
+              <textarea id="fb-message" name="message" required minLength={3} maxLength={2000} rows={5} />
+            </div>
+            <div>
+              <button type="submit" className="btn btn-primary" disabled={sending}>
+                {sending ? "Sending..." : "Send feedback"}
+              </button>
+              <p className={`form-status${status ? ` ${status.kind}` : ""}`} role="status">
+                {status?.message ?? ""}
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ------------------------------ Landing page ---------------------------------
+function LandingPage() {
+  const clock = useUtcClock();
 
   return (
     <main className="page-main">
@@ -222,7 +607,7 @@ function LandingPage() {
         <div className="container hero-grid">
           <div>
             <span className="glass-pill hero-kicker">
-              <span className="live-dot" aria-hidden="true" /> Live data from NASA, NOAA, CelesTrak & JPL
+              <span className="live-dot" aria-hidden="true" /> Live data from NASA, NOAA, CelesTrak &amp; JPL
             </span>
             <h1>See beyond the <span>sky</span></h1>
             <p className="hero-lede">
@@ -235,47 +620,16 @@ function LandingPage() {
               <Link to="/tracker" className="btn btn-primary">Open Orbit Tracker</Link>
               <Link to="/about" className="btn">How the data works</Link>
             </div>
-            <div className="hero-clock glass-pill mono" aria-live="off">
-              {stats ? `${stats.utc} UTC · ${stats.date}` : "-- : -- : -- UTC"}
-            </div>
+            <div className="hero-clock glass-pill mono" aria-live="off">{clock}</div>
           </div>
           <HeroOrbit />
         </div>
       </section>
 
-      {/* LIVE STAT GRID */}
+      {/* PLATFORM OVERVIEW */}
       <section className="tight">
         <div className="container">
-          <div className="section-head">
-            <span className="eyebrow">Computed now</span>
-            <h2>Live numbers from verified elements</h2>
-          </div>
-          <div className="stat-grid">
-            <div className="glass glass-card stat-card">
-              <div className="stat-label">Moon phase</div>
-              <div className="stat-value">{stats ? `${stats.moonIllum}%` : "--"}</div>
-              <div className="stat-unit">{stats ? stats.moonName : "computing"}</div>
-              <div className="stat-note">{stats ? `${fmtNum(stats.moonAgeDays, 1)} days into the cycle` : "Live lunar illumination"}</div>
-            </div>
-            <div className="glass glass-card stat-card">
-              <div className="stat-label">Mars · Earth distance</div>
-              <div className="stat-value">{stats ? fmtAU(stats.marsAU, 2) : "--"}</div>
-              <div className="stat-unit">{stats ? `${stats.marsLight} light-time` : "computing"}</div>
-              <div className="stat-note">From JPL Keplerian elements</div>
-            </div>
-            <div className="glass glass-card stat-card">
-              <div className="stat-label">Jupiter · Earth distance</div>
-              <div className="stat-value">{stats ? fmtAU(stats.jupiterAU, 2) : "--"}</div>
-              <div className="stat-unit">{stats ? `${stats.jupiterLight} light-time` : "computing"}</div>
-              <div className="stat-note">From JPL Keplerian elements</div>
-            </div>
-            <div className="glass glass-card stat-card">
-              <div className="stat-label">Tracked bodies</div>
-              <div className="stat-value">{PLANET_ORDER.length}</div>
-              <div className="stat-unit">major planets</div>
-              <div className="stat-note">Plus the Moon, Sun, and live satellites</div>
-            </div>
-          </div>
+          <OverviewStrip />
         </div>
       </section>
 
@@ -298,26 +652,21 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* SPACE NEWS */}
-      <section id="news">
+      {/* LOCAL CONDITIONS */}
+      <section className="tight">
         <div className="container">
-          <div className="section-head">
-            <span className="eyebrow">Updated daily</span>
-            <h2>Space news</h2>
-          </div>
-          {newsItems.length > 0 ? (
-            <div className="news-grid">
-              {newsItems.map((item) => (
-                <NewsCard key={item.id} item={item} />
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted">
-              {newsResult.error ?? "Space news is temporarily unavailable."}
-            </p>
-          )}
+          <WeatherWidget />
         </div>
       </section>
+
+      {/* SPACE NEWS & LAUNCHES */}
+      <NewsSection />
+
+      {/* COMPETITIONS */}
+      <CompetitionsSection />
+
+      {/* SUGGESTIONS & FEEDBACK */}
+      <FeedbackSection />
     </main>
   );
 }
