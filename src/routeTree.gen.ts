@@ -20,6 +20,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SkyRouteImport } from './routes/sky'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WeatherRouteImport } from './routes/weather'
+import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const WeatherRoute = WeatherRouteImport.update({
   path: '/weather',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRefreshNewsRoute = ApiPublicRefreshNewsRouteImport.update({
+  id: '/api/public/refresh-news',
+  path: '/api/public/refresh-news',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRoute
   '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRoute
   '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRoute
   '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/api/public/refresh-news'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/api/public/refresh-news'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/api/public/refresh-news'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   SkyRoute: typeof SkyRoute
   TrackerRoute: typeof TrackerRoute
   WeatherRoute: typeof WeatherRoute
+  ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeatherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/refresh-news': {
+      id: '/api/public/refresh-news'
+      path: '/api/public/refresh-news'
+      fullPath: '/api/public/refresh-news'
+      preLoaderRoute: typeof ApiPublicRefreshNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkyRoute: SkyRoute,
   TrackerRoute: TrackerRoute,
   WeatherRoute: WeatherRoute,
+  ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

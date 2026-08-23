@@ -4,28 +4,29 @@
 // handler, call the shared fetch helpers, wrap the call in cached() for
 // read-through caching with stale-on-error fallback. No secrets reach the
 // client; all upstream calls happen server-side.
+//
+// Upstream JSON is dynamic, so payloads are typed loosely (any) and narrowed
+// on the consuming page. The CacheResult wrapper carries source/freshness
+// flags the UI uses to label a value as live or stale-fallback.
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { cached } from "@/lib/api-cache.server";
-import { fetchJson, fetchText, validCoord, pickAllowed, isoDate, nasaKey } from "@/lib/orbitex-fetch.server";
+import { cached, type CacheResult } from "@/lib/api-cache.server";
+import { fetchJson, fetchText, isoDate, nasaKey } from "@/lib/orbitex-fetch.server";
 
 // ------------------------------- Types ------------------------------------
-export type ApiError = { error: true; message: string };
+export type DataResult = CacheResult<any>;
 
 // ----------------------------- NOAA: Kp index -----------------------------
-// Planetary K-index from NOAA SWPC. Returns the full series; the page
-// derives the latest value and the 3-day forecast table from it.
 export const getKpIndex = createServerFn({ method: "GET" }).handler(async () => {
-  return cached<unknown>("kp-index", {}, 300, async () => {
-    return fetchJson("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json", { timeoutMs: 12000 });
-  });
+  return cached("kp-index", {}, 300, () =>
+    fetchJson("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json", { timeoutMs: 12000 })
+  );
 });
 
 // ----------------------------- NOAA: solar wind ---------------------------
-// Combines the plasma and mag 1-day products into one response.
 export const getSolarWind = createServerFn({ method: "GET" }).handler(async () => {
-  return cached<{ plasma: unknown; mag: unknown }>("solar-wind", {}, 300, async () => {
+  return cached("solar-wind", {}, 300, async () => {
     const [plasma, mag] = await Promise.all([
       fetchJson("https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json", { timeoutMs: 12000 }),
       fetchJson("https://services.swpc.noaa.gov/products/solar-wind/mag-1-day.json", { timeoutMs: 12000 }),
@@ -35,33 +36,30 @@ export const getSolarWind = createServerFn({ method: "GET" }).handler(async () =
 });
 
 // ------------------------------- NOAA: DONKI ------------------------------
-// Space weather notifications from the last 7 days.
 export const getDONKI = createServerFn({ method: "GET" }).handler(async () => {
   const end = new Date();
   const start = new Date();
   start.setUTCDate(start.getUTCDate() - 7);
   const key = nasaKey();
   const url = `https://api.nasa.gov/DONKI/notifications?startDate=${isoDate(start)}&endDate=${isoDate(end)}&type=all&api_key=${encodeURIComponent(key)}`;
-  return cached<unknown>("donki", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("donki", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // -------------------------------- NASA: APOD -----------------------------
 export const getAPOD = createServerFn({ method: "GET" }).handler(async () => {
   const key = nasaKey();
   const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}`;
-  return cached<unknown>("apod", {}, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("apod", {}, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // -------------------------------- NASA: NEO ------------------------------
-// Near-Earth Object feed for the next 7 days, computed server-side so no
-// date string is ever taken from the client.
 export const getNEO = createServerFn({ method: "GET" }).handler(async () => {
   const start = new Date();
   const end = new Date();
   end.setUTCDate(end.getUTCDate() + 7);
   const key = nasaKey();
   const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${isoDate(start)}&end_date=${isoDate(end)}&api_key=${encodeURIComponent(key)}`;
-  return cached<unknown>("neo", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("neo", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // ------------------------------- NASA: Mars ------------------------------
@@ -73,7 +71,7 @@ export const getMarsPhotos = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const key = nasaKey();
     const url = `https://api.nasa.gov/mars-photos/api/v1/rovers/${data.rover}/latest_photos?api_key=${encodeURIComponent(key)}`;
-    return cached<unknown>("mars-photos", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+    return cached("mars-photos", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 export const getMarsManifest = createServerFn({ method: "GET" })
@@ -81,7 +79,7 @@ export const getMarsManifest = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const key = nasaKey();
     const url = `https://api.nasa.gov/mars-photos/api/v1/manifests/${data.rover}?api_key=${encodeURIComponent(key)}`;
-    return cached<unknown>("mars-manifest", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+    return cached("mars-manifest", { rover: data.rover }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 // --------------------------- CelesTrak: satellites ------------------------
@@ -92,7 +90,7 @@ export const getSatellites = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => SatInput.parse(input ?? {}))
   .handler(async ({ data }) => {
     const url = `https://celestrak.org/NORAD/elements/gp.php?GROUP=${data.group}&FORMAT=json`;
-    return cached<unknown>("satellites", { group: data.group }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
+    return cached("satellites", { group: data.group }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 // ------------------------- wheretheiss: ISS position ---------------------
@@ -102,14 +100,14 @@ export const getISSPosition = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => IssInput.parse(input ?? {}))
   .handler(async ({ data }) => {
     const url = `https://api.wheretheiss.at/v1/satellites/${data.id}`;
-    return cached<unknown>("iss-position", { id: data.id }, 5, () => fetchJson(url, { timeoutMs: 12000 }));
+    return cached("iss-position", { id: data.id }, 5, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 // ---------------------- The Space Devs: launches --------------------------
 const LL2_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=12&mode=detailed";
 
 export const getLaunches = createServerFn({ method: "GET" }).handler(async () => {
-  return cached<unknown>("launches", {}, 300, async () => {
+  return cached("launches", {}, 300, async () => {
     const token = process.env["LAUNCH_LIBRARY_KEY"];
     // If a token is configured, try it first; fall back to the public tier
     // on any failure so the endpoint never breaks.
@@ -133,12 +131,10 @@ const WeatherInput = z.object({
 export const getEarthWeather = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => WeatherInput.parse(input ?? {}))
   .handler(async ({ data }) => {
-    const lat = data.lat;
-    const lon = data.lon;
     const current = "temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,pressure_msl,is_day";
     const hourly = "cloud_cover,precipitation_probability,temperature_2m";
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=${current}&hourly=${hourly}&forecast_days=2&timezone=auto`;
-    return cached<unknown>("weather-earth", { lat, lon }, 300, () => fetchJson(url, { timeoutMs: 12000 }));
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${data.lat}&longitude=${data.lon}&current=${current}&hourly=${hourly}&forecast_days=2&timezone=auto`;
+    return cached("weather-earth", { lat: data.lat, lon: data.lon }, 300, () => fetchJson(url, { timeoutMs: 12000 }));
   });
 
 // ----------------------------- JPL: Horizons ------------------------------
@@ -178,26 +174,26 @@ export const getHorizons = createServerFn({ method: "GET" })
     params.set("OUT_UNITS", q("KM-S"));
     params.set("CSV_FORMAT", q("YES"));
     const url = `https://ssd.jpl.nasa.gov/api/horizons.api?${params.toString()}`;
-    return cached<string>("horizons", { probe: data.probe }, 120, () => fetchText(url, { timeoutMs: 15000 }));
+    return cached("horizons", { probe: data.probe }, 120, () => fetchText(url, { timeoutMs: 15000 }));
   });
 
 // ----------------------- Spaceflight News API (live) ----------------------
-// Combined live news fetch used by /news page filters. Cached until the
-// next UTC midnight to match the daily-update design.
+// Combined live news fetch. Cached until the next UTC midnight to match the
+// daily-update design.
 export const getNewsLive = createServerFn({ method: "GET" }).handler(async () => {
-  return cached<{ items: unknown[]; generatedAt: string }>("news-live", {}, 3600, async () => {
+  return cached("news-live", {}, 3600, async () => {
     const TYPES = ["articles", "blogs", "reports"] as const;
     const results = await Promise.all(
       TYPES.map(async (type) => {
         try {
-          const res = await fetchJson<{ results: unknown[] }>(`https://api.spaceflightnewsapi.net/v4/${type}/?limit=10&ordering=-published_at`, { timeoutMs: 10000 });
-          return { type, results: res.results ?? [] };
+          const res = await fetchJson<{ results: any[] }>(`https://api.spaceflightnewsapi.net/v4/${type}/?limit=10&ordering=-published_at`, { timeoutMs: 10000 });
+          return res.results ?? [];
         } catch {
-          return { type, results: [] };
+          return [];
         }
       })
     );
-    const combined = results.flatMap((r) => r.results);
-    return { items: combined, generatedAt: new Date().toISOString() };
+    const items = results.flat() as any[];
+    return { items, generatedAt: new Date().toISOString() };
   });
 });
