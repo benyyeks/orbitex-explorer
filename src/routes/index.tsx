@@ -239,7 +239,7 @@ function WeatherWidget() {
       try {
         const res = await fetchWeather({ data: c });
         const current = (res?.data as { current?: CurrentWeather } | undefined)?.current;
-        if (res?.ok && current) setState({ status: "ok", current });
+        if (current) setState({ status: "ok", current });
       } catch {
         /* keep last reading */
       }
@@ -260,7 +260,7 @@ function WeatherWidget() {
         try {
           const res = await fetchWeather({ data: coords });
           const current = (res?.data as { current?: CurrentWeather } | undefined)?.current;
-          if (res?.ok && current) {
+          if (current) {
             setState({ status: "ok", current });
           } else {
             setState({ status: "error", message: "Conditions could not be loaded right now." });
