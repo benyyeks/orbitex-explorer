@@ -33,7 +33,6 @@ export const Route = createFileRoute("/mars")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  errorComponent: MarsError,
   component: MarsPage,
 });
 
@@ -174,28 +173,6 @@ function OrbitMap({ earth, mars, au }: { earth: Heliocentric; mars: Heliocentric
   );
 }
 
-function MarsError({ reset }: { reset: () => void }) {
-  return (
-    <main className="page-main">
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">NASA Mars Exploration Program</span>
-          <h1>Mars</h1>
-        </div>
-      </section>
-      <section>
-        <div className="container">
-          <FeedError
-            title="Mars data is temporarily unavailable"
-            source="NASA's Mars mission feeds"
-            onRetry={reset}
-          />
-        </div>
-      </section>
-    </main>
-  );
-}
-
 function MarsPage() {
   const now = useNow(60_000);
   const [rover, setRover] = useState<RoverKey>("perseverance");
@@ -317,7 +294,7 @@ function MarsPage() {
 
           <div className="grid-2" style={{ marginBottom: 24 }}>
             {(Object.keys(ROVER_META) as RoverKey[]).map((key) => {
-              const { feed, res } = feeds[key];
+              const { feed, res, loading, failed, retry } = feeds[key];
               const latest = feed?.images[0] ?? null;
               return (
                 <div className="glass glass-card side-card" key={key}>
@@ -325,7 +302,15 @@ function MarsPage() {
                     <h3>{ROVER_META[key].label}</h3>
                     {res ? <FreshnessBadge res={res} /> : null}
                   </div>
-                  {feed ? (
+                  {loading ? (
+                    <FeedLoading label="Loading mission status" />
+                  ) : failed || !feed ? (
+                    <FeedError
+                      title="Mission status is temporarily unavailable"
+                      source="NASA's Mars mission feed"
+                      onRetry={retry}
+                    />
+                  ) : (
                     <div className="detail-rows">
                       <DetailCell label="Landing site" value={ROVER_META[key].site} />
                       <DetailCell label="Landed" value={ROVER_META[key].landed} />
@@ -342,10 +327,6 @@ function MarsPage() {
                         value={fmtNum(feed.total_images)}
                       />
                     </div>
-                  ) : (
-                    <p className="detail-note">
-                      The mission feed did not load. Try again shortly.
-                    </p>
                   )}
                   <p className="detail-note">
                     Status is read from the rover's own image feed: as long as new frames
@@ -379,7 +360,15 @@ function MarsPage() {
                 </button>
               ))}
             </div>
-            {photos.length === 0 ? (
+            {active.loading ? (
+              <FeedLoading label="Loading surface imagery" />
+            ) : active.failed ? (
+              <FeedError
+                title="Surface imagery is temporarily unavailable"
+                source="NASA's Mars raw image service"
+                onRetry={active.retry}
+              />
+            ) : photos.length === 0 ? (
               <p className="detail-note">No recent images are listed for this rover.</p>
             ) : (
               <div className="mars-photo-grid">
