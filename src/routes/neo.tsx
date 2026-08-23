@@ -1,42 +1,277 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageScaffold } from "@/components/site/page-scaffold";
+import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { getNEO } from "@/lib/orbitex-data.functions";
+import { fmtNum, timeAgo, safeText } from "@/lib/format";
 
 export const Route = createFileRoute("/neo")({
   head: () => ({
     meta: [
-      { title: "Asteroid Watch - ORBITEX" },
+      { title: "Asteroid Watch — ORBITEX" },
       {
         name: "description",
         content:
-          "Near-Earth objects approaching this week, with size, distance, and velocity from NASA's NeoWs feed.",
+          "Near-Earth objects making close approaches this week: size, velocity, and miss distance in lunar distances, from NASA's NeoWs feed.",
       },
-      { property: "og:title", content: "Asteroid Watch - ORBITEX" },
+      { property: "og:title", content: "Asteroid Watch — ORBITEX" },
       {
         property: "og:description",
-        content:
-          "Near-Earth asteroid approaches this week with size, distance, and velocity from NASA NeoWs.",
+        content: "This week's near-Earth asteroid approaches with verified size, speed, and miss distance from NASA NeoWs.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
+  loader: async ({ context }) => {
+    await context.queryClient.ensureQueryData(neoQueryOptions).catch(() => null);
+  },
+  errorComponent: NeoError,
   component: NeoPage,
 });
 
-function NeoPage() {
+const neoQueryOptions = queryOptions({
+  queryKey: ["orbitex", "neo-week"],
+  queryFn: () => getNEO(),
+  retry: false,
+  staleTime: 600_000,
+});
+
+const LUNAR_DISTANCE_KM = 384400;
+
+type NeoRow = {
+  id: string;
+  name: string;
+  approachLabel: string;
+  approachTs: number;
+  diaMinM: number;
+  diaMaxM: number;
+  velKmS: number;
+  missKm: number;
+  missLD: number;
+  hazardous: boolean;
+};
+
+// NASA NeoWs feed: near_earth_objects is keyed by ISO date, each entry an
+// array of objects with close_approach_data[0] holding the approach in range.
+function parseNeo(raw: unknown): NeoRow[] {
+  const grouped = (raw as any)?.near_earth_objects;
+  if (!grouped || typeof grouped !== "object") return [];
+  const rows: NeoRow[] = [];
+  for (const key of Object.keys(grouped)) {
+    const list = grouped[key];
+    if (!Array.isArray(list)) continue;
+    for (const obj of list as any[]) {
+      const ca = Array.isArray(obj?.close_approach_data) ? obj.close_approach_data[0] : null;
+      if (!ca) continue;
+      const diaKm = obj?.estimated_diameter?.kilometers;
+      const missKm = Number(ca?.miss_distance?.kilometers);
+      const velKmS = Number(ca?.relative_velocity?.kilometers_per_second);
+      if (!Number.isFinite(missKm)) continue;
+      const label = String(ca?.close_approach_date_full ?? key);
+      rows.push({
+        id: String(obj?.id ?? `${key}-${rows.length}`),
+        name: safeText(String(obj?.name ?? "Unknown object"), 60),
+        approachLabel: label,
+        approachTs: Date.parse(String(ca?.close_approach_date ?? key)) || 0,
+        diaMinM: Number(diaKm?.estimated_diameter_min) * 1000 || 0,
+        diaMaxM: Number(diaKm?.estimated_diameter_max) * 1000 || 0,
+        velKmS: Number.isFinite(velKmS) ? velKmS : 0,
+        missKm,
+        missLD: missKm / LUNAR_DISTANCE_KM,
+        hazardous: Boolean(obj?.is_potentially_hazardous_asteroid),
+      });
+    }
+  }
+  return rows;
+}
+
+type SortKey = "approach" | "size" | "velocity" | "miss";
+
+const SORTERS: Record<SortKey, (a: NeoRow, b: NeoRow) => number> = {
+  approach: (a, b) => a.approachTs - b.approachTs,
+  size: (a, b) => a.diaMaxM - b.diaMaxM,
+  velocity: (a, b) => a.velKmS - b.velKmS,
+  miss: (a, b) => a.missLD - b.missLD,
+};
+
+function formatDiameter(minM: number, maxM: number): string {
+  if (!minM && !maxM) return "--";
+  const fmt = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(2)} km` : `${Math.round(m)} m`);
+  return `${fmt(minM)} - ${fmt(maxM)}`;
+}
+
+function NeoError() {
   return (
-    <PageScaffold
-      title="Asteroid Watch"
-      tagline="Near-Earth objects passing us this week, with verified closest approach data."
-      description="A table of near-Earth asteroids making close approaches in the coming days: estimated diameter, closest approach distance (in lunar distances), relative velocity, and whether each is potentially hazardous, from NASA's NeoWs (Near Earth Object Web Service)."
-      sources={[
-        "NASA NeoWs (Near Earth Object Web Service)",
-        "JPL Small-Body Database",
-      ]}
-      plannedFeatures={[
-        "Weekly close-approach table with sortable columns",
-        "Distance in lunar distances and kilometers",
-        "Estimated diameter and relative velocity",
-        "Potentially hazardous flag and miss-distance visualization",
-      ]}
-    />
+    <main className="page-main">
+      <section>
+        <div className="container">
+          <div className="glass glass-card scaffold-card">
+            <h1>Asteroid feed temporarily unavailable</h1>
+            <p>
+              NASA's NeoWs service did not respond and no cached copy exists yet. The free
+              demo key is rate limited to 30 requests per hour, so this can happen on a busy
+              hour. Please try again shortly.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function NeoPage() {
+  const neo = useSuspenseQuery(neoQueryOptions).data;
+  const rows = useMemo(() => parseNeo(neo?.data), [neo]);
+
+  const [sortKey, setSortKey] = useState<SortKey>("approach");
+  const [sortAsc, setSortAsc] = useState(true);
+
+  const sorted = useMemo(() => {
+    const sorter = SORTERS[sortKey];
+    return rows.slice().sort((a, b) => (sortAsc ? sorter(a, b) : sorter(b, a)));
+  }, [rows, sortKey, sortAsc]);
+
+  const stats = useMemo(() => {
+    if (!rows.length) return null;
+    const closest = rows.reduce((m, r) => (r.missLD < m.missLD ? r : m), rows[0]!);
+    const fastest = rows.reduce((m, r) => (r.velKmS > m.velKmS ? r : m), rows[0]!);
+    const largest = rows.reduce((m, r) => (r.diaMaxM > m.diaMaxM ? r : m), rows[0]!);
+    return { closest, fastest, largest, hazardCount: rows.filter((r) => r.hazardous).length };
+  }, [rows]);
+
+  const maxLD = useMemo(() => Math.min(40, Math.max(1, ...rows.map((r) => r.missLD))), [rows]);
+
+  const toggleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortAsc((v) => !v);
+    } else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
+  };
+
+  const sortMark = (key: SortKey) => (key === sortKey ? (sortAsc ? " ↑" : " ↓") : "");
+
+  return (
+    <main className="page-main">
+      <section>
+        <div className="container">
+          <div className="page-hero">
+            <span className="eyebrow">NASA NeoWs</span>
+            <h1>Asteroid watch</h1>
+            <p className="tagline">
+              Every near-Earth object with a known close approach in the next 7 days, from
+              NASA's Near Earth Object Web Service. Distances are given in lunar distances
+              (LD), where 1 LD is the distance from Earth to the Moon, about 384,400 km.
+            </p>
+          </div>
+
+          <div className="freshness-row">
+            <span className={`badge ${neo.isStale ? "badge-warning" : "badge-success"}`}>
+              {neo.isStale ? "Stale cache" : "Live"} · {timeAgo(new Date(neo.fetchedAt))}
+            </span>
+            <span className="freshness-note">
+              Sizes are telescope estimates and carry real uncertainty; read them as ranges.
+            </span>
+          </div>
+
+          <div className="stat-grid" style={{ marginBottom: 24 }}>
+            <div className="glass glass-card stat-card">
+              <div className="stat-label">Approaches this week</div>
+              <div className="stat-value">{rows.length}</div>
+              <div className="stat-unit">tracked objects</div>
+              <div className="stat-note">
+                {stats ? `${stats.hazardCount} flagged potentially hazardous` : ""}
+              </div>
+            </div>
+            <div className="glass glass-card stat-card">
+              <div className="stat-label">Closest approach</div>
+              <div className="stat-value">{stats ? stats.closest.missLD.toFixed(1) : "--"}</div>
+              <div className="stat-unit">lunar distances</div>
+              <div className="stat-note">{stats ? safeText(stats.closest.name, 40) : ""}</div>
+            </div>
+            <div className="glass glass-card stat-card">
+              <div className="stat-label">Fastest object</div>
+              <div className="stat-value">{stats ? stats.fastest.velKmS.toFixed(1) : "--"}</div>
+              <div className="stat-unit">km/s relative</div>
+              <div className="stat-note">{stats ? safeText(stats.fastest.name, 40) : ""}</div>
+            </div>
+            <div className="glass glass-card stat-card">
+              <div className="stat-label">Largest object</div>
+              <div className="stat-value">
+                {stats ? (stats.largest.diaMaxM >= 1000 ? (stats.largest.diaMaxM / 1000).toFixed(2) : Math.round(stats.largest.diaMaxM)) : "--"}
+              </div>
+              <div className="stat-unit">{stats ? (stats.largest.diaMaxM >= 1000 ? "km max estimate" : "m max estimate") : ""}</div>
+              <div className="stat-note">{stats ? safeText(stats.largest.name, 40) : ""}</div>
+            </div>
+          </div>
+
+          <div className="glass glass-card scaffold-card">
+            <h2>Close approach table</h2>
+            <p>
+              Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
+            </p>
+            {sorted.length === 0 ? (
+              <p className="scaffold-note">No close approaches in the feed window.</p>
+            ) : (
+              <div className="source-table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Object</th>
+                      <th className="sortable-th" onClick={() => toggleSort("approach")}>
+                        Approach (UTC){sortMark("approach")}
+                      </th>
+                      <th className="sortable-th" onClick={() => toggleSort("size")}>
+                        Diameter{sortMark("size")}
+                      </th>
+                      <th className="sortable-th" onClick={() => toggleSort("velocity")}>
+                        Velocity{sortMark("velocity")}
+                      </th>
+                      <th className="sortable-th" onClick={() => toggleSort("miss")}>
+                        Miss distance{sortMark("miss")}
+                      </th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sorted.map((r) => (
+                      <tr key={r.id}>
+                        <td className="mono" style={{ fontSize: "0.84rem" }}>{r.name}</td>
+                        <td className="mono" style={{ fontSize: "0.84rem" }}>{r.approachLabel}</td>
+                        <td className="mono" style={{ fontSize: "0.84rem" }}>{formatDiameter(r.diaMinM, r.diaMaxM)}</td>
+                        <td className="mono">{r.velKmS ? `${r.velKmS.toFixed(1)} km/s` : "--"}</td>
+                        <td>
+                          <div className="mono" style={{ fontSize: "0.84rem", marginBottom: 6 }}>
+                            {r.missLD.toFixed(1)} LD · {fmtNum(r.missKm, 0)} km
+                          </div>
+                          <div className="ld-bar">
+                            <div
+                              className={`ld-fill ${r.hazardous ? "ld-hazard" : ""}`}
+                              style={{ width: `${Math.min(100, (r.missLD / maxLD) * 100)}%` }}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${r.hazardous ? "badge-danger" : "badge-muted"}`}>
+                            {r.hazardous ? "Potentially hazardous" : "Nominal"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="scaffold-note">
+              Potentially hazardous is NASA's official designation: an object whose orbit can
+              bring it within 0.05 AU of Earth and which is large enough to cause significant
+              damage if it ever impacted. It does not mean an impact is expected. None of the
+              objects above pose a known impact threat; their orbits are well determined.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
