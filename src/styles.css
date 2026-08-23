@@ -1093,6 +1093,13 @@ select.hud-pill option { color: #111; }
 
 /* r3f canvas fills the shell */
 .scene-shell { height: 580px; }
-.scene-shell > div { height: 100%; }
+.scene-shell > div:has(canvas) { height: 100%; }
 @media (max-width: 980px) { .scene-shell { height: 460px; } }
 @media (max-width: 640px) { .scene-shell { height: 380px; } }
+
+.scene-hud .scene-pill {
+  background: rgba(9, 14, 28, 0.6);
+  color: #ffd489;
+  border-color: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(10px);
+}
