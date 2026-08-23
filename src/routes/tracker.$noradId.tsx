@@ -1,15 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, queryOptions } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { getSatellite } from "@/lib/orbitex-data.functions";
-import { parseOMMArray, propagateSat, type TLE } from "@/lib/satellite";
+import { parseOMMArray, propagateSat, orbitRegime, type TLE } from "@/lib/satellite";
 import { fmtNum, timeAgo, utcClock, utcDateStr } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state";
+import { GroundTrack } from "@/components/tracker/ground-track";
+import { ObserverLocationControls, PassForecast } from "@/components/tracker/observer-location";
+import { FavButton } from "@/components/tracker/fav-button";
+import { useFavorites } from "@/lib/favorites";
+import { useObserverLocation } from "@/lib/location";
+import { useNow } from "@/hooks/use-now";
 
 // Shared detail template for any object in the public satellite catalog.
 // One route serves every NORAD catalog number: live telemetry, a rendered
-// ground track, and the full orbital element set behind the object.
+// ground track, pass predictions, and the full orbital element set.
 
 export const Route = createFileRoute("/tracker/$noradId")({
   head: ({ params }) => ({
@@ -44,108 +50,6 @@ function epochDate(jd: number): Date {
   return new Date((jd - 2440587.5) * 86400000);
 }
 
-function orbitRegime(tle: TLE): string {
-  const meanAlt = (tle.apogeeAlt + tle.perigeeAlt) / 2;
-  if (tle.ecc > 0.25 && tle.apogeeAlt > 20000) return "Highly elliptical (HEO)";
-  if (meanAlt < 2000) return "Low Earth orbit (LEO)";
-  if (meanAlt < 34000) return "Medium Earth orbit (MEO)";
-  if (meanAlt < 37000) return "Geosynchronous (GEO)";
-  return "High Earth orbit";
-}
-
-function useNow(intervalMs = 1000): Date | null {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => {
-    const tick = () => setNow(new Date());
-    tick();
-    const id = setInterval(tick, intervalMs);
-    return () => clearInterval(id);
-  }, [intervalMs]);
-  return now;
-}
-
-// Equirectangular ground track: one full past orbit plus half an orbit ahead,
-// drawn over the Blue Marble map (same projection), with a marker at the
-// current subpoint. Polylines break at the antimeridian to avoid streaks.
-function GroundTrack({ tle, now }: { tle: TLE; now: Date }) {
-  const W = 720;
-  const H = 360;
-
-  const tracks = useMemo(() => {
-    const n = 260;
-    const start = now.getTime() - tle.periodMin * 60_000;
-    const span = tle.periodMin * 1.5 * 60_000;
-    const lines: string[] = [];
-    let cur: [number, number][] = [];
-    let prevX: number | null = null;
-    const flush = () => {
-      if (cur.length > 1) {
-        lines.push(cur.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" "));
-      }
-      cur = [];
-    };
-    for (let k = 0; k <= n; k++) {
-      const t = new Date(start + (k / n) * span);
-      const s = propagateSat(tle, t);
-      const x = ((s.lon + 180) / 360) * W;
-      const y = ((90 - s.lat) / 180) * H;
-      if (prevX !== null && Math.abs(x - prevX) > W / 2) flush();
-      cur.push([x, y]);
-      prevX = x;
-    }
-    flush();
-    return lines;
-  }, [tle, now]);
-
-  const s = propagateSat(tle, now);
-  const cx = ((s.lon + 180) / 360) * W;
-  const cy = ((90 - s.lat) / 180) * H;
-
-  return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="ground-track"
-      role="img"
-      aria-label={`Ground track of ${tle.name}`}
-    >
-      <image
-        href="/textures/earth-blue-marble.jpg"
-        x={0}
-        y={0}
-        width={W}
-        height={H}
-        preserveAspectRatio="none"
-      />
-      {Array.from({ length: 11 }, (_, i) => (i + 1) * 30).map((lon) => (
-        <line
-          key={`v${lon}`}
-          x1={(lon / 360) * W}
-          y1={0}
-          x2={(lon / 360) * W}
-          y2={H}
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={1}
-        />
-      ))}
-      {[30, 60, 90, 120, 150].map((lat) => (
-        <line
-          key={`h${lat}`}
-          x1={0}
-          y1={(lat / 180) * H}
-          x2={W}
-          y2={(lat / 180) * H}
-          stroke="rgba(255,255,255,0.08)"
-          strokeWidth={1}
-        />
-      ))}
-      {tracks.map((pts, i) => (
-        <polyline key={i} points={pts} fill="none" stroke="#f0b35e" strokeWidth={1.6} opacity={0.9} />
-      ))}
-      <circle cx={cx} cy={cy} r={5.5} fill="#ffd489" stroke="#04060d" strokeWidth={1.5} />
-    </svg>
-  );
-}
-
 function DetailCell({ label, value }: { label: string; value: string }) {
   return (
     <div className="detail-cell">
@@ -160,6 +64,8 @@ function SatelliteDetailPage() {
   const validId = /^\d{1,6}$/.test(noradId);
   const query = useQuery({ ...satByIdQuery(noradId), enabled: validId });
   const now = useNow(1000);
+  const favorites = useFavorites();
+  const loc = useObserverLocation();
 
   const tle = useMemo(() => {
     if (!query.data?.data) return null;
@@ -179,7 +85,7 @@ function SatelliteDetailPage() {
             </Link>
             {` · NORAD catalog ${noradId}`}
           </span>
-          <h1>{tle ? tle.name : `Catalog object ${noradId}`}</h1>
+          <h1 aria-live="polite">{tle ? tle.name : `Catalog object ${noradId}`}</h1>
           <p className="tagline">
             Live position, ground track, and the complete orbital element set for this
             object, propagated in your browser from the latest published elements.
@@ -221,8 +127,15 @@ function SatelliteDetailPage() {
                 <div className="glass glass-card side-card">
                   <div className="side-item-top">
                     <h3>Live telemetry</h3>
-                    <span className="mono" style={{ fontSize: "0.75rem", color: "var(--ink-faint)" }}>
-                      {now ? `${utcClock(now)} UTC` : "--"}
+                    <span className="side-item-actions">
+                      <FavButton
+                        isFav={favorites.isFavorite(tle.noradId)}
+                        name={tle.name}
+                        onToggle={() => favorites.toggle({ noradId: tle.noradId, name: tle.name })}
+                      />
+                      <span className="mono" style={{ fontSize: "0.75rem", color: "var(--ink-faint)" }}>
+                        {now ? `${utcClock(now)} UTC` : "--"}
+                      </span>
                     </span>
                   </div>
                   <div className="detail-rows">
@@ -257,6 +170,22 @@ function SatelliteDetailPage() {
                   </div>
                 </div>
 
+                <div className="glass glass-card side-card">
+                  <div className="side-item-top">
+                    <h3>Passes from your location</h3>
+                    {loc.location ? (
+                      <span className="mono" style={{ fontSize: "0.75rem", color: "var(--ink-faint)" }}>
+                        {fmtNum(Math.abs(loc.location.lat), 2)}°{loc.location.lat >= 0 ? "N" : "S"},{" "}
+                        {fmtNum(Math.abs(loc.location.lon), 2)}°{loc.location.lon >= 0 ? "E" : "W"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <ObserverLocationControls loc={loc} />
+                  <PassForecast tle={tle} location={loc.location} />
+                </div>
+              </div>
+
+              <div className="sat-detail-grid" style={{ marginTop: 18 }}>
                 <div className="glass glass-card side-card">
                   <div className="side-item-top">
                     <h3>Orbit profile</h3>
