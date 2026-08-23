@@ -101,6 +101,24 @@ function fmtNet(net: string): string {
 
 // ------------------------------ Components ---------------------------------
 
+// Mission imagery from the launch provider feed. Renders nothing when the
+// feed has no image or the remote file fails to load, so cards never show
+// a broken frame.
+function LaunchImage({ src, className }: { src: string | null; className: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) return null;
+  return (
+    <img
+      className={className}
+      src={src}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 // Ticking countdown; clock-dependent, so it renders only after hydration.
 function Countdown({ net }: { net: string }) {
   const [now, setNow] = useState<number | null>(null);
