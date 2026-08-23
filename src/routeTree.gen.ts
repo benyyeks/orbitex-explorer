@@ -10,33 +10,180 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as AskRouteImport } from './routes/ask'
+import { Route as DeepspaceRouteImport } from './routes/deepspace'
+import { Route as LaunchesRouteImport } from './routes/launches'
+import { Route as MarsRouteImport } from './routes/mars'
+import { Route as NeoRouteImport } from './routes/neo'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as SkyRouteImport } from './routes/sky'
+import { Route as TrackerRouteImport } from './routes/tracker'
+import { Route as WeatherRouteImport } from './routes/weather'
+import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AskRoute = AskRouteImport.update({
+  id: '/ask',
+  path: '/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DeepspaceRoute = DeepspaceRouteImport.update({
+  id: '/deepspace',
+  path: '/deepspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LaunchesRoute = LaunchesRouteImport.update({
+  id: '/launches',
+  path: '/launches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarsRoute = MarsRouteImport.update({
+  id: '/mars',
+  path: '/mars',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NeoRoute = NeoRouteImport.update({
+  id: '/neo',
+  path: '/neo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkyRoute = SkyRouteImport.update({
+  id: '/sky',
+  path: '/sky',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TrackerRoute = TrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WeatherRoute = WeatherRouteImport.update({
+  id: '/weather',
+  path: '/weather',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicRefreshNewsRoute = ApiPublicRefreshNewsRouteImport.update({
+  id: '/api/public/refresh-news',
+  path: '/api/public/refresh-news',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ask': typeof AskRoute
+  '/deepspace': typeof DeepspaceRoute
+  '/launches': typeof LaunchesRoute
+  '/mars': typeof MarsRoute
+  '/neo': typeof NeoRoute
+  '/privacy': typeof PrivacyRoute
+  '/sky': typeof SkyRoute
+  '/tracker': typeof TrackerRoute
+  '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ask': typeof AskRoute
+  '/deepspace': typeof DeepspaceRoute
+  '/launches': typeof LaunchesRoute
+  '/mars': typeof MarsRoute
+  '/neo': typeof NeoRoute
+  '/privacy': typeof PrivacyRoute
+  '/sky': typeof SkyRoute
+  '/tracker': typeof TrackerRoute
+  '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/ask': typeof AskRoute
+  '/deepspace': typeof DeepspaceRoute
+  '/launches': typeof LaunchesRoute
+  '/mars': typeof MarsRoute
+  '/neo': typeof NeoRoute
+  '/privacy': typeof PrivacyRoute
+  '/sky': typeof SkyRoute
+  '/tracker': typeof TrackerRoute
+  '/weather': typeof WeatherRoute
+  '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/ask'
+    | '/deepspace'
+    | '/launches'
+    | '/mars'
+    | '/neo'
+    | '/privacy'
+    | '/sky'
+    | '/tracker'
+    | '/weather'
+    | '/api/public/refresh-news'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/ask'
+    | '/deepspace'
+    | '/launches'
+    | '/mars'
+    | '/neo'
+    | '/privacy'
+    | '/sky'
+    | '/tracker'
+    | '/weather'
+    | '/api/public/refresh-news'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/ask'
+    | '/deepspace'
+    | '/launches'
+    | '/mars'
+    | '/neo'
+    | '/privacy'
+    | '/sky'
+    | '/tracker'
+    | '/weather'
+    | '/api/public/refresh-news'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  AskRoute: typeof AskRoute
+  DeepspaceRoute: typeof DeepspaceRoute
+  LaunchesRoute: typeof LaunchesRoute
+  MarsRoute: typeof MarsRoute
+  NeoRoute: typeof NeoRoute
+  PrivacyRoute: typeof PrivacyRoute
+  SkyRoute: typeof SkyRoute
+  TrackerRoute: typeof TrackerRoute
+  WeatherRoute: typeof WeatherRoute
+  ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +195,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ask': {
+      id: '/ask'
+      path: '/ask'
+      fullPath: '/ask'
+      preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deepspace': {
+      id: '/deepspace'
+      path: '/deepspace'
+      fullPath: '/deepspace'
+      preLoaderRoute: typeof DeepspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/launches': {
+      id: '/launches'
+      path: '/launches'
+      fullPath: '/launches'
+      preLoaderRoute: typeof LaunchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mars': {
+      id: '/mars'
+      path: '/mars'
+      fullPath: '/mars'
+      preLoaderRoute: typeof MarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/neo': {
+      id: '/neo'
+      path: '/neo'
+      fullPath: '/neo'
+      preLoaderRoute: typeof NeoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sky': {
+      id: '/sky'
+      path: '/sky'
+      fullPath: '/sky'
+      preLoaderRoute: typeof SkyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tracker': {
+      id: '/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof TrackerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/weather': {
+      id: '/weather'
+      path: '/weather'
+      fullPath: '/weather'
+      preLoaderRoute: typeof WeatherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/refresh-news': {
+      id: '/api/public/refresh-news'
+      path: '/api/public/refresh-news'
+      fullPath: '/api/public/refresh-news'
+      preLoaderRoute: typeof ApiPublicRefreshNewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  AskRoute: AskRoute,
+  DeepspaceRoute: DeepspaceRoute,
+  LaunchesRoute: LaunchesRoute,
+  MarsRoute: MarsRoute,
+  NeoRoute: NeoRoute,
+  PrivacyRoute: PrivacyRoute,
+  SkyRoute: SkyRoute,
+  TrackerRoute: TrackerRoute,
+  WeatherRoute: WeatherRoute,
+  ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

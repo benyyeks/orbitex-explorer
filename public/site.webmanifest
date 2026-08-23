@@ -1,0 +1,11 @@
+{
+  "name": "ORBITEX - Space Intelligence Platform",
+  "short_name": "ORBITEX",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "theme_color": "#1f3555",
+  "background_color": "#fdfcfa",
+  "display": "standalone",
+  "start_url": "/"
+}
