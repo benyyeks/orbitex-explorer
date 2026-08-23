@@ -11,17 +11,18 @@ import {
 } from "@/lib/news.functions";
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
 import { timeAgo, safeText, pad2 } from "@/lib/format";
+import { EmptyState } from "@/components/site/data-state";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "ORBITEX — Space Intelligence Platform" },
+      { title: "ORBITEX - Space Intelligence Platform" },
       {
         name: "description",
         content:
           "Live satellite tracking, verified space weather, near-Earth object watch, and deep-space mission data from NASA, NOAA, CelesTrak, and JPL, in one research-grade dashboard.",
       },
-      { property: "og:title", content: "ORBITEX — Space Intelligence Platform" },
+      { property: "og:title", content: "ORBITEX - Space Intelligence Platform" },
       {
         property: "og:description",
         content:
@@ -447,7 +448,10 @@ function NewsSection() {
               ))}
             </div>
           ) : (
-            <p className="text-muted">No upcoming launches found.</p>
+            <EmptyState
+              title="No launches currently listed"
+              message="The worldwide schedule has no confirmed orbital launches in the coming window. New missions appear as they are announced."
+            />
           )
         ) : visibleNews.length > 0 ? (
           <div className="news-grid">
@@ -457,10 +461,16 @@ function NewsSection() {
             ))}
             {!filter && launches[1] ? <LaunchCard key={launches[1].name} launch={launches[1]} /> : null}
           </div>
+        ) : newsResult.error ? (
+          <EmptyState
+            title="News is temporarily unavailable"
+            message="The news desk could not be reached. Stories return automatically, so please check back shortly."
+          />
         ) : (
-          <p className="text-muted">
-            {newsResult.error ?? "No stories in this category right now."}
-          </p>
+          <EmptyState
+            title="Nothing in this category right now"
+            message="Try another category, or check back after the next daily update."
+          />
         )}
       </div>
     </section>

@@ -1,20 +1,21 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { getLaunches } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText, pad2 } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
+import { FeedError, EmptyState } from "@/components/site/data-state";
 
 export const Route = createFileRoute("/launches")({
   head: () => ({
     meta: [
-      { title: "Launch Schedule — ORBITEX" },
+      { title: "Launch Schedule - ORBITEX" },
       {
         name: "description",
         content:
           "Upcoming orbital launches worldwide with live countdowns: rocket, provider, pad, and mission details from The Space Devs Launch Library 2.",
       },
-      { property: "og:title", content: "Launch Schedule — ORBITEX" },
+      { property: "og:title", content: "Launch Schedule - ORBITEX" },
       {
         property: "og:description",
         content: "Upcoming orbital launches with live countdowns, from The Space Devs Launch Library 2.",
@@ -142,26 +143,20 @@ function Countdown({ net }: { net: string }) {
   );
 }
 
-function LaunchesError({ reset }: { reset?: () => void }) {
+function LaunchesError({ reset }: { reset: () => void }) {
+  const router = useRouter();
   return (
     <main className="page-main">
       <section>
         <div className="container">
-          <div className="page-hero">
-            <span className="eyebrow">Launch Library 2 · The Space Devs</span>
-            <h1>Launch schedule</h1>
-          </div>
-          <div className="glass glass-card" style={{ padding: 32, textAlign: "center" }}>
-            <h2 style={{ marginTop: 0 }}>Launch feed temporarily unavailable</h2>
-            <p className="tagline">
-              The launch schedule could not be loaded right now. Please try again in a moment.
-            </p>
-            {reset ? (
-              <button className="btn btn-primary" onClick={reset}>Retry</button>
-            ) : (
-              <a className="btn btn-primary" href="/launches">Retry</a>
-            )}
-          </div>
+          <FeedError
+            title="The launch schedule is temporarily unavailable"
+            source="Launch Library 2 by The Space Devs"
+            onRetry={() => {
+              router.invalidate();
+              reset();
+            }}
+          />
         </div>
       </section>
     </main>
@@ -217,6 +212,13 @@ function LaunchesPage() {
               <div className="stat-unit">{next ? `${next.provider || "Unknown provider"} · ${fmtNet(next.net)}` : ""}</div>
             </div>
           </div>
+
+          {launches.length === 0 && (
+            <EmptyState
+              title="No launches currently listed"
+              message="The worldwide schedule has no confirmed orbital launches in the coming window. New missions appear here as soon as they are announced."
+            />
+          )}
 
           {next && (
             <article className="glass glass-card next-launch" aria-label="Next launch">

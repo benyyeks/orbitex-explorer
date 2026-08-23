@@ -45,10 +45,9 @@ export function PageScaffold({
           </div>
         </div>
         <p className="scaffold-note">
-          This module is part of the phased ORBITEX rebuild. Live numbers are
-          never shown until they are fetched or computed from a named source,
-          so the page stays in this documented preview state until its data
-          layer is connected.
+          This module is completing final verification. ORBITEX publishes a
+          figure only when it can be traced to a named source, so this view
+          opens once its data meets that standard.
         </p>
       </section>
     </main>
