@@ -77,6 +77,33 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: number
+          message: string
+          name: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: never
+          message: string
+          name?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: never
+          message?: string
+          name?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
       space_news: {
         Row: {
           content_type: string

@@ -154,8 +154,7 @@ function LaunchesError({ reset }: { reset?: () => void }) {
           <div className="glass glass-card" style={{ padding: 32, textAlign: "center" }}>
             <h2 style={{ marginTop: 0 }}>Launch feed temporarily unavailable</h2>
             <p className="tagline">
-              The Launch Library 2 service did not respond in time. The public tier is rate limited,
-              so this can happen under load. Try again in a moment.
+              The launch schedule could not be loaded right now. Please try again in a moment.
             </p>
             {reset ? (
               <button className="btn btn-primary" onClick={reset}>Retry</button>
@@ -186,8 +185,8 @@ function LaunchesPage() {
             <h1>Launch schedule</h1>
             <p className="tagline">
               Every confirmed upcoming orbital launch worldwide, with times given as NET
-              (no earlier than). Schedules shift often; this feed refreshes through the
-              ORBITEX cache every few minutes.
+              (no earlier than). Schedules shift often, and this page is refreshed
+              throughout the day.
             </p>
           </div>
 
@@ -273,8 +272,7 @@ function LaunchesPage() {
               The Space Devs. Times are NET (no earlier than): a launch can slip later than the
               listed time, never earlier. Status abbreviations: Go means confirmed for the
               window, TBD or TBC means the date is provisional, Hold means the countdown is
-              paused. ORBITEX caches responses for a few minutes to respect the public rate
-              limit.
+              paused.
             </p>
           </div>
         </div>
