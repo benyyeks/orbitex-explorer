@@ -657,3 +657,66 @@ html.nav-open-lock body {
 .data-table a:hover { text-decoration: underline; }
 
 
+
+/* ----------------------- Weather + NEO page bits ------------------------- */
+.freshness-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.freshness-note { font-size: 0.8rem; color: var(--color-text-faint); }
+
+.alert-item {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-item .alert-head {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.alert-item .alert-body {
+  font-size: 0.88rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.ld-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-accent-soft);
+  position: relative;
+  min-width: 120px;
+}
+.ld-bar .ld-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-accent);
+}
+.ld-bar .ld-fill.ld-hazard { background: var(--color-danger); }
+
+.kp-dial {
+  display: flex;
+  gap: 6px;
+  align-items: flex-end;
+  margin-top: 10px;
+}
+.kp-dial .kp-seg {
+  width: 100%;
+  max-width: 22px;
+  border-radius: 3px 3px 0 0;
+  background: var(--color-border-strong);
+  opacity: 0.35;
+}
+.kp-dial .kp-seg.on { opacity: 1; }
+.kp-dial .kp-seg.on.kp-calm { background: var(--color-success); }
+.kp-dial .kp-seg.on.kp-storm { background: var(--color-danger); }
+.kp-dial .kp-seg.on.kp-watch { background: var(--color-warning); }
+
+.sortable-th { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable-th:hover { color: var(--color-text); }

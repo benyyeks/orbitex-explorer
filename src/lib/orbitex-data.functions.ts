@@ -45,6 +45,13 @@ export const getDONKI = createServerFn({ method: "GET" }).handler(async () => {
   return cached("donki", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
+// --------------------------- NOAA: GOES X-ray flux ------------------------
+export const getXrayFlux = createServerFn({ method: "GET" }).handler(async () => {
+  return cached("xray-flux", {}, 300, () =>
+    fetchJson("https://services.swpc.noaa.gov/json/goes/primary/xrays-6-hour.json", { timeoutMs: 12000 })
+  );
+});
+
 // -------------------------------- NASA: APOD -----------------------------
 export const getAPOD = createServerFn({ method: "GET" }).handler(async () => {
   const key = nasaKey();
