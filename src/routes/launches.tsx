@@ -239,7 +239,7 @@ function LaunchesPage() {
             <article className="glass glass-card next-launch" aria-label="Next launch">
               {next.image && (
                 <div className="next-launch-media">
-                  <LaunchImage src={next.image} className="next-launch-img" />
+                  <LaunchImage src={next.image} className="next-launch-img" eager />
                 </div>
               )}
               <div className="next-launch-body">
