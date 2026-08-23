@@ -247,24 +247,31 @@ function LaunchesPage() {
 
           {next && (
             <article className="glass glass-card next-launch" aria-label="Next launch">
-              <div className="next-launch-info">
-                <span className={`badge badge-${statusTone(next.status)}`}>{next.status || "Scheduled"}</span>
-                <h2>{next.name}</h2>
-                <dl className="fact-list">
-                  {next.provider && <div><dt>Provider</dt><dd>{next.provider}</dd></div>}
-                  {next.rocket && <div><dt>Rocket</dt><dd>{next.rocket}</dd></div>}
-                  {(next.pad || next.location) && (
-                    <div><dt>Pad</dt><dd>{[next.pad, next.location].filter(Boolean).join(", ")}</dd></div>
-                  )}
-                  {next.orbit && <div><dt>Target orbit</dt><dd>{next.orbit}</dd></div>}
-                  {next.missionType && <div><dt>Mission type</dt><dd>{next.missionType}</dd></div>}
-                </dl>
-                {next.missionDesc && <p className="next-launch-desc">{next.missionDesc}</p>}
-              </div>
-              <div className="next-launch-count">
-                <div className="stat-label">Time until launch (NET)</div>
-                <Countdown net={next.net} />
-                <div className="freshness-note">{fmtNet(next.net)}</div>
+              {next.image && (
+                <div className="next-launch-media">
+                  <LaunchImage src={next.image} className="next-launch-img" />
+                </div>
+              )}
+              <div className="next-launch-body">
+                <div className="next-launch-info">
+                  <span className={`badge badge-${statusTone(next.status)}`}>{next.status || "Scheduled"}</span>
+                  <h2>{next.name}</h2>
+                  <dl className="fact-list">
+                    {next.provider && <div><dt>Provider</dt><dd>{next.provider}</dd></div>}
+                    {next.rocket && <div><dt>Rocket</dt><dd>{next.rocket}</dd></div>}
+                    {(next.pad || next.location) && (
+                      <div><dt>Pad</dt><dd>{[next.pad, next.location].filter(Boolean).join(", ")}</dd></div>
+                    )}
+                    {next.orbit && <div><dt>Target orbit</dt><dd>{next.orbit}</dd></div>}
+                    {next.missionType && <div><dt>Mission type</dt><dd>{next.missionType}</dd></div>}
+                  </dl>
+                  {next.missionDesc && <p className="next-launch-desc">{next.missionDesc}</p>}
+                </div>
+                <div className="next-launch-count">
+                  <div className="stat-label">Time until launch (NET)</div>
+                  <Countdown net={next.net} />
+                  <div className="freshness-note">{fmtNet(next.net)}</div>
+                </div>
               </div>
             </article>
           )}
@@ -275,17 +282,20 @@ function LaunchesPage() {
               <div className="launch-list">
                 {rest.map((l) => (
                   <article className="glass glass-card launch-row" key={l.id || l.name}>
-                    <div className="launch-row-head">
-                      <span className={`badge badge-${statusTone(l.status)}`}>{l.status || "Scheduled"}</span>
-                      <span className="launch-date">{fmtNet(l.net)}</span>
+                    <LaunchImage src={l.image} className="launch-thumb" />
+                    <div className="launch-row-body">
+                      <div className="launch-row-head">
+                        <span className={`badge badge-${statusTone(l.status)}`}>{l.status || "Scheduled"}</span>
+                        <span className="launch-date">{fmtNet(l.net)}</span>
+                      </div>
+                      <h3>{l.name}</h3>
+                      <p className="launch-meta">
+                        {[l.provider, l.rocket, l.location && `${l.location}${l.country ? ` (${l.country})` : ""}`]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </p>
+                      {l.missionDesc && <p className="launch-desc">{l.missionDesc}</p>}
                     </div>
-                    <h3>{l.name}</h3>
-                    <p className="launch-meta">
-                      {[l.provider, l.rocket, l.location && `${l.location}${l.country ? ` (${l.country})` : ""}`]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                    {l.missionDesc && <p className="launch-desc">{l.missionDesc}</p>}
                   </article>
                 ))}
               </div>
