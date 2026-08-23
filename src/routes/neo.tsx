@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { getNEO } from "@/lib/orbitex-data.functions";
-import { fmtNum, timeAgo, safeText } from "@/lib/format";
+import { fmtNum, safeText } from "@/lib/format";
+import { FreshnessBadge } from "@/components/site/freshness-badge";
 
 export const Route = createFileRoute("/neo")({
   head: () => ({
