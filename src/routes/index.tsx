@@ -138,6 +138,19 @@ const PLANET_NAMES: Record<PlanetKey, string> = {
   neptune: "Neptune",
 };
 
+// True-color palette for the hero diagram (approx. NASA true-color imagery),
+// so planets are told apart by color alone, no labels needed.
+const HERO_PLANET_COLORS: Record<PlanetKey, string> = {
+  mercury: "#a89a8c",
+  venus: "#e0b56e",
+  earth: "#3f8fe0",
+  mars: "#c1440e",
+  jupiter: "#d1a876",
+  saturn: "#e0c689",
+  uranus: "#8fd1d8",
+  neptune: "#4a67d6",
+};
+
 type HeroPlanet = {
   key: PlanetKey;
   x: number;
@@ -158,7 +171,7 @@ function computeHeroPlanets(now: Date): HeroPlanet[] {
       x: 100 + rho * Math.cos(lon),
       y: 100 - rho * Math.sin(lon),
       dotR: PLANET_DOT_R[key],
-      color: PLANET_ELEMENTS[key].color,
+      color: HERO_PLANET_COLORS[key],
       distAU: h.r,
     };
   });
