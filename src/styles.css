@@ -468,6 +468,18 @@ html.nav-open-lock body {
   margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--color-border);
   font-size: 0.84rem; color: var(--color-text-faint); line-height: 1.55;
 }
+
+/* ------------------------------ Textbook shelf --------------------------- */
+.book-topic { margin-top: 26px; }
+.book-topic:first-of-type { margin-top: 6px; }
+.book-topic h3 {
+  font-family: var(--font-heading); font-size: 1.02rem; margin: 0 0 2px;
+  color: var(--color-text);
+}
+.book-topic .book-sub {
+  margin: 0 0 10px; font-size: 0.85rem; color: var(--color-text-faint);
+}
+.book-author { color: var(--color-text-faint); font-style: italic; }
 @media (max-width: 760px) {
   .scaffold-grid { grid-template-columns: 1fr; gap: 24px; }
   .scaffold-card { padding: 22px 18px; }
