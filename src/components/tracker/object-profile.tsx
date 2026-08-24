@@ -88,7 +88,8 @@ function buildWriteUp(sat: SatnogsSat, displayName: string, noradId: string): st
   );
 
   const operator = cleanField(sat.operator, 120);
-  const countries = cleanField(sat.countries, 120);
+  // Country codes arrive packed as "RU,US"; add breathing room for prose.
+  const countries = cleanField(sat.countries, 120).replace(/,/g, ", ");
   const launched = fmtDate(sat.launched);
   let mission = "";
   if (operator) mission = `It is operated by ${operator}${countries ? ` (${countries})` : ""}`;
@@ -102,7 +103,8 @@ function buildWriteUp(sat: SatnogsSat, displayName: string, noradId: string): st
   if (deployed) sentences.push(`Deployment followed on ${deployed}.`);
   const decayed = fmtDate(sat.decayed);
   if (decayed) sentences.push(`The object reentered the atmosphere on ${decayed}.`);
-  const status = cleanField(sat.status, 40);
+  const rawStatus = cleanField(sat.status, 40);
+  const status = rawStatus ? rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1) : "";
   if (status && !decayed) sentences.push(`Observers currently report its status as ${status}.`);
   return sentences.join(" ");
 }
@@ -184,7 +186,7 @@ export function ObjectProfile({ noradId, displayName }: { noradId: string; displ
           <>
             {sat.image ? (
               <div className="profile-figure">
-                <SkeletonImage src={sat.image} className="profile-img" alt={`${displayName} spacecraft`} />
+                <SkeletonImage src={sat.image} className="profile-img" alt={`${displayName} spacecraft`} hideOnError />
               </div>
             ) : null}
             <p className="profile-lede">{writeUp}</p>
