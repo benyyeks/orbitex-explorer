@@ -204,10 +204,8 @@ function HeroOrbit() {
             r={orbitRadius(PLANET_ELEMENTS[key].a[0])}
           />
         ))}
-        <circle className="body" cx={100} cy={100} r="5" />
-        <text className="label" x={103} y={94}>
-          SUN
-        </text>
+        <circle className="sun-halo" cx={100} cy={100} r="11" />
+        <circle className="sun" cx={100} cy={100} r="6" />
         {planets?.map((p) => (
           <circle key={p.key} className="planet" cx={p.x} cy={p.y} r={p.dotR} fill={p.color}>
             <title>{`${PLANET_NAMES[p.key]} - ${p.distAU.toFixed(2)} AU from the Sun`}</title>
