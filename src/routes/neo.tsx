@@ -28,6 +28,7 @@ export const Route = createFileRoute("/neo")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(neoQueryOptions).catch(() => null);
   },
+  staleTime: 60_000,
   pendingMs: 0,
   pendingComponent: NeoSkeleton,
   errorComponent: NeoError,

@@ -40,6 +40,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(competitionsQueryOptions),
     ]);
   },
+  staleTime: 60_000,
   pendingMs: 0,
   pendingComponent: LandingSkeleton,
   component: LandingPage,

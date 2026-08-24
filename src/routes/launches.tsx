@@ -30,6 +30,7 @@ export const Route = createFileRoute("/launches")({
     // Best effort: if the upstream is down during SSR, the client retries.
     await Promise.allSettled([context.queryClient.ensureQueryData(launchesQueryOptions)]);
   },
+  staleTime: 60_000,
   pendingMs: 0,
   pendingComponent: LaunchesSkeleton,
   errorComponent: LaunchesError,

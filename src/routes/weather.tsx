@@ -33,6 +33,7 @@ export const Route = createFileRoute("/weather")({
       context.queryClient.ensureQueryData(donkiQueryOptions),
     ]);
   },
+  staleTime: 60_000,
   pendingMs: 0,
   pendingComponent: WeatherSkeleton,
   errorComponent: WeatherError,
