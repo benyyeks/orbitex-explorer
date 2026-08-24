@@ -6,6 +6,7 @@ import { fmtNum, safeText, pad2 } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
 import { SkeletonImage } from "@/components/site/skeleton-image";
+import { PageHeroSkeleton, StatGridSkeleton, LaunchListSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/launches")({
   head: () => ({
@@ -29,9 +30,26 @@ export const Route = createFileRoute("/launches")({
     // Best effort: if the upstream is down during SSR, the client retries.
     await Promise.allSettled([context.queryClient.ensureQueryData(launchesQueryOptions)]);
   },
+  pendingMs: 0,
+  pendingComponent: LaunchesSkeleton,
   errorComponent: LaunchesError,
   component: LaunchesPage,
 });
+
+function LaunchesSkeleton() {
+  return (
+    <main className="page-main">
+      <section>
+        <div className="container" role="status" aria-busy="true" aria-label="Loading launch schedule">
+          <span className="sr-only">Loading launch schedule</span>
+          <PageHeroSkeleton />
+          <StatGridSkeleton count={4} />
+          <LaunchListSkeleton />
+        </div>
+      </section>
+    </main>
+  );
+}
 
 const launchesQueryOptions = queryOptions({
   queryKey: ["orbitex", "launches"],

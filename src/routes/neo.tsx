@@ -5,6 +5,7 @@ import { getNEO } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { PageHeroSkeleton, StatGridSkeleton, TableSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/neo")({
   head: () => ({
@@ -27,9 +28,26 @@ export const Route = createFileRoute("/neo")({
   loader: async ({ context }) => {
     await context.queryClient.ensureQueryData(neoQueryOptions).catch(() => null);
   },
+  pendingMs: 0,
+  pendingComponent: NeoSkeleton,
   errorComponent: NeoError,
   component: NeoPage,
 });
+
+function NeoSkeleton() {
+  return (
+    <main className="page-main">
+      <section>
+        <div className="container" role="status" aria-busy="true" aria-label="Loading asteroid watch">
+          <span className="sr-only">Loading asteroid watch</span>
+          <PageHeroSkeleton />
+          <StatGridSkeleton count={4} />
+          <TableSkeleton rows={8} />
+        </div>
+      </section>
+    </main>
+  );
+}
 
 const neoQueryOptions = queryOptions({
   queryKey: ["orbitex", "neo-week"],

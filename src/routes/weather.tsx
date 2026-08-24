@@ -4,6 +4,7 @@ import { getKpIndex, getSolarWind, getXrayFlux, getDONKI } from "@/lib/orbitex-d
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { PageHeroSkeleton, StatGridSkeleton, PanelSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/weather")({
   head: () => ({
@@ -32,9 +33,26 @@ export const Route = createFileRoute("/weather")({
       context.queryClient.ensureQueryData(donkiQueryOptions),
     ]);
   },
+  pendingMs: 0,
+  pendingComponent: WeatherSkeleton,
   errorComponent: WeatherError,
   component: WeatherPage,
 });
+
+function WeatherSkeleton() {
+  return (
+    <main className="page-main">
+      <section>
+        <div className="container" role="status" aria-busy="true" aria-label="Loading space weather">
+          <span className="sr-only">Loading space weather</span>
+          <PageHeroSkeleton />
+          <StatGridSkeleton count={5} />
+          <PanelSkeleton lines={4} />
+        </div>
+      </section>
+    </main>
+  );
+}
 
 const kpQueryOptions = queryOptions({
   queryKey: ["orbitex", "kp-index"],
