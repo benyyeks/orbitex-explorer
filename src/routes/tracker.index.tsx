@@ -583,7 +583,7 @@ function TrackerPage() {
                       </button>
                     ))}
                   </div>
-                  <div className="chip-row" role="group" aria-label="Satellite groups in {regimeDef.label}">
+                  <div className="chip-row" role="group" aria-label={`Satellite groups in ${regimeDef.label}`}>
                     {regimeDef.groups.map((g) => (
                       <button
                         key={g.id}
