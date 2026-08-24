@@ -146,11 +146,20 @@ function SkyPage() {
                   {lat.toFixed(4)}°, {lon.toFixed(4)}° · {data ? `${data.utc} UTC` : "--:--:--"}
                 </div>
               </div>
-              <button type="button" className="btn btn-sm btn-primary" onClick={useMyLocation}>
-                Use my location
+              <button
+                type="button"
+                className="btn btn-sm btn-primary"
+                onClick={loc.requestDeviceLocation}
+                disabled={loc.status === "requesting"}
+              >
+                {loc.status === "requesting" ? "Locating..." : "Use my location"}
               </button>
             </div>
-            {geoError ? <p className="text-muted" style={{ marginTop: 10, marginBottom: 0 }}>{geoError}</p> : null}
+            {loc.error ? (
+              <p className="text-muted" role="alert" style={{ marginTop: 10, marginBottom: 0 }}>
+                {loc.error}
+              </p>
+            ) : null}
           </div>
 
           <div className="stat-grid" style={{ marginBottom: 24 }}>
