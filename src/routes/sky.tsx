@@ -12,6 +12,7 @@ import {
   DEG,
 } from "@/lib/astronomy";
 import { fmtAU, fmtNum, utcClock, lightTimeFromAU } from "@/lib/format";
+import { useObserverLocation } from "@/lib/location";
 
 export const Route = createFileRoute("/sky")({
   head: () => ({
@@ -100,11 +101,17 @@ function azToCompass(az: number): string {
 }
 
 function SkyPage() {
-  const [lat, setLat] = useState(51.4769);
-  const [lon, setLon] = useState(-0.0005); // Royal Observatory, Greenwich
-  const [locLabel, setLocLabel] = useState("Greenwich, UK (default)");
+  // Shared observer-location hook: two-stage lookup with automatic retry,
+  // persisted coordinates, and consistent messaging across pages.
+  const loc = useObserverLocation();
+  const lat = loc.location?.lat ?? 51.4769;
+  const lon = loc.location?.lon ?? -0.0005; // Royal Observatory, Greenwich
+  const locLabel = loc.location
+    ? loc.location.source === "device"
+      ? "Your current location"
+      : "Saved coordinates"
+    : "Greenwich, UK (default)";
   const [data, setData] = useState<SkyData | null>(null);
-  const [geoError, setGeoError] = useState<string | null>(null);
 
   useEffect(() => {
     const tick = () => setData(computeSky(lat, lon, new Date()));
@@ -112,25 +119,6 @@ function SkyPage() {
     const id = setInterval(tick, 30000);
     return () => clearInterval(id);
   }, [lat, lon]);
-
-  const useMyLocation = () => {
-    setGeoError(null);
-    if (!navigator.geolocation) {
-      setGeoError("Geolocation is not supported in this browser.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLat(Number(pos.coords.latitude.toFixed(4)));
-        setLon(Number(pos.coords.longitude.toFixed(4)));
-        setLocLabel("Your current location");
-      },
-      (err) => {
-        setGeoError(err.code === 1 ? "Location permission denied." : "Could not get your location.");
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
-    );
-  };
 
   const visibleCount = useMemo(() => data?.planets.filter((p) => p.visible).length ?? 0, [data]);
 
