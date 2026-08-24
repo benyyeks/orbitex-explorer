@@ -103,9 +103,11 @@ type SatellitesProps = {
   color: string;
   selectedId: string | null;
   onSelect: (tle: TLE | null) => void;
+  altitudeScale: number;
+  pointSize: number;
 };
 
-function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
+function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSize }: SatellitesProps) {
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const acc = useRef(1);
   const sprite = useMemo(() => makeDotTexture(), []);
@@ -113,6 +115,7 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
 
   // Seed positions once so the first frame is not a clump at the origin.
   useEffect(() => {
+    _altScale = altitudeScale;
     const now = new Date();
     for (let i = 0; i < tles.length; i++) {
       const tle = tles[i]!;
@@ -125,12 +128,13 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
     const attr = geomRef.current?.getAttribute("position") as THREE.BufferAttribute | undefined;
     if (attr) attr.needsUpdate = true;
     geomRef.current?.computeBoundingSphere();
-  }, [tles, positions]);
+  }, [tles, positions, altitudeScale]);
 
   useFrame((_, delta) => {
     acc.current += delta;
     if (acc.current < 0.25) return; // propagate at 4 Hz; LEO drift is smooth at this rate
     acc.current = 0;
+    _altScale = altitudeScale;
     const now = new Date();
     for (let i = 0; i < tles.length; i++) {
       const s = propagateSat(tles[i]!, now);
@@ -156,7 +160,7 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.075}
+        size={pointSize}
         sizeAttenuation
         map={sprite}
         color={selectedId ? color : color}
