@@ -193,6 +193,34 @@ export const getHorizons = createServerFn({ method: "GET" })
     return cached("horizons", { probe: data.probe }, 120, () => fetchText(url, { timeoutMs: 15000 }));
   });
 
+// --------------------------- SatNOGS DB: profiles --------------------------
+// Crowdsourced satellite metadata and radio transmitter records, keyed by
+// NORAD catalog number. Entries are maintained by the SatNOGS observer
+// community, so many small or debris objects have no record; the page treats
+// a missing record as "no community profile" rather than an error.
+const SatnogsInput = z.object({ noradId: z.string().regex(/^\d{1,6}$/) });
+
+export const getSatnogsSatellite = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => SatnogsInput.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    const url = `https://db.satnogs.org/api/satellites/?norad_cat_id=${data.noradId}&format=json`;
+    return cached("satnogs-satellite", { id: data.noradId }, 21600, async () => {
+      const res = await fetchJson<any>(url, { timeoutMs: 12000 });
+      const rows = Array.isArray(res) ? res : (res?.results ?? []);
+      return rows[0] ?? null;
+    });
+  });
+
+export const getSatnogsTransmitters = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => SatnogsInput.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    const url = `https://db.satnogs.org/api/transmitters/?satellite__norad_cat_id=${data.noradId}&format=json`;
+    return cached("satnogs-transmitters", { id: data.noradId }, 21600, async () => {
+      const res = await fetchJson<any>(url, { timeoutMs: 12000 });
+      return Array.isArray(res) ? res : (res?.results ?? []);
+    });
+  });
+
 // ----------------------- Spaceflight News API (live) ----------------------
 // Combined live news fetch. Cached until the next UTC midnight to match the
 // daily-update design.

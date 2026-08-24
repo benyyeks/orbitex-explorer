@@ -9,6 +9,8 @@ type SkeletonImageProps = {
   alt?: string;
   /** Load eagerly instead of lazily, for above-the-fold hero imagery. */
   eager?: boolean;
+  /** Remove the frame entirely when the source fails, instead of the placeholder tile. */
+  hideOnError?: boolean;
 };
 
 /**
@@ -16,7 +18,7 @@ type SkeletonImageProps = {
  * placeholder tile when the source is missing or fails. The frame always
  * reserves its final dimensions, so cards never shift layout as feeds load.
  */
-export function SkeletonImage({ src, className = "", alt = "", eager = false }: SkeletonImageProps) {
+export function SkeletonImage({ src, className = "", alt = "", eager = false, hideOnError = false }: SkeletonImageProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     src ? "loading" : "error"
   );
@@ -28,6 +30,8 @@ export function SkeletonImage({ src, className = "", alt = "", eager = false }: 
       setStatus(el.naturalWidth > 0 ? "loaded" : "error");
     }
   }, []);
+
+  if (hideOnError && status === "error") return null;
 
   return (
     <div className={`skel-img ${className} ${status === "loaded" ? "loaded" : ""}`} aria-hidden={alt === ""}>
