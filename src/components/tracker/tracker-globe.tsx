@@ -18,8 +18,14 @@ import { DEG } from "@/lib/astronomy";
 const EARTH_R = 2;
 const KM_PER_UNIT = RE_EARTH / EARTH_R;
 
+// Altitude compression for high-orbit regimes. MEO (20,200 km) and GEO
+// (35,786 km) are so far beyond LEO that at true scale they'd sit well
+// outside the default camera frame. The scale factor compresses the
+// visual ring while telemetry continues to show true values.
+let _altScale = 1;
+
 function geoToScene(lat: number, lon: number, altKm: number): [number, number, number] {
-  const r = EARTH_R + altKm / KM_PER_UNIT;
+  const r = EARTH_R + (altKm * _altScale) / KM_PER_UNIT;
   const phi = (90 - lat) * DEG;
   const theta = (lon + 180) * DEG;
   return [
