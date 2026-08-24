@@ -192,8 +192,13 @@ export function ObjectProfile({ noradId, displayName }: { noradId: string; displ
             <p className="profile-lede">{writeUp}</p>
             <div className="detail-rows">
               {cleanField(sat.operator, 80) ? <DetailCell label="Operator" value={cleanField(sat.operator, 80)} /> : null}
-              {cleanField(sat.countries, 80) ? <DetailCell label="Countries" value={cleanField(sat.countries, 80)} /> : null}
-              {cleanField(sat.status, 40) ? <DetailCell label="Status" value={cleanField(sat.status, 40)} /> : null}
+              {cleanField(sat.countries, 80) ? <DetailCell label="Countries" value={cleanField(sat.countries, 80).replace(/,/g, ", ")} /> : null}
+              {cleanField(sat.status, 40) ? (
+                <DetailCell
+                  label="Status"
+                  value={cleanField(sat.status, 40).charAt(0).toUpperCase() + cleanField(sat.status, 40).slice(1)}
+                />
+              ) : null}
               {fmtDate(sat.launched) ? <DetailCell label="Launched" value={fmtDate(sat.launched)!} /> : null}
               {fmtDate(sat.deployed) ? <DetailCell label="Deployed" value={fmtDate(sat.deployed)!} /> : null}
               {fmtDate(sat.decayed) ? <DetailCell label="Reentered" value={fmtDate(sat.decayed)!} /> : null}
