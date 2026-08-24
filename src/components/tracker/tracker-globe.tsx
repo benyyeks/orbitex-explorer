@@ -18,8 +18,14 @@ import { DEG } from "@/lib/astronomy";
 const EARTH_R = 2;
 const KM_PER_UNIT = RE_EARTH / EARTH_R;
 
+// Altitude compression for high-orbit regimes. MEO (20,200 km) and GEO
+// (35,786 km) are so far beyond LEO that at true scale they'd sit well
+// outside the default camera frame. The scale factor compresses the
+// visual ring while telemetry continues to show true values.
+let _altScale = 1;
+
 function geoToScene(lat: number, lon: number, altKm: number): [number, number, number] {
-  const r = EARTH_R + altKm / KM_PER_UNIT;
+  const r = EARTH_R + (altKm * _altScale) / KM_PER_UNIT;
   const phi = (90 - lat) * DEG;
   const theta = (lon + 180) * DEG;
   return [
@@ -97,9 +103,11 @@ type SatellitesProps = {
   color: string;
   selectedId: string | null;
   onSelect: (tle: TLE | null) => void;
+  altitudeScale: number;
+  pointSize: number;
 };
 
-function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
+function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSize }: SatellitesProps) {
   const geomRef = useRef<THREE.BufferGeometry>(null);
   const acc = useRef(1);
   const sprite = useMemo(() => makeDotTexture(), []);
@@ -107,6 +115,7 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
 
   // Seed positions once so the first frame is not a clump at the origin.
   useEffect(() => {
+    _altScale = altitudeScale;
     const now = new Date();
     for (let i = 0; i < tles.length; i++) {
       const tle = tles[i]!;
@@ -119,12 +128,13 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
     const attr = geomRef.current?.getAttribute("position") as THREE.BufferAttribute | undefined;
     if (attr) attr.needsUpdate = true;
     geomRef.current?.computeBoundingSphere();
-  }, [tles, positions]);
+  }, [tles, positions, altitudeScale]);
 
   useFrame((_, delta) => {
     acc.current += delta;
     if (acc.current < 0.25) return; // propagate at 4 Hz; LEO drift is smooth at this rate
     acc.current = 0;
+    _altScale = altitudeScale;
     const now = new Date();
     for (let i = 0; i < tles.length; i++) {
       const s = propagateSat(tles[i]!, now);
@@ -150,7 +160,7 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
         <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
-        size={0.075}
+        size={pointSize}
         sizeAttenuation
         map={sprite}
         color={selectedId ? color : color}
@@ -163,13 +173,14 @@ function Satellites({ tles, color, selectedId, onSelect }: SatellitesProps) {
   );
 }
 
-function SelectedSatellite({ tle }: { tle: TLE }) {
+function SelectedSatellite({ tle, altitudeScale }: { tle: TLE; altitudeScale: number }) {
   const markerRef = useRef<THREE.Group>(null);
   const [orbitPts, setOrbitPts] = useState<[number, number, number][]>([]);
   const [trackPts, setTrackPts] = useState<[number, number, number][]>([]);
 
   // Sample one full revolution for the orbit path and its ground track.
   useEffect(() => {
+    _altScale = altitudeScale;
     const now = Date.now();
     const n = 180;
     const orbit: [number, number, number][] = [];
@@ -182,10 +193,11 @@ function SelectedSatellite({ tle }: { tle: TLE }) {
     }
     setOrbitPts(orbit);
     setTrackPts(track);
-  }, [tle]);
+  }, [tle, altitudeScale]);
 
   useFrame(() => {
     if (!markerRef.current) return;
+    _altScale = altitudeScale;
     const s = propagateSat(tle, new Date());
     markerRef.current.position.set(...geoToScene(s.lat, s.lon, s.alt));
   });
@@ -232,9 +244,19 @@ export type TrackerGlobeProps = {
   selected: TLE | null;
   autoRotate: boolean;
   onSelect: (tle: TLE | null) => void;
+  altitudeScale?: number;
+  pointSize?: number;
 };
 
-export default function TrackerGlobe({ tles, color, selected, autoRotate, onSelect }: TrackerGlobeProps) {
+export default function TrackerGlobe({
+  tles,
+  color,
+  selected,
+  autoRotate,
+  onSelect,
+  altitudeScale = 1,
+  pointSize = 0.075,
+}: TrackerGlobeProps) {
   return (
     <Canvas
       camera={{ position: [0, 1.3, 5.8], fov: 42, near: 0.1, far: 200 }}
@@ -253,8 +275,15 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
       <Suspense fallback={null}>
         <Earth />
       </Suspense>
-      <Satellites tles={tles} color={color} selectedId={selected?.noradId ?? null} onSelect={onSelect} />
-      {selected ? <SelectedSatellite tle={selected} /> : null}
+      <Satellites
+        tles={tles}
+        color={color}
+        selectedId={selected?.noradId ?? null}
+        onSelect={onSelect}
+        altitudeScale={altitudeScale}
+        pointSize={pointSize}
+      />
+      {selected ? <SelectedSatellite tle={selected} altitudeScale={altitudeScale} /> : null}
       <OrbitControls
         makeDefault
         enablePan={false}

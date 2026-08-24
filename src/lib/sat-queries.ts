@@ -5,6 +5,7 @@ import { queryOptions } from "@tanstack/react-query";
 import {
   getSatellite,
   getSatellites,
+  getSatellitesSSO,
   getSatnogsSatellite,
   getSatnogsTransmitters,
 } from "@/lib/orbitex-data.functions";
@@ -14,15 +15,33 @@ export type SatGroup =
   | "active"
   | "starlink"
   | "gps-ops"
+  | "glo-ops"
+  | "galileo"
+  | "beidou"
+  | "geo"
   | "iridium-NEXT"
   | "resource"
   | "weather"
-  | "science";
+  | "science"
+  | "cosmos-2251-debris"
+  | "iridium-33-debris"
+  | "19820"
+  | "sso";
 
 export function satGroupQuery(group: SatGroup) {
+  if (group === "sso") return satSSOQuery();
   return queryOptions({
     queryKey: ["orbitex", "sats", group],
     queryFn: () => getSatellites({ data: { group } }),
+    staleTime: 30 * 60_000,
+    retry: 1,
+  });
+}
+
+export function satSSOQuery() {
+  return queryOptions({
+    queryKey: ["orbitex", "sats", "sso"],
+    queryFn: () => getSatellitesSSO(),
     staleTime: 30 * 60_000,
     retry: 1,
   });

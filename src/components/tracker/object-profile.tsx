@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { satnogsProfileQuery, satnogsTransmittersQuery } from "@/lib/sat-queries";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { safeText, utcDateStr } from "@/lib/format";
+import { matchDebrisEvent, orbitRegime, type TLE } from "@/lib/satellite";
 
 // Community mission profile and radio transmitter records for a catalog
 // object, sourced from the SatNOGS DB. Rendered on the shared satellite
@@ -141,7 +142,7 @@ function TransmitterRow({ tx }: { tx: SatnogsTx }) {
   );
 }
 
-export function ObjectProfile({ noradId, displayName }: { noradId: string; displayName: string }) {
+export function ObjectProfile({ noradId, displayName, tle }: { noradId: string; displayName: string; tle?: TLE | null }) {
   const profileQuery = useQuery(satnogsProfileQuery(noradId));
   const txQuery = useQuery(satnogsTransmittersQuery(noradId));
   const [showInactive, setShowInactive] = useState(false);
@@ -162,11 +163,14 @@ export function ObjectProfile({ noradId, displayName }: { noradId: string; displ
   const profilePending = profileQuery.isPending;
   const txPending = txQuery.isPending;
 
+  const debrisEvent = tle ? matchDebrisEvent(tle.name) : null;
+  const isDebris = tle ? orbitRegime(tle) === "Orbital debris" : false;
+
   return (
     <div className="sat-detail-grid" style={{ marginTop: 18 }}>
       <div className="glass glass-card side-card">
         <div className="side-item-top">
-          <h3>Mission profile</h3>
+          <h3>{isDebris ? "Fragmentation debris" : "Mission profile"}</h3>
           {sat?.website ? (
             <a
               href={sat.website}
@@ -180,7 +184,25 @@ export function ObjectProfile({ noradId, displayName }: { noradId: string; displ
           ) : null}
         </div>
 
-        {profilePending ? (
+        {isDebris && debrisEvent ? (
+          <>
+            <div className="debris-event-banner">
+              <span className="badge badge-warning">Debris</span>
+              <span className="debris-event-name">{debrisEvent.event}</span>
+            </div>
+            <p className="profile-lede">{debrisEvent.detail}</p>
+            <div className="detail-rows">
+              <DetailCell label="Event date" value={debrisEvent.date} />
+              <DetailCell label="Debris altitude" value={debrisEvent.altKm} />
+              <DetailCell label="Origin" value={debrisEvent.event} />
+            </div>
+            <p className="detail-note">
+              This object is a tracked fragment from a fragmentation event. Orbital debris
+              is catalogued and tracked by the 18th Space Defense Squadron; elements are
+              published via CelesTrak.
+            </p>
+          </>
+        ) : profilePending ? (
           <p className="detail-note">Loading the community mission record.</p>
         ) : sat ? (
           <>

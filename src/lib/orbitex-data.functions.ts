@@ -88,7 +88,11 @@ export const getMarsImagery = createServerFn({ method: "GET" })
   });
 
 // --------------------------- CelesTrak: satellites ------------------------
-const SAT_GROUPS = ["stations", "visual", "gps-ops", "weather", "starlink", "science", "active", "iridium-NEXT", "resource"] as const;
+const SAT_GROUPS = [
+  "stations", "visual", "gps-ops", "glo-ops", "galileo", "beidou",
+  "geo", "weather", "starlink", "science", "active", "iridium-NEXT",
+  "resource", "cosmos-2251-debris", "iridium-33-debris", "19820",
+] as const;
 const SatInput = z.object({ group: z.enum(SAT_GROUPS).default("stations") });
 
 export const getSatellites = createServerFn({ method: "GET" })
@@ -97,6 +101,27 @@ export const getSatellites = createServerFn({ method: "GET" })
     const url = `https://celestrak.org/NORAD/elements/gp.php?GROUP=${data.group}&FORMAT=json`;
     return cached("satellites", { group: data.group }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
   });
+
+// Sun-synchronous orbit (SSO) view: CelesTrak has no single SSO group, so
+// this fetches the polar-orbiting weather (noaa) and Earth-observation
+// (resource) groups in parallel and filters by inclination 96-100 deg,
+// which captures the sun-synchronous band (~97-99 deg).
+export const getSatellitesSSO = createServerFn({ method: "GET" }).handler(async () => {
+  return cached("satellites-sso", {}, 3600, async () => {
+    const [noaaRes, resourceRes] = await Promise.all([
+      fetchJson<any[]>("https://celestrak.org/NORAD/elements/gp.php?GROUP=noaa&FORMAT=json", { timeoutMs: 12000 }),
+      fetchJson<any[]>("https://celestrak.org/NORAD/elements/gp.php?GROUP=resource&FORMAT=json", { timeoutMs: 12000 }),
+    ]);
+    const noaa = Array.isArray(noaaRes) ? noaaRes : [];
+    const resource = Array.isArray(resourceRes) ? resourceRes : [];
+    const merged = [...noaa, ...resource];
+    const filtered = merged.filter((rec) => {
+      const inc = Number(rec?.["INCLINATION"]);
+      return Number.isFinite(inc) && inc >= 96 && inc <= 100;
+    });
+    return filtered;
+  });
+});
 
 // Single-object lookup by NORAD catalog number, used by the satellite
 // detail template page.

@@ -198,7 +198,7 @@ function SatelliteDetailPage() {
                 </div>
               </div>
 
-              <ObjectProfile noradId={noradId} displayName={tle.name} />
+              <ObjectProfile noradId={noradId} displayName={tle.name} tle={tle} />
 
               <p className="scaffold-note" style={{ marginTop: 18 }}>
                 Elements source: CelesTrak. Mission and transmitter records: SatNOGS

@@ -399,12 +399,50 @@ export function parseOMMArray(json: unknown): TLE[] {
   return out;
 }
 
-// Human-readable orbital regime from the mean orbital altitude and shape.
+// Human-readable orbital regime from the mean orbital altitude, shape, and
+// inclination. Detects sun-synchronous orbits (near-polar, ~98 deg) and
+// cataloged debris by name pattern.
 export function orbitRegime(tle: TLE): string {
   const meanAlt = (tle.apogeeAlt + tle.perigeeAlt) / 2;
+  const isDebris = /\bDEB(RIS)?\b/i.test(tle.name);
+  if (isDebris) return "Orbital debris";
   if (tle.ecc > 0.25 && tle.apogeeAlt > 20000) return "Highly elliptical (HEO)";
+  if (meanAlt < 2000 && tle.inc >= 96 && tle.inc <= 100) return "Sun-synchronous (SSO)";
   if (meanAlt < 2000) return "Low Earth orbit (LEO)";
   if (meanAlt < 34000) return "Medium Earth orbit (MEO)";
   if (meanAlt < 37000) return "Geosynchronous (GEO)";
   return "High Earth orbit";
+}
+
+// Debris fragmentation event reference. Matched by testing the object name
+// against known debris-cloud prefixes from CelesTrak catalog entries.
+export const DEBRIS_EVENTS: { pattern: RegExp; event: string; date: string; altKm: string; detail: string }[] = [
+  {
+    pattern: /COSMOS\s*2251/i,
+    event: "Iridium 33 / Cosmos 2251 collision",
+    date: "10 February 2009",
+    altKm: "~789 km",
+    detail:
+      "The first major accidental debris event in orbit. The operational Iridium 33 communications satellite and the defunct Russian Cosmos 2251 collided at 11.7 km/s over Siberia, generating hundreds of trackable fragments that will persist for decades.",
+  },
+  {
+    pattern: /IRIDIUM\s*33/i,
+    event: "Iridium 33 / Cosmos 2251 collision",
+    date: "10 February 2009",
+    altKm: "~789 km",
+    detail:
+      "The first major accidental debris event in orbit. The operational Iridium 33 communications satellite and the defunct Russian Cosmos 2251 collided at 11.7 km/s over Siberia, generating hundreds of trackable fragments that will persist for decades.",
+  },
+  {
+    pattern: /(COSMOS\s*1408|19820)/i,
+    event: "Cosmos 1408 anti-satellite test",
+    date: "15 November 2021",
+    altKm: "~470 km",
+    detail:
+      "A Russian direct-ascent anti-satellite missile destroyed the defunct Cosmos 1408 surveillance satellite, creating a large debris cloud at an altitude intersecting the ISS orbital path. Fragments forced the station crew to shelter in their reentry vehicles.",
+  },
+];
+
+export function matchDebrisEvent(name: string) {
+  return DEBRIS_EVENTS.find((e) => e.pattern.test(name)) ?? null;
 }
