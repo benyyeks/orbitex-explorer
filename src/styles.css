@@ -480,6 +480,48 @@ html.nav-open-lock body {
   margin: 0 0 10px; font-size: 0.85rem; color: var(--color-text-faint);
 }
 .book-author { color: var(--color-text-faint); font-style: italic; }
+.book-list, .wishlist { list-style: none; padding: 0; margin: 0; }
+.book-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 12px 0; border-bottom: 1px dashed var(--color-border);
+}
+.book-list > .book-row:last-child, .wishlist > .book-row:last-child { border-bottom: none; }
+.book-cover {
+  width: 52px; height: 78px; flex: 0 0 52px;
+  border-radius: 5px; border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.book-cover .skel-fallback svg { width: 20px; height: 20px; }
+.book-cover-sm { width: 38px; height: 56px; flex-basis: 38px; }
+.book-meta {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.92rem; color: var(--color-text-soft); line-height: 1.55;
+}
+.wishlist .book-meta strong { display: block; }
+.book-save {
+  flex: 0 0 auto; margin-top: 2px; padding: 5px 14px;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 600;
+  border: 1px solid var(--color-border-strong); color: var(--color-text-soft);
+  background: transparent;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.book-save:hover { border-color: var(--color-accent); color: var(--color-accent); }
+.book-save.saved {
+  background: var(--color-accent); border-color: var(--color-accent); color: #ffffff;
+}
+.list-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.list-notice { margin: 14px 0 0; font-size: 0.85rem; color: var(--color-text-soft); }
+.shared-list { border: 1px solid var(--color-accent); }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .book-row { flex-wrap: wrap; row-gap: 8px; }
+  .book-meta { flex-basis: calc(100% - 66px); }
+  .book-save { margin-left: 66px; }
+  .wishlist .book-save { margin-left: 52px; }
+}
 @media (max-width: 760px) {
   .scaffold-grid { grid-template-columns: 1fr; gap: 24px; }
   .scaffold-card { padding: 22px 18px; }
