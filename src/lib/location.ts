@@ -1,6 +1,6 @@
 // Saved observer location for personalized pass predictions. Coordinates are
 // stored only in the browser's localStorage; they never leave the device.
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type ObserverLocation = {
   lat: number;
@@ -33,10 +33,29 @@ function read(): ObserverLocation | null {
 
 const round4 = (n: number) => Math.round(n * 10000) / 10000;
 
+// Failure copy stays professional: no browser or infrastructure internals.
+const MSG_UNSUPPORTED =
+  "This browser cannot determine your position. Enter your coordinates manually instead.";
+const MSG_DENIED =
+  "Location access was declined. Allow location access for this site in your browser, or enter your coordinates manually.";
+const MSG_BLOCKED =
+  "Location access is turned off for this site. Enable it in your browser settings, or enter your coordinates manually.";
+const MSG_UNAVAILABLE =
+  "Your position is not available right now. Try again in a moment, or enter your coordinates manually.";
+const MSG_TIMEOUT =
+  "Determining your position took too long. Try again, or enter your coordinates manually.";
+
+function messageFor(err: GeolocationPositionError): string {
+  if (err.code === err.PERMISSION_DENIED) return MSG_DENIED;
+  if (err.code === err.POSITION_UNAVAILABLE) return MSG_UNAVAILABLE;
+  return MSG_TIMEOUT;
+}
+
 export function useObserverLocation() {
   const [location, setLocation] = useState<ObserverLocation | null>(null);
   const [status, setStatus] = useState<GeoRequestStatus>("idle");
   const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
 
   useEffect(() => {
     setLocation(read());
@@ -57,23 +76,71 @@ export function useObserverLocation() {
   const requestDeviceLocation = useCallback(() => {
     if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setStatus("error");
-      setError("This browser cannot look up your position. Enter your coordinates manually instead.");
+      setError(MSG_UNSUPPORTED);
       return;
     }
+    // Guard against stacked concurrent requests from rapid clicks.
+    if (inFlight.current) return;
+    inFlight.current = true;
     setStatus("requesting");
     setError(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => save(pos.coords.latitude, pos.coords.longitude, "device"),
-      (err) => {
-        setStatus("error");
-        setError(
-          err.code === err.PERMISSION_DENIED
-            ? "Location access was declined. You can enter your coordinates manually instead."
-            : "Your position could not be determined. Try again, or enter your coordinates manually."
-        );
-      },
-      { timeout: 10000, maximumAge: 300000 }
-    );
+
+    const finish = () => {
+      inFlight.current = false;
+    };
+    const fail = (message: string) => {
+      finish();
+      setStatus("error");
+      setError(message);
+    };
+    const onSuccess = (pos: GeolocationPosition) => {
+      finish();
+      save(pos.coords.latitude, pos.coords.longitude, "device");
+    };
+
+    // Stage 2: a single precise retry after a slow or unavailable
+    // network-based fix. Desktops have no GPS, so a first fix can exceed a
+    // short timeout; one retry absorbs that without user friction.
+    const retryHighAccuracy = () => {
+      navigator.geolocation.getCurrentPosition(onSuccess, (err) => fail(messageFor(err)), {
+        enableHighAccuracy: true,
+        timeout: 20000,
+        maximumAge: 0,
+      });
+    };
+
+    // Stage 1: fast network-based fix, accepting a recent cached position.
+    const startLookup = () => {
+      navigator.geolocation.getCurrentPosition(
+        onSuccess,
+        (err) => {
+          if (err.code === err.PERMISSION_DENIED) {
+            fail(MSG_DENIED);
+          } else {
+            retryHighAccuracy();
+          }
+        },
+        { enableHighAccuracy: false, timeout: 12000, maximumAge: 600000 }
+      );
+    };
+
+    // If the browser already reports the permission as denied, skip the
+    // request: it can only fail, and some browsers surface no prompt at all.
+    const perms = navigator.permissions;
+    if (perms?.query) {
+      perms
+        .query({ name: "geolocation" as PermissionName })
+        .then((result) => {
+          if (result.state === "denied") {
+            fail(MSG_BLOCKED);
+          } else {
+            startLookup();
+          }
+        })
+        .catch(() => startLookup());
+    } else {
+      startLookup();
+    }
   }, [save]);
 
   const setManual = useCallback((lat: number, lon: number) => save(lat, lon, "manual"), [save]);
