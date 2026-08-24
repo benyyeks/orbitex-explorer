@@ -336,7 +336,7 @@ function ResourcesPage() {
                     <button
                       type="button"
                       className="book-save saved"
-                      aria-label={`Remove ${b.title} from my reading list`}
+                      aria-label={`Remove ${b.title} from the saved list`}
                       onClick={() => {
                         toggle(b.id);
                         setNotice("");
