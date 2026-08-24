@@ -139,7 +139,7 @@ function ResourcesPage() {
               </li>
               <li>
                 <strong>
-                  <Link to="/#competitions" className="text-accent">
+                  <Link to="/" className="text-accent">
                     ORBITEX Competitions Board
                   </Link>
                   :{" "}
