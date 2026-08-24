@@ -320,7 +320,9 @@ function TrackerPage() {
   useEffect(() => {
     if (mounted && !query.isPending) setBooted(true);
   }, [mounted, query.isPending]);
-  const groupMeta = GROUPS.find((g) => g.id === group) ?? GROUPS[0]!;
+  const groupMeta = findGroupDef(group) ?? ALL_GROUPS[0]!;
+  const regimeDef = findRegimeDef(group) ?? REGIMES[0]!;
+  const currentRegime = regimeDef.id;
 
   const tles = useMemo(() => {
     if (!query.data?.data) return [];
@@ -550,6 +552,8 @@ function TrackerPage() {
                     color={groupMeta.color}
                     selected={selected}
                     autoRotate={autoRotate}
+                    altitudeScale={regimeDef.altScale}
+                    pointSize={regimeDef.pointSize}
                     onSelect={(t) => {
                       if (!t) return;
                       handlePick(tles.find((x) => x.noradId === t.noradId) ?? t);
@@ -560,21 +564,42 @@ function TrackerPage() {
 
               <div className="scene-hud" role="toolbar" aria-label="Tracker controls">
                 <div className="scene-hud-group" role="group" aria-label="Satellite groups">
-                  {GROUPS.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      className={`chip ${group === g.id ? "chip-active" : ""}`}
-                      aria-pressed={group === g.id}
-                      onClick={() => {
-                        setGroup(g.id);
-                        setFilter("");
-                        setCompareIds([null, null]);
-                      }}
-                    >
-                      {g.label}
-                    </button>
-                  ))}
+                  <div className="regime-tabs" role="tablist" aria-label="Orbital regime">
+                    {REGIMES.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={currentRegime === r.id}
+                        className={`regime-tab ${currentRegime === r.id ? "regime-tab-active" : ""}`}
+                        onClick={() => {
+                          const first = r.groups[0]!;
+                          setGroup(first.id);
+                          setFilter("");
+                          setCompareIds([null, null]);
+                        }}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="chip-row" role="group" aria-label="Satellite groups in {regimeDef.label}">
+                    {regimeDef.groups.map((g) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        className={`chip ${group === g.id ? "chip-active" : ""}`}
+                        aria-pressed={group === g.id}
+                        onClick={() => {
+                          setGroup(g.id);
+                          setFilter("");
+                          setCompareIds([null, null]);
+                        }}
+                      >
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <button
                   type="button"
