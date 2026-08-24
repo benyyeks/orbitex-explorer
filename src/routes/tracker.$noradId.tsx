@@ -9,6 +9,7 @@ import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state
 import { GroundTrack } from "@/components/tracker/ground-track";
 import { ObserverLocationControls, PassForecast } from "@/components/tracker/observer-location";
 import { FavButton } from "@/components/tracker/fav-button";
+import { ObjectProfile } from "@/components/tracker/object-profile";
 import { useFavorites } from "@/lib/favorites";
 import { useObserverLocation } from "@/lib/location";
 import { useNow } from "@/hooks/use-now";
@@ -196,10 +197,13 @@ function SatelliteDetailPage() {
                 </div>
               </div>
 
+              <ObjectProfile noradId={noradId} displayName={tle.name} />
+
               <p className="scaffold-note" style={{ marginTop: 18 }}>
-                Elements source: CelesTrak. Propagation uses a Kepler solver with J2
-                secular corrections; short-term accuracy is typically within a few
-                kilometers of the true position while elements are fresh.
+                Elements source: CelesTrak. Mission and transmitter records: SatNOGS
+                community catalog. Propagation uses a Kepler solver with J2 secular
+                corrections; short-term accuracy is typically within a few kilometers
+                of the true position while elements are fresh.
               </p>
             </>
           )}
