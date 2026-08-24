@@ -508,6 +508,17 @@ html.nav-open-lock body {
 .hero-orbit .label {
   font-family: var(--font-mono); font-size: 9px; fill: var(--color-text-faint);
 }
+.hero-orbit .planet {
+  transition: cx 1.4s ease, cy 1.4s ease, opacity 0.9s ease;
+}
+.hero-orbit-caption {
+  position: absolute; left: 0; right: 0; bottom: -6px;
+  text-align: center; font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--color-text-faint);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-orbit .planet { transition: none; }
+}
 
 .section-head {
   display: flex; align-items: baseline; justify-content: space-between;

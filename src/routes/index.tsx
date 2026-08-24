@@ -10,7 +10,14 @@ import {
   type CompetitionItem,
 } from "@/lib/news.functions";
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
-import { timeAgo, safeText, pad2 } from "@/lib/format";
+import { timeAgo, safeText, pad2, utcDateStr } from "@/lib/format";
+import {
+  heliocentricEcliptic,
+  julianDateUTC,
+  PLANET_ELEMENTS,
+  PLANET_ORDER,
+  type PlanetKey,
+} from "@/lib/astronomy";
 import { EmptyState } from "@/components/site/data-state";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { LandingSkeleton } from "@/components/site/page-skeleton";
@@ -97,23 +104,106 @@ const ICONS: Record<string, React.ReactNode> = {
 };
 
 // --------------------------- Hero orbit diagram ----------------------------
-const ORBIT_AU = [0.387, 0.723, 1.0, 1.524];
-const ORBIT_SCALE = 26;
+// Top-down heliocentric map of all eight planets. Positions are computed in
+// the browser from JPL Keplerian elements for the current instant and
+// recomputed every minute, so the diagram always shows the real configuration
+// of the solar system on the current Earth day. A square-root radial scale
+// keeps Mercury and Neptune readable in the same frame.
+const ORBIT_R_MAX = 94;
+const NEPTUNE_SQRT_A = Math.sqrt(PLANET_ELEMENTS.neptune.a[0]);
+
+function orbitRadius(au: number): number {
+  return (Math.sqrt(Math.max(au, 0.05)) / NEPTUNE_SQRT_A) * ORBIT_R_MAX;
+}
+
+const PLANET_DOT_R: Record<PlanetKey, number> = {
+  mercury: 1.9,
+  venus: 2.4,
+  earth: 2.7,
+  mars: 2.2,
+  jupiter: 4.3,
+  saturn: 3.8,
+  uranus: 3.1,
+  neptune: 3.0,
+};
+
+const PLANET_NAMES: Record<PlanetKey, string> = {
+  mercury: "Mercury",
+  venus: "Venus",
+  earth: "Earth",
+  mars: "Mars",
+  jupiter: "Jupiter",
+  saturn: "Saturn",
+  uranus: "Uranus",
+  neptune: "Neptune",
+};
+
+type HeroPlanet = {
+  key: PlanetKey;
+  x: number;
+  y: number;
+  dotR: number;
+  color: string;
+  distAU: number;
+};
+
+function computeHeroPlanets(now: Date): HeroPlanet[] {
+  const jd = julianDateUTC(now);
+  return PLANET_ORDER.map((key) => {
+    const h = heliocentricEcliptic(key, jd);
+    const rho = orbitRadius(h.r);
+    const lon = Math.atan2(h.y, h.x);
+    return {
+      key,
+      x: 100 + rho * Math.cos(lon),
+      y: 100 - rho * Math.sin(lon),
+      dotR: PLANET_DOT_R[key],
+      color: PLANET_ELEMENTS[key].color,
+      distAU: h.r,
+    };
+  });
+}
 
 function HeroOrbit() {
+  const [planets, setPlanets] = useState<HeroPlanet[] | null>(null);
+  const [stamp, setStamp] = useState("");
+
+  useEffect(() => {
+    const update = () => {
+      const now = new Date();
+      setPlanets(computeHeroPlanets(now));
+      setStamp(utcDateStr(now));
+    };
+    update();
+    const id = setInterval(update, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   return (
     <div className="hero-orbit" aria-hidden="true">
       <svg viewBox="0 0 200 200">
-        {ORBIT_AU.map((r, i) => (
-          <circle key={i} className="ring" cx={100} cy={100} r={r * ORBIT_SCALE} />
+        {PLANET_ORDER.map((key) => (
+          <circle
+            key={key}
+            className={`ring${key === "earth" ? " ring-accent" : ""}`}
+            cx={100}
+            cy={100}
+            r={orbitRadius(PLANET_ELEMENTS[key].a[0])}
+          />
         ))}
         <circle className="body" cx={100} cy={100} r="5" />
-        <circle className="body-faint" cx={100 + 0.387 * ORBIT_SCALE} cy={100} r="2.6" />
-        <circle className="body-faint" cx={100 - 0.723 * ORBIT_SCALE} cy={100 - 8} r="2.6" />
-        <circle className="body" cx={100} cy={100 - 1.0 * ORBIT_SCALE} r="3.4" />
-        <circle className="body-faint" cx={100 - 1.524 * ORBIT_SCALE * 0.7} cy={100 + 1.524 * ORBIT_SCALE * 0.7} r="2.6" />
-        <text className="label" x={103} y={94}>SUN</text>
+        <text className="label" x={103} y={94}>
+          SUN
+        </text>
+        {planets?.map((p) => (
+          <circle key={p.key} className="planet" cx={p.x} cy={p.y} r={p.dotR} fill={p.color}>
+            <title>{`${PLANET_NAMES[p.key]} - ${p.distAU.toFixed(2)} AU from the Sun`}</title>
+          </circle>
+        ))}
       </svg>
+      <div className="hero-orbit-caption mono">
+        {stamp ? `Planetary positions for ${stamp}` : "Computing planetary positions"}
+      </div>
     </div>
   );
 }
