@@ -102,17 +102,17 @@ function buildWriteUp(sat: SatnogsSat, displayName: string, noradId: string): st
   if (deployed) sentences.push(`Deployment followed on ${deployed}.`);
   const decayed = fmtDate(sat.decayed);
   if (decayed) sentences.push(`The object reentered the atmosphere on ${decayed}.`);
-  const status = safeText(sat.status, 40);
+  const status = cleanField(sat.status, 40);
   if (status && !decayed) sentences.push(`Observers currently report its status as ${status}.`);
   return sentences.join(" ");
 }
 
 function TransmitterRow({ tx }: { tx: SatnogsTx }) {
-  const description = safeText(tx.description, 120) || "Unnamed transmitter";
+  const description = cleanField(tx.description, 120) || "Unnamed transmitter";
   const downlink = fmtFreqRange(tx.downlink_low, tx.downlink_high);
   const uplink = fmtFreqRange(tx.uplink_low, tx.uplink_high);
-  const mode = safeText(tx.mode, 40);
-  const service = safeText(tx.service, 60);
+  const mode = cleanField(tx.mode, 40);
+  const service = cleanField(tx.service, 60);
   const active = tx.alive === true || tx.status === "active";
 
   const meta: string[] = [];
@@ -127,7 +127,7 @@ function TransmitterRow({ tx }: { tx: SatnogsTx }) {
       <div className="tx-row-top">
         <span className="tx-name">{description}</span>
         <span className="tx-badges">
-          {tx.type ? <span className="badge badge-muted">{safeText(tx.type, 20)}</span> : null}
+          {tx.type ? <span className="badge badge-muted">{cleanField(tx.type, 20)}</span> : null}
           <span className={`badge ${active ? "badge-success" : "badge-muted"}`}>
             {active ? "Active" : "Inactive"}
           </span>
@@ -189,9 +189,9 @@ export function ObjectProfile({ noradId, displayName }: { noradId: string; displ
             ) : null}
             <p className="profile-lede">{writeUp}</p>
             <div className="detail-rows">
-              {sat.operator ? <DetailCell label="Operator" value={safeText(sat.operator, 80)} /> : null}
-              {sat.countries ? <DetailCell label="Countries" value={safeText(sat.countries, 80)} /> : null}
-              {sat.status ? <DetailCell label="Status" value={safeText(sat.status, 40)} /> : null}
+              {cleanField(sat.operator, 80) ? <DetailCell label="Operator" value={cleanField(sat.operator, 80)} /> : null}
+              {cleanField(sat.countries, 80) ? <DetailCell label="Countries" value={cleanField(sat.countries, 80)} /> : null}
+              {cleanField(sat.status, 40) ? <DetailCell label="Status" value={cleanField(sat.status, 40)} /> : null}
               {fmtDate(sat.launched) ? <DetailCell label="Launched" value={fmtDate(sat.launched)!} /> : null}
               {fmtDate(sat.deployed) ? <DetailCell label="Deployed" value={fmtDate(sat.deployed)!} /> : null}
               {fmtDate(sat.decayed) ? <DetailCell label="Reentered" value={fmtDate(sat.decayed)!} /> : null}
