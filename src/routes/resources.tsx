@@ -1,6 +1,28 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo, useRef, useState } from "react";
+import { SkeletonImage } from "@/components/site/skeleton-image";
+import {
+  BOOKS,
+  BOOK_TOPICS,
+  bookById,
+  bookCoverUrl,
+  type Book,
+} from "@/lib/books";
+import {
+  decodeShareParam,
+  encodeShareParam,
+  parseWishlistFile,
+  serializeWishlist,
+  useWishlist,
+} from "@/lib/wishlist";
 
 export const Route = createFileRoute("/resources")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    list:
+      typeof search["list"] === "string" && search["list"].length <= 2000
+        ? search["list"]
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Learning Resources — ORBITEX" },
@@ -21,7 +43,106 @@ export const Route = createFileRoute("/resources")({
   component: ResourcesPage,
 });
 
+// Copies text to the clipboard with a fallback for browsers that block the
+// async clipboard API outside secure gestures.
+async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
 function ResourcesPage() {
+  const { list: sharedParam } = Route.useSearch();
+  const navigate = useNavigate({ from: Route.fullPath });
+  const { entries, toggle, importMany, isSaved } = useWishlist();
+  const [notice, setNotice] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const validIds = useMemo(() => new Set(BOOKS.map((b) => b.id)), []);
+  const sharedBooks = useMemo(
+    () =>
+      (sharedParam ? decodeShareParam(sharedParam, validIds) : [])
+        .map((id) => bookById(id))
+        .filter((b): b is Book => !!b),
+    [sharedParam, validIds]
+  );
+  const savedBooks = useMemo(
+    () =>
+      entries
+        .map((e) => bookById(e.id))
+        .filter((b): b is Book => !!b),
+    [entries]
+  );
+
+  const copyShareLink = async () => {
+    const url = `${window.location.origin}/resources?list=${encodeShareParam(
+      entries.map((e) => e.id)
+    )}`;
+    const ok = await copyText(url);
+    setNotice(
+      ok
+        ? "Share link copied. Anyone opening it will see this reading list."
+        : `Copy this link to share your list: ${url}`
+    );
+  };
+
+  const exportList = () => {
+    const blob = new Blob([serializeWishlist(entries, bookById)], {
+      type: "application/json",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "orbitex-reading-list.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    setNotice("Reading list exported as a JSON file.");
+  };
+
+  const onImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const ids = parseWishlistFile(await file.text(), validIds);
+      const added = importMany(ids);
+      setNotice(
+        added > 0
+          ? `Added ${added} ${added === 1 ? "book" : "books"} to your reading list.`
+          : "Every book in that file was already on your list."
+      );
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : "That file could not be read.");
+    }
+  };
+
+  const saveSharedList = () => {
+    const added = importMany(sharedBooks.map((b) => b.id));
+    setNotice(
+      added > 0
+        ? `Added ${added} ${added === 1 ? "book" : "books"} to your reading list.`
+        : "Every shared book was already on your list."
+    );
+    navigate({ search: { list: undefined }, replace: true });
+  };
+
+  const dismissSharedList = () =>
+    navigate({ search: { list: undefined }, replace: true });
+
   return (
     <main className="page-main">
       <section>
@@ -96,7 +217,7 @@ function ResourcesPage() {
             <h2>Citizen science</h2>
             <p>
               NASA sponsors dozens of citizen science projects open to everyone,
-                regardless of citizenship or background. Volunteers have helped
+              regardless of citizenship or background. Volunteers have helped
               make thousands of important scientific discoveries through these
               programs.
             </p>
@@ -120,7 +241,7 @@ function ResourcesPage() {
             <h2>Student competitions</h2>
             <p>
               These are verified, active competitions for student teams
-                interested in aerospace engineering and space science.
+              interested in aerospace engineering and space science.
             </p>
             <ul className="feature-list">
               <li>
@@ -152,6 +273,123 @@ function ResourcesPage() {
             </ul>
           </div>
 
+          {sharedBooks.length > 0 && (
+            <div
+              className="glass glass-card scaffold-card shared-list"
+              style={{ marginTop: 24 }}
+            >
+              <h2>A reading list was shared with you</h2>
+              <p>
+                Someone sent you {sharedBooks.length}{" "}
+                {sharedBooks.length === 1 ? "book" : "books"} from the ORBITEX
+                textbook shelf. Save them to keep the list in this browser.
+              </p>
+              <ul className="feature-list">
+                {sharedBooks.map((b) => (
+                  <li key={b.id}>
+                    <strong>{b.title}</strong>,{" "}
+                    <span className="book-author">{b.authors}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="list-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={saveSharedList}
+                >
+                  Save to my list
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={dismissSharedList}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
+            <h2>My reading list</h2>
+            {savedBooks.length === 0 ? (
+              <p>
+                Nothing saved yet. Use the Save button beside any book on the
+                shelf below to start a personal reading list. Your list stays in
+                this browser, and you can share it with a link or move it to
+                another device with a file.
+              </p>
+            ) : (
+              <ul className="wishlist">
+                {savedBooks.map((b) => (
+                  <li key={b.id} className="book-row">
+                    <SkeletonImage
+                      src={bookCoverUrl(b.isbn13)}
+                      className="book-cover book-cover-sm"
+                      alt={`Cover of ${b.title}`}
+                    />
+                    <div className="book-meta">
+                      <strong>{b.title}</strong>
+                      <span className="book-author">{b.authors}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="book-save saved"
+                      aria-label={`Remove ${b.title} from the saved list`}
+                      onClick={() => {
+                        toggle(b.id);
+                        setNotice("");
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="list-actions">
+              {savedBooks.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={copyShareLink}
+                  >
+                    Copy share link
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm"
+                    onClick={exportList}
+                  >
+                    Export list
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => fileRef.current?.click()}
+              >
+                Import list
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="visually-hidden"
+                aria-label="Import a reading list file"
+                onChange={onImportFile}
+              />
+            </div>
+            {notice && (
+              <p className="list-notice" role="status">
+                {notice}
+              </p>
+            )}
+          </div>
+
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
             <h2>Textbook shelf</h2>
             <p>
@@ -161,145 +399,56 @@ function ResourcesPage() {
               title is easy to find in a library or bookstore.
             </p>
 
-            <div className="book-topic">
-              <h3>Orbital mechanics and astrodynamics</h3>
-              <p className="book-sub">The mathematics of how spacecraft move.</p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Fundamentals of Astrodynamics</strong>,{" "}
-                  <span className="book-author">Bate, Mueller, White and Saylor</span>:
-                  the classic first text, compact and rigorous.
-                </li>
-                <li>
-                  <strong>Orbital Mechanics for Engineering Students</strong>,{" "}
-                  <span className="book-author">Howard Curtis</span>: a complete
-                  course treatment with worked examples throughout.
-                </li>
-                <li>
-                  <strong>Fundamentals of Astrodynamics and Applications</strong>,{" "}
-                  <span className="book-author">David Vallado</span>: the industry
-                  reference for orbit determination and propagation.
-                </li>
-              </ul>
-            </div>
-
-            <div className="book-topic">
-              <h3>Rocket propulsion</h3>
-              <p className="book-sub">
-                From propellant chemistry to engine hardware.
-              </p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Rocket Propulsion Elements</strong>,{" "}
-                  <span className="book-author">George Sutton and Oscar Biblarz</span>:
-                  the standard text on propulsion fundamentals, from nozzles to
-                  propellants.
-                </li>
-                <li>
-                  <strong>Modern Engineering for Design of Liquid-Propellant
-                  Rocket Engines</strong>,{" "}
-                  <span className="book-author">Huzel and Huang</span>: the NASA
-                  engine design handbook, published as SP-125 and{" "}
-                  <a
-                    href="https://ntrs.nasa.gov/citations/19710019929"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent"
-                  >
-                    free from the NASA Technical Reports Server
-                  </a>
-                  .
-                </li>
-                <li>
-                  <strong>Mechanics and Thermodynamics of Propulsion</strong>,{" "}
-                  <span className="book-author">Hill and Peterson</span>: the
-                  thermodynamic foundation beneath jet and rocket engines.
-                </li>
-              </ul>
-            </div>
-
-            <div className="book-topic">
-              <h3>Spacecraft systems and mission design</h3>
-              <p className="book-sub">
-                How a mission is planned and how a spacecraft is put together.
-              </p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Space Mission Analysis and Design</strong>,{" "}
-                  <span className="book-author">Wertz and Larson</span>: widely
-                  known as SMAD, the end-to-end reference for planning a space
-                  mission.
-                </li>
-                <li>
-                  <strong>Spacecraft Systems Engineering</strong>,{" "}
-                  <span className="book-author">Fortescue, Swinerd and Stark</span>:
-                  subsystem-by-subsystem coverage of spacecraft design.
-                </li>
-                <li>
-                  <strong>Understanding Space: An Introduction to Astronautics</strong>,{" "}
-                  <span className="book-author">Sellers and contributors</span>: a
-                  gentler on-ramp for readers early in the subject.
-                </li>
-              </ul>
-            </div>
-
-            <div className="book-topic">
-              <h3>Guidance, navigation and control</h3>
-              <p className="book-sub">
-                How spacecraft know where they are pointing.
-              </p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Space Vehicle Dynamics and Control</strong>,{" "}
-                  <span className="book-author">Bong Wie</span>: attitude dynamics
-                  and control system design in depth.
-                </li>
-                <li>
-                  <strong>Fundamentals of Spacecraft Attitude Determination and
-                  Control</strong>,{" "}
-                  <span className="book-author">Markley and Crassidis</span>: the
-                  modern reference for sensors, estimation and pointing.
-                </li>
-              </ul>
-            </div>
-
-            <div className="book-topic">
-              <h3>Aerodynamics and flight</h3>
-              <p className="book-sub">
-                The atmospheric side of aerospace engineering.
-              </p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Fundamentals of Aerodynamics</strong>,{" "}
-                  <span className="book-author">John Anderson</span>: the standard
-                  undergraduate aerodynamics text.
-                </li>
-                <li>
-                  <strong>Introduction to Flight</strong>,{" "}
-                  <span className="book-author">John Anderson</span>: a broad
-                  survey of how aircraft and spacecraft fly.
-                </li>
-              </ul>
-            </div>
-
-            <div className="book-topic">
-              <h3>Structures and the space environment</h3>
-              <p className="book-sub">
-                Building hardware that survives launch and orbit.
-              </p>
-              <ul className="feature-list">
-                <li>
-                  <strong>Spacecraft Structures and Mechanisms</strong>,{" "}
-                  <span className="book-author">Sarafin and Larson</span>: loads,
-                  materials and deployable mechanisms.
-                </li>
-                <li>
-                  <strong>Spacecraft-Environment Interactions</strong>,{" "}
-                  <span className="book-author">Hastings and Garrett</span>: how
-                  radiation, plasma and debris shape spacecraft design.
-                </li>
-              </ul>
-            </div>
+            {BOOK_TOPICS.map((topic) => (
+              <div className="book-topic" key={topic.id}>
+                <h3>{topic.label}</h3>
+                <p className="book-sub">{topic.sub}</p>
+                <ul className="book-list">
+                  {BOOKS.filter((b) => b.topic === topic.id).map((b) => {
+                    const saved = isSaved(b.id);
+                    return (
+                      <li key={b.id} className="book-row">
+                        <SkeletonImage
+                          src={bookCoverUrl(b.isbn13)}
+                          className="book-cover"
+                          alt={`Cover of ${b.title}`}
+                        />
+                        <div className="book-meta">
+                          <strong>{b.title}</strong>,{" "}
+                          <span className="book-author">{b.authors}</span>:{" "}
+                          {b.note}
+                          {b.freeUrl && b.freeLabel && (
+                            <>
+                              {" "}
+                              <a
+                                href={b.freeUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-accent"
+                              >
+                                {b.freeLabel}
+                              </a>
+                              .
+                            </>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          className={`book-save${saved ? " saved" : ""}`}
+                          aria-pressed={saved}
+                          aria-label={`${
+                            saved ? "Remove" : "Save"
+                          } ${b.title} ${saved ? "from" : "to"} my reading list`}
+                          onClick={() => toggle(b.id)}
+                        >
+                          {saved ? "Saved" : "Save"}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
 
             <p className="scaffold-note">
               Most of these titles can be borrowed through university libraries

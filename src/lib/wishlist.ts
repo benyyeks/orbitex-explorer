@@ -1,0 +1,154 @@
+// The personal reading list for the textbook shelf. Stored in the browser so
+// it survives reloads without an account. The list can be shared as a link
+// (book ids in the URL) or exported to a small JSON file and imported again
+// later or on another device.
+import { useCallback, useEffect, useState } from "react";
+
+export type WishlistEntry = { id: string; addedAt: number };
+
+const KEY = "orbitex:reading-list";
+const MAX_BOOKS = 30;
+
+// Payload shape of an exported list. The app tag lets us recognize our own
+// files on import; a bare array of ids or { id } entries is accepted too.
+export const WISHLIST_FILE_APP = "orbitex-reading-list";
+
+function isEntry(v: unknown): v is WishlistEntry {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as WishlistEntry).id === "string"
+  );
+}
+
+function read(): WishlistEntry[] {
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isEntry);
+  } catch {
+    return [];
+  }
+}
+
+function write(next: WishlistEntry[]) {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    /* storage unavailable */
+  }
+}
+
+// Serializes the list for export. Titles and authors are looked up and
+// included so the file reads as a plain reading list outside the app too.
+export function serializeWishlist(
+  entries: WishlistEntry[],
+  lookup: (id: string) => { title: string; authors: string } | undefined
+): string {
+  const books = entries.map((e) => {
+    const b = lookup(e.id);
+    return b ? { id: e.id, title: b.title, authors: b.authors } : { id: e.id };
+  });
+  return JSON.stringify(
+    {
+      app: WISHLIST_FILE_APP,
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      books,
+    },
+    null,
+    2
+  );
+}
+
+// Validates an imported file against the known shelf ids. Returns the ids to
+// merge; throws a plain-language error when the file is unusable.
+export function parseWishlistFile(text: string, validIds: Set<string>): string[] {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("That file is not valid JSON.");
+  }
+  const list: unknown = Array.isArray(parsed)
+    ? parsed
+    : (parsed as { books?: unknown })?.books;
+  if (!Array.isArray(list)) {
+    throw new Error("That file does not contain a reading list.");
+  }
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const item of list) {
+    const id =
+      typeof item === "string"
+        ? item.trim()
+        : String((item as { id?: unknown })?.id ?? "").trim();
+    if (!validIds.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  if (out.length === 0) {
+    throw new Error("No recognizable books were found in that file.");
+  }
+  return out;
+}
+
+// Share links carry the short internal book ids, comma separated.
+export function encodeShareParam(ids: string[]): string {
+  return ids.join(",");
+}
+
+export function decodeShareParam(raw: string, validIds: Set<string>): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const part of raw.split(",")) {
+    const id = part.trim();
+    if (!validIds.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= MAX_BOOKS) break;
+  }
+  return out;
+}
+
+export function useWishlist() {
+  const [entries, setEntries] = useState<WishlistEntry[]>([]);
+
+  useEffect(() => {
+    setEntries(read());
+  }, []);
+
+  const toggle = useCallback((id: string) => {
+    setEntries((prev) => {
+      const exists = prev.some((e) => e.id === id);
+      const next = exists
+        ? prev.filter((e) => e.id !== id)
+        : [{ id, addedAt: Date.now() }, ...prev].slice(0, MAX_BOOKS);
+      write(next);
+      return next;
+    });
+  }, []);
+
+  // Merge imported or shared ids into the saved list. Returns how many books
+  // were actually added; entries already saved are left untouched.
+  const importMany = useCallback((ids: string[]): number => {
+    const prev = read();
+    const existing = new Set(prev.map((e) => e.id));
+    const fresh = ids
+      .filter((id) => !existing.has(id))
+      .map((id) => ({ id, addedAt: Date.now() }));
+    const next = [...prev, ...fresh].slice(0, MAX_BOOKS);
+    write(next);
+    setEntries(next);
+    return next.length - prev.length;
+  }, []);
+
+  const isSaved = useCallback(
+    (id: string) => entries.some((e) => e.id === id),
+    [entries]
+  );
+
+  return { entries, toggle, importMany, isSaved };
+}
