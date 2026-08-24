@@ -80,15 +80,15 @@ function DetailCell({ label, value }: { label: string; value: string }) {
 // record actually carries. No detail is guessed; sparse records produce a
 // shorter paragraph.
 function buildWriteUp(sat: SatnogsSat, displayName: string, noradId: string): string {
-  const name = safeText(sat.name, 120) || displayName;
-  const alt = safeText(sat.names, 160);
+  const name = cleanField(sat.name, 120) || displayName;
+  const alt = cleanField(sat.names, 160);
   const sentences: string[] = [];
   sentences.push(
     `${name}${alt ? `, also catalogued as ${alt},` : ""} is tracked in the public catalog as NORAD ${noradId}.`
   );
 
-  const operator = safeText(sat.operator, 120);
-  const countries = safeText(sat.countries, 120);
+  const operator = cleanField(sat.operator, 120);
+  const countries = cleanField(sat.countries, 120);
   const launched = fmtDate(sat.launched);
   let mission = "";
   if (operator) mission = `It is operated by ${operator}${countries ? ` (${countries})` : ""}`;
