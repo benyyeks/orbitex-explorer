@@ -1379,3 +1379,63 @@ a.side-item { text-decoration: none; color: inherit; }
 .mars-photo figcaption { font-size: 0.78rem; color: var(--color-text-faint); margin-top: 6px; line-height: 1.4; }
 @media (max-width: 900px) { .mars-photo-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .mars-photo-grid { grid-template-columns: 1fr; } }
+
+/* ---------------- Satellite mission profile (SatNOGS records) ------------ */
+.profile-figure { margin: 12px 0 2px; }
+.profile-img { aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; }
+.profile-lede {
+  margin: 12px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--color-text);
+}
+
+.tx-controls { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+.tx-toggle {
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 30%, transparent);
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.tx-toggle:hover { background: color-mix(in srgb, var(--color-accent) 16%, transparent); }
+
+.tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0 4px 0 0;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.tx-row {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tx-row-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.tx-name { font-size: 0.88rem; font-weight: 600; color: var(--color-text); }
+.tx-badges { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.tx-meta {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  line-height: 1.6;
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
