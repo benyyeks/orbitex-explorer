@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { satnogsProfileQuery, satnogsTransmittersQuery } from "@/lib/sat-queries";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { safeText, utcDateStr } from "@/lib/format";
+import { matchDebrisEvent, orbitRegime, type TLE } from "@/lib/satellite";
 
 // Community mission profile and radio transmitter records for a catalog
 // object, sourced from the SatNOGS DB. Rendered on the shared satellite
