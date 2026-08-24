@@ -13,10 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AskRouteImport } from './routes/ask'
 import { Route as DeepspaceRouteImport } from './routes/deepspace'
+import { Route as EngineeringRouteImport } from './routes/engineering'
+import { Route as IntelligenceRouteImport } from './routes/intelligence'
 import { Route as LaunchesRouteImport } from './routes/launches'
 import { Route as MarsRouteImport } from './routes/mars'
 import { Route as NeoRouteImport } from './routes/neo'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResearchRouteImport } from './routes/research'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as SkyRouteImport } from './routes/sky'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WeatherRouteImport } from './routes/weather'
@@ -46,6 +50,16 @@ const DeepspaceRoute = DeepspaceRouteImport.update({
   path: '/deepspace',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EngineeringRoute = EngineeringRouteImport.update({
+  id: '/engineering',
+  path: '/engineering',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntelligenceRoute = IntelligenceRouteImport.update({
+  id: '/intelligence',
+  path: '/intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LaunchesRoute = LaunchesRouteImport.update({
   id: '/launches',
   path: '/launches',
@@ -64,6 +78,16 @@ const NeoRoute = NeoRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResearchRoute = ResearchRouteImport.update({
+  id: '/research',
+  path: '/research',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SkyRoute = SkyRouteImport.update({
@@ -112,10 +136,14 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
   '/deepspace': typeof DeepspaceRouteWithChildren
+  '/engineering': typeof EngineeringRoute
+  '/intelligence': typeof IntelligenceRoute
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
+  '/research': typeof ResearchRoute
+  '/resources': typeof ResourcesRoute
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
@@ -129,10 +157,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
+  '/engineering': typeof EngineeringRoute
+  '/intelligence': typeof IntelligenceRoute
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
+  '/research': typeof ResearchRoute
+  '/resources': typeof ResourcesRoute
   '/sky': typeof SkyRoute
   '/weather': typeof WeatherRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
@@ -147,10 +179,14 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
   '/deepspace': typeof DeepspaceRouteWithChildren
+  '/engineering': typeof EngineeringRoute
+  '/intelligence': typeof IntelligenceRoute
   '/launches': typeof LaunchesRoute
   '/mars': typeof MarsRoute
   '/neo': typeof NeoRoute
   '/privacy': typeof PrivacyRoute
+  '/research': typeof ResearchRoute
+  '/resources': typeof ResourcesRoute
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
@@ -167,10 +203,14 @@ export interface FileRouteTypes {
     | '/about'
     | '/ask'
     | '/deepspace'
+    | '/engineering'
+    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
     | '/privacy'
+    | '/research'
+    | '/resources'
     | '/sky'
     | '/tracker'
     | '/weather'
@@ -184,10 +224,14 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/ask'
+    | '/engineering'
+    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
     | '/privacy'
+    | '/research'
+    | '/resources'
     | '/sky'
     | '/weather'
     | '/deepspace/$objectId'
@@ -201,10 +245,14 @@ export interface FileRouteTypes {
     | '/about'
     | '/ask'
     | '/deepspace'
+    | '/engineering'
+    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
     | '/privacy'
+    | '/research'
+    | '/resources'
     | '/sky'
     | '/tracker'
     | '/weather'
@@ -220,10 +268,14 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AskRoute: typeof AskRoute
   DeepspaceRoute: typeof DeepspaceRouteWithChildren
+  EngineeringRoute: typeof EngineeringRoute
+  IntelligenceRoute: typeof IntelligenceRoute
   LaunchesRoute: typeof LaunchesRoute
   MarsRoute: typeof MarsRoute
   NeoRoute: typeof NeoRoute
   PrivacyRoute: typeof PrivacyRoute
+  ResearchRoute: typeof ResearchRoute
+  ResourcesRoute: typeof ResourcesRoute
   SkyRoute: typeof SkyRoute
   TrackerRoute: typeof TrackerRouteWithChildren
   WeatherRoute: typeof WeatherRoute
@@ -260,6 +312,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeepspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/engineering': {
+      id: '/engineering'
+      path: '/engineering'
+      fullPath: '/engineering'
+      preLoaderRoute: typeof EngineeringRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intelligence': {
+      id: '/intelligence'
+      path: '/intelligence'
+      fullPath: '/intelligence'
+      preLoaderRoute: typeof IntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/launches': {
       id: '/launches'
       path: '/launches'
@@ -286,6 +352,20 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/research': {
+      id: '/research'
+      path: '/research'
+      fullPath: '/research'
+      preLoaderRoute: typeof ResearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sky': {
@@ -379,10 +459,14 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AskRoute: AskRoute,
   DeepspaceRoute: DeepspaceRouteWithChildren,
+  EngineeringRoute: EngineeringRoute,
+  IntelligenceRoute: IntelligenceRoute,
   LaunchesRoute: LaunchesRoute,
   MarsRoute: MarsRoute,
   NeoRoute: NeoRoute,
   PrivacyRoute: PrivacyRoute,
+  ResearchRoute: ResearchRoute,
+  ResourcesRoute: ResourcesRoute,
   SkyRoute: SkyRoute,
   TrackerRoute: TrackerRouteWithChildren,
   WeatherRoute: WeatherRoute,
