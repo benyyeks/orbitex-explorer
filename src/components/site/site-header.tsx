@@ -23,6 +23,10 @@ const NAV_LINKS: NavLink[] = [
   { id: "launches", label: "Launches", to: "/launches", section: "Data & Missions" },
   { id: "ask", label: "Ask ORBITEX", to: "/ask", section: "More" },
   { id: "about", label: "About & Sources", to: "/about", section: "More" },
+  { id: "research", label: "Research", to: "/research", section: "Learn" },
+  { id: "intelligence", label: "Mission Intelligence", to: "/intelligence", section: "Learn" },
+  { id: "engineering", label: "Engineering", to: "/engineering", section: "Learn" },
+  { id: "resources", label: "Learning Resources", to: "/resources", section: "Learn" },
 ];
 
 function isMatch(pathname: string, to: string): boolean {
