@@ -49,58 +49,175 @@ export const Route = createFileRoute("/tracker/")({
 
 
 
-const GROUPS: { id: SatGroup; label: string; color: string; blurb: string; cap?: number }[] = [
+type RegimeId = "leo" | "meo" | "geo" | "sso" | "debris";
+
+type GroupDef = { id: SatGroup; label: string; color: string; blurb: string; cap?: number };
+
+type RegimeDef = {
+  id: RegimeId;
+  label: string;
+  altScale: number;
+  pointSize: number;
+  groups: GroupDef[];
+};
+
+const REGIMES: RegimeDef[] = [
   {
-    id: "stations",
-    label: "Space stations",
-    color: "#ffd489",
-    blurb: "Crewed outposts: the ISS, Tiangong, and company.",
+    id: "leo",
+    label: "LEO",
+    altScale: 1,
+    pointSize: 0.075,
+    groups: [
+      {
+        id: "stations",
+        label: "Space stations",
+        color: "#ffd489",
+        blurb: "Crewed outposts: the ISS, Tiangong, and company.",
+      },
+      {
+        id: "starlink",
+        label: "Starlink",
+        color: "#9ee8c1",
+        blurb: "SpaceX's broadband constellation, the largest fleet ever flown.",
+        cap: 500,
+      },
+      {
+        id: "iridium-NEXT",
+        label: "Communications",
+        color: "#e3b5f5",
+        blurb: "Iridium's low-orbit voice and data relay network, 66 satellites strong.",
+      },
+      {
+        id: "resource",
+        label: "Earth observation",
+        color: "#a8e6e1",
+        blurb: "Landsat-class imagers mapping crops, coastlines, ice, and cities.",
+      },
+      {
+        id: "weather",
+        label: "Weather",
+        color: "#f5c9a8",
+        blurb: "Meteorological satellites watching clouds, storms, and climate.",
+      },
+      {
+        id: "science",
+        label: "Science",
+        color: "#b8b5ff",
+        blurb: "Research craft in Earth orbit: telescopes, experiments, and pathfinders.",
+      },
+      {
+        id: "active",
+        label: "Active satellites",
+        color: "#9fc2f2",
+        blurb: "A cross-section of the active catalog: imaging, science, and communications craft.",
+        cap: 1500,
+      },
+    ],
   },
   {
-    id: "starlink",
-    label: "Starlink",
-    color: "#9ee8c1",
-    blurb: "SpaceX's broadband constellation, the largest fleet ever flown.",
-    cap: 500,
+    id: "meo",
+    label: "MEO",
+    altScale: 0.35,
+    pointSize: 0.13,
+    groups: [
+      {
+        id: "gps-ops",
+        label: "GPS",
+        color: "#f2a9a9",
+        blurb: "The US navigation constellation, orbiting twice a day at 20,200 km.",
+      },
+      {
+        id: "galileo",
+        label: "Galileo",
+        color: "#a8d8ff",
+        blurb: "The EU's civilian navigation constellation at 23,222 km.",
+      },
+      {
+        id: "glo-ops",
+        label: "GLONASS",
+        color: "#c8b8e8",
+        blurb: "Russia's navigation constellation at 19,100 km.",
+      },
+      {
+        id: "beidou",
+        label: "BeiDou",
+        color: "#f5d9a0",
+        blurb: "China's navigation system, a mix of MEO, IGSO, and GEO satellites.",
+      },
+    ],
   },
   {
-    id: "iridium-NEXT",
-    label: "Communications",
-    color: "#e3b5f5",
-    blurb: "Iridium's low-orbit voice and data relay network, 66 satellites strong.",
+    id: "geo",
+    label: "GEO",
+    altScale: 0.22,
+    pointSize: 0.16,
+    groups: [
+      {
+        id: "geo",
+        label: "Geosynchronous",
+        color: "#90e0d8",
+        blurb:
+          "Communications and weather satellites at 35,786 km above the equator, matching Earth's rotation. They appear nearly stationary over a fixed longitude.",
+        cap: 500,
+      },
+    ],
   },
   {
-    id: "resource",
-    label: "Earth observation",
-    color: "#a8e6e1",
-    blurb: "Landsat-class imagers mapping crops, coastlines, ice, and cities.",
+    id: "sso",
+    label: "SSO",
+    altScale: 1,
+    pointSize: 0.075,
+    groups: [
+      {
+        id: "sso",
+        label: "Polar sun-synchronous",
+        color: "#b8e0ff",
+        blurb:
+          "Satellites in near-polar orbits (~98 deg inclination) that pass over any given latitude at the same local solar time, ensuring consistent lighting for imaging and weather observation.",
+      },
+    ],
   },
   {
-    id: "gps-ops",
-    label: "GPS",
-    color: "#f2a9a9",
-    blurb: "The US navigation constellation, orbiting twice a day at 20,000 km.",
-  },
-  {
-    id: "weather",
-    label: "Weather",
-    color: "#f5c9a8",
-    blurb: "Meteorological satellites watching clouds, storms, and climate.",
-  },
-  {
-    id: "science",
-    label: "Science",
-    color: "#b8b5ff",
-    blurb: "Research craft in Earth orbit: telescopes, experiments, and pathfinders.",
-  },
-  {
-    id: "active",
-    label: "Active satellites",
-    color: "#9fc2f2",
-    blurb: "A cross-section of the active catalog: imaging, science, and communications craft.",
-    cap: 1500,
+    id: "debris",
+    label: "Debris",
+    altScale: 1,
+    pointSize: 0.06,
+    groups: [
+      {
+        id: "cosmos-2251-debris",
+        label: "Cosmos 2251",
+        color: "#e0a0a0",
+        blurb:
+          "Debris from the 2009 Iridium 33 and Cosmos 2251 collision at 789 km, the first major accidental fragmentation in orbit.",
+        cap: 600,
+      },
+      {
+        id: "iridium-33-debris",
+        label: "Iridium 33",
+        color: "#e0b8a0",
+        blurb:
+          "Debris from the 2009 collision between Iridium 33 and Cosmos 2251, the first major accidental fragmentation in orbit.",
+        cap: 400,
+      },
+      {
+        id: "19820",
+        label: "Cosmos 1408",
+        color: "#d4a8a8",
+        blurb:
+          "Debris from the November 2021 anti-satellite test that destroyed Cosmos 1408 at approximately 470 km altitude.",
+        cap: 600,
+      },
+    ],
   },
 ];
+
+const ALL_GROUPS: GroupDef[] = REGIMES.flatMap((r) => r.groups);
+function findGroupDef(id: SatGroup): GroupDef | undefined {
+  return ALL_GROUPS.find((g) => g.id === id);
+}
+function findRegimeDef(id: SatGroup): RegimeDef | undefined {
+  return REGIMES.find((r) => r.groups.some((g) => g.id === id));
+}
 
 const ISS_NORAD = "25544";
 
