@@ -173,13 +173,14 @@ function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSiz
   );
 }
 
-function SelectedSatellite({ tle }: { tle: TLE }) {
+function SelectedSatellite({ tle, altitudeScale }: { tle: TLE; altitudeScale: number }) {
   const markerRef = useRef<THREE.Group>(null);
   const [orbitPts, setOrbitPts] = useState<[number, number, number][]>([]);
   const [trackPts, setTrackPts] = useState<[number, number, number][]>([]);
 
   // Sample one full revolution for the orbit path and its ground track.
   useEffect(() => {
+    _altScale = altitudeScale;
     const now = Date.now();
     const n = 180;
     const orbit: [number, number, number][] = [];
@@ -192,10 +193,11 @@ function SelectedSatellite({ tle }: { tle: TLE }) {
     }
     setOrbitPts(orbit);
     setTrackPts(track);
-  }, [tle]);
+  }, [tle, altitudeScale]);
 
   useFrame(() => {
     if (!markerRef.current) return;
+    _altScale = altitudeScale;
     const s = propagateSat(tle, new Date());
     markerRef.current.position.set(...geoToScene(s.lat, s.lon, s.alt));
   });
@@ -242,9 +244,19 @@ export type TrackerGlobeProps = {
   selected: TLE | null;
   autoRotate: boolean;
   onSelect: (tle: TLE | null) => void;
+  altitudeScale?: number;
+  pointSize?: number;
 };
 
-export default function TrackerGlobe({ tles, color, selected, autoRotate, onSelect }: TrackerGlobeProps) {
+export default function TrackerGlobe({
+  tles,
+  color,
+  selected,
+  autoRotate,
+  onSelect,
+  altitudeScale = 1,
+  pointSize = 0.075,
+}: TrackerGlobeProps) {
   return (
     <Canvas
       camera={{ position: [0, 1.3, 5.8], fov: 42, near: 0.1, far: 200 }}
@@ -263,8 +275,15 @@ export default function TrackerGlobe({ tles, color, selected, autoRotate, onSele
       <Suspense fallback={null}>
         <Earth />
       </Suspense>
-      <Satellites tles={tles} color={color} selectedId={selected?.noradId ?? null} onSelect={onSelect} />
-      {selected ? <SelectedSatellite tle={selected} /> : null}
+      <Satellites
+        tles={tles}
+        color={color}
+        selectedId={selected?.noradId ?? null}
+        onSelect={onSelect}
+        altitudeScale={altitudeScale}
+        pointSize={pointSize}
+      />
+      {selected ? <SelectedSatellite tle={selected} altitudeScale={altitudeScale} /> : null}
       <OrbitControls
         makeDefault
         enablePan={false}
