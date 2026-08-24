@@ -46,6 +46,13 @@ function fmtDate(value: unknown): string | null {
   return Number.isNaN(d.getTime()) ? null : utcDateStr(d);
 }
 
+// The community record stores literal placeholder strings such as "None"
+// for empty fields. Treat those as absent so they never reach the page.
+function cleanField(value: unknown, maxLen = 120): string {
+  const text = safeText(value, maxLen);
+  return /^(none|n\/a|null|unknown)$/i.test(text) ? "" : text;
+}
+
 function fmtFreq(hz: number | null | undefined): string | null {
   if (typeof hz !== "number" || !Number.isFinite(hz) || hz <= 0) return null;
   if (hz >= 1e9) return `${(hz / 1e9).toFixed(3)} GHz`;
