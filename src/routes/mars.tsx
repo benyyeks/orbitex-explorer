@@ -11,7 +11,8 @@ import {
 } from "@/lib/astronomy";
 import { fmtAU, fmtKm, fmtNum, lightTimeFromAU } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
-import { FeedError, FeedLoading } from "@/components/site/data-state";
+import { FeedError } from "@/components/site/data-state";
+import { MapSkeleton, DetailRowsSkeleton, PhotoGridSkeleton } from "@/components/site/page-skeleton";
 import { useNow } from "@/hooks/use-now";
 
 export const Route = createFileRoute("/mars")({
@@ -267,7 +268,7 @@ function MarsPage() {
               {geo ? (
                 <OrbitMap earth={geo.earth} mars={geo.mars} au={geo.au} />
               ) : (
-                <FeedLoading label="Computing orbital geometry" />
+                <MapSkeleton label="Computing orbital geometry" />
               )}
               <p className="detail-note">
                 Positions are computed in your browser from JPL Keplerian elements and
@@ -307,7 +308,7 @@ function MarsPage() {
                     {res ? <FreshnessBadge res={res} /> : null}
                   </div>
                   {loading ? (
-                    <FeedLoading label="Loading mission status" />
+                    <DetailRowsSkeleton cells={5} label="Loading mission status" />
                   ) : failed || !feed ? (
                     <FeedError
                       title="Mission status is temporarily unavailable"
@@ -365,7 +366,7 @@ function MarsPage() {
               ))}
             </div>
             {active.loading ? (
-              <FeedLoading label="Loading surface imagery" />
+              <PhotoGridSkeleton count={6} label="Loading surface imagery" />
             ) : active.failed ? (
               <FeedError
                 title="Surface imagery is temporarily unavailable"

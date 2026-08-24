@@ -5,7 +5,8 @@ import { satByIdQuery } from "@/lib/sat-queries";
 import { parseOMMArray, propagateSat, orbitRegime, type TLE } from "@/lib/satellite";
 import { fmtNum, timeAgo, utcClock, utcDateStr } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
-import { FeedError, FeedLoading, EmptyState } from "@/components/site/data-state";
+import { FeedError, EmptyState } from "@/components/site/data-state";
+import { DetailPageSkeleton } from "@/components/site/page-skeleton";
 import { GroundTrack } from "@/components/tracker/ground-track";
 import { ObserverLocationControls, PassForecast } from "@/components/tracker/observer-location";
 import { FavButton } from "@/components/tracker/fav-button";
@@ -89,7 +90,7 @@ function SatelliteDetailPage() {
       <section>
         <div className="container">
           {validId && query.isPending ? (
-            <FeedLoading label="Loading element set" />
+            <DetailPageSkeleton label="Loading element set" />
           ) : failed ? (
             <FeedError
               title="Object details are temporarily unavailable"

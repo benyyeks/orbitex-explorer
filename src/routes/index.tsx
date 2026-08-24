@@ -13,6 +13,7 @@ import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functio
 import { timeAgo, safeText, pad2 } from "@/lib/format";
 import { EmptyState } from "@/components/site/data-state";
 import { SkeletonImage } from "@/components/site/skeleton-image";
+import { LandingSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -39,6 +40,9 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(competitionsQueryOptions),
     ]);
   },
+  staleTime: 60_000,
+  pendingMs: 0,
+  pendingComponent: LandingSkeleton,
   component: LandingPage,
 });
 

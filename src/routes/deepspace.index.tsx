@@ -21,6 +21,7 @@ import { horizonsProbeQuery } from "@/lib/horizons-queries";
 import { useNow } from "@/hooks/use-now";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import type { SceneSelection } from "@/components/deepspace/solar-system";
+import { SceneSkeleton, SceneBootOverlay } from "@/components/site/page-skeleton";
 
 const SolarSystemScene = lazy(() => import("@/components/deepspace/solar-system"));
 
@@ -252,6 +253,8 @@ function ProbeDetail({ k }: { k: ProbeKey }) {
 // ---------------------------------------------------------------------------
 function DeepSpacePage() {
   const [mounted, setMounted] = useState(false);
+  // Set on the first animation tick: the scene has booted and produced a frame.
+  const [sceneReady, setSceneReady] = useState(false);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(3); // days per second
   const [sel, setSel] = useState<SceneSelection>({ kind: "planet", key: "earth" });
@@ -371,6 +374,9 @@ function DeepSpacePage() {
 
       <section>
         <div className="container">
+          {!mounted ? (
+            <SceneSkeleton label="Preparing the solar system model" chips={5} />
+          ) : (
           <div className="scene-layout">
             <div
               ref={shellRef}
@@ -379,7 +385,7 @@ function DeepSpacePage() {
               aria-label="Interactive 3D model of the solar system"
             >
               {mounted ? (
-                <Suspense fallback={null}>
+                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
                   <SolarSystemScene
                     playing={playing}
                     daysPerSecond={speed}
@@ -388,7 +394,10 @@ function DeepSpacePage() {
                     onSelect={(s) => {
                       if (s) setSel(s);
                     }}
-                    onTick={(jdNow) => setSimJd(jdNow)}
+                    onTick={(jdNow) => {
+                      setSimJd(jdNow);
+                      setSceneReady(true);
+                    }}
                   />
                 </Suspense>
               ) : null}
@@ -450,10 +459,8 @@ function DeepSpacePage() {
                 Drag to orbit · scroll to zoom · click a planet or probe
               </div>
 
-              {!mounted ? (
-                <div className="scene-overlay">
-                  <p className="detail-note">Preparing the solar system model</p>
-                </div>
+              {!sceneReady ? (
+                <SceneBootOverlay label="Preparing the solar system model" />
               ) : null}
             </div>
 
@@ -567,6 +574,7 @@ function DeepSpacePage() {
               </div>
             </aside>
           </div>
+          )}
         </div>
       </section>
 

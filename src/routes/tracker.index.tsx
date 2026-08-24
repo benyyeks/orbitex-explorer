@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { parseOMMArray, propagateSat, type TLE } from "@/lib/satellite";
 import { satByIdQuery, satGroupQuery, type SatGroup } from "@/lib/sat-queries";
@@ -12,6 +12,7 @@ import { ObserverLocationControls, PassForecast } from "@/components/tracker/obs
 import { FavButton } from "@/components/tracker/fav-button";
 import { ComparePanel } from "@/components/tracker/compare-panel";
 import { FavoritesTransfer } from "@/components/tracker/favorites-transfer";
+import { SceneSkeleton, SceneBootOverlay } from "@/components/site/page-skeleton";
 
 // three.js is browser-only; the globe mounts after hydration.
 const TrackerGlobe = lazy(() => import("@/components/tracker/tracker-globe"));
@@ -193,7 +194,15 @@ function TrackerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const query = useQuery(satGroupQuery(group));
+  // Keep the previous group's data while a new group loads so the globe and
+  // catalog never blank out between selections.
+  const query = useQuery({ ...satGroupQuery(group), placeholderData: keepPreviousData });
+  // The full scene skeleton shows only on first boot; once any catalog
+  // response (success or failure) arrives, the real layout takes over.
+  const [booted, setBooted] = useState(false);
+  useEffect(() => {
+    if (mounted && !query.isPending) setBooted(true);
+  }, [mounted, query.isPending]);
   const groupMeta = GROUPS.find((g) => g.id === group) ?? GROUPS[0]!;
 
   const tles = useMemo(() => {
@@ -407,6 +416,9 @@ function TrackerPage() {
 
       <section>
         <div className="container">
+          {!booted ? (
+            <SceneSkeleton label="Acquiring orbital elements" chips={8} />
+          ) : (
           <div className="scene-layout">
             <div
               ref={shellRef}
@@ -415,7 +427,7 @@ function TrackerPage() {
               aria-label="Interactive 3D globe showing live satellite positions"
             >
               {mounted && tles.length > 0 ? (
-                <Suspense fallback={null}>
+                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
                   <TrackerGlobe
                     tles={tles}
                     color={groupMeta.color}
@@ -786,6 +798,7 @@ function TrackerPage() {
               )}
             </aside>
           </div>
+          )}
 
           {compareMode && (compareA || compareB) ? <ComparePanel a={compareA} b={compareB} /> : null}
 
