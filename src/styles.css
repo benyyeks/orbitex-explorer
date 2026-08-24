@@ -504,11 +504,9 @@ html.nav-open-lock body {
 .hero-orbit svg { width: 100%; height: 100%; }
 .hero-orbit .ring { fill: none; stroke: var(--color-border-strong); stroke-width: 1; }
 .hero-orbit .ring-accent { stroke: var(--color-accent); stroke-dasharray: 4 6; }
-.hero-orbit .body { fill: var(--color-accent); }
+.hero-orbit .sun { fill: #ffc94d; }
+.hero-orbit .sun-halo { fill: #ffc94d; opacity: 0.16; }
 .hero-orbit .body-faint { fill: var(--color-text-faint); opacity: 0.5; }
-.hero-orbit .label {
-  font-family: var(--font-mono); font-size: 9px; fill: var(--color-text-faint);
-}
 .hero-orbit .planet {
   transition: cx 1.4s ease, cy 1.4s ease, opacity 0.9s ease;
 }
