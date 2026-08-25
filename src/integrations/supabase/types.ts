@@ -104,6 +104,24 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_list: {
+        Row: {
+          added_at: string
+          book_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          book_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          book_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       space_news: {
         Row: {
           content_type: string
@@ -137,6 +155,51 @@ export type Database = {
           summary?: string | null
           title?: string
           url?: string
+        }
+        Relationships: []
+      }
+      tracker_favorites: {
+        Row: {
+          added_at: string
+          name: string
+          norad_id: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          name: string
+          norad_id: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          name?: string
+          norad_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          observer_lat: number | null
+          observer_lon: number | null
+          observer_source: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          observer_lat?: number | null
+          observer_lon?: number | null
+          observer_source?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          observer_lat?: number | null
+          observer_lon?: number | null
+          observer_source?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

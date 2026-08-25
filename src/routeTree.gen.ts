@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AskRouteImport } from './routes/ask'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as DeepspaceRouteImport } from './routes/deepspace'
 import { Route as EngineeringRouteImport } from './routes/engineering'
 import { Route as IntelligenceRouteImport } from './routes/intelligence'
@@ -24,6 +25,7 @@ import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as SkyRouteImport } from './routes/sky'
 import { Route as TrackerRouteImport } from './routes/tracker'
 import { Route as WeatherRouteImport } from './routes/weather'
+import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as DeepspaceIndexRouteImport } from './routes/deepspace.index'
 import { Route as DeepspaceObjectIdRouteImport } from './routes/deepspace.$objectId'
 import { Route as TrackerIndexRouteImport } from './routes/tracker.index'
@@ -43,6 +45,11 @@ const AboutRoute = AboutRouteImport.update({
 const AskRoute = AskRouteImport.update({
   id: '/ask',
   path: '/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeepspaceRoute = DeepspaceRouteImport.update({
@@ -105,6 +112,11 @@ const WeatherRoute = WeatherRouteImport.update({
   path: '/weather',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAskRoute = ApiAskRouteImport.update({
+  id: '/api/ask',
+  path: '/api/ask',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DeepspaceIndexRoute = DeepspaceIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -135,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
+  '/auth': typeof AuthRoute
   '/deepspace': typeof DeepspaceRouteWithChildren
   '/engineering': typeof EngineeringRoute
   '/intelligence': typeof IntelligenceRoute
@@ -147,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace/': typeof DeepspaceIndexRoute
@@ -157,6 +171,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
+  '/auth': typeof AuthRoute
   '/engineering': typeof EngineeringRoute
   '/intelligence': typeof IntelligenceRoute
   '/launches': typeof LaunchesRoute
@@ -167,6 +182,7 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesRoute
   '/sky': typeof SkyRoute
   '/weather': typeof WeatherRoute
+  '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace': typeof DeepspaceIndexRoute
@@ -178,6 +194,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/ask': typeof AskRoute
+  '/auth': typeof AuthRoute
   '/deepspace': typeof DeepspaceRouteWithChildren
   '/engineering': typeof EngineeringRoute
   '/intelligence': typeof IntelligenceRoute
@@ -190,6 +207,7 @@ export interface FileRoutesById {
   '/sky': typeof SkyRoute
   '/tracker': typeof TrackerRouteWithChildren
   '/weather': typeof WeatherRoute
+  '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace/': typeof DeepspaceIndexRoute
@@ -202,6 +220,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/ask'
+    | '/auth'
     | '/deepspace'
     | '/engineering'
     | '/intelligence'
@@ -214,6 +233,7 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/api/ask'
     | '/deepspace/$objectId'
     | '/tracker/$noradId'
     | '/deepspace/'
@@ -224,6 +244,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/ask'
+    | '/auth'
     | '/engineering'
     | '/intelligence'
     | '/launches'
@@ -234,6 +255,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/sky'
     | '/weather'
+    | '/api/ask'
     | '/deepspace/$objectId'
     | '/tracker/$noradId'
     | '/deepspace'
@@ -244,6 +266,7 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/ask'
+    | '/auth'
     | '/deepspace'
     | '/engineering'
     | '/intelligence'
@@ -256,6 +279,7 @@ export interface FileRouteTypes {
     | '/sky'
     | '/tracker'
     | '/weather'
+    | '/api/ask'
     | '/deepspace/$objectId'
     | '/tracker/$noradId'
     | '/deepspace/'
@@ -267,6 +291,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   AskRoute: typeof AskRoute
+  AuthRoute: typeof AuthRoute
   DeepspaceRoute: typeof DeepspaceRouteWithChildren
   EngineeringRoute: typeof EngineeringRoute
   IntelligenceRoute: typeof IntelligenceRoute
@@ -279,6 +304,7 @@ export interface RootRouteChildren {
   SkyRoute: typeof SkyRoute
   TrackerRoute: typeof TrackerRouteWithChildren
   WeatherRoute: typeof WeatherRoute
+  ApiAskRoute: typeof ApiAskRoute
   ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
 
@@ -303,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/ask'
       fullPath: '/ask'
       preLoaderRoute: typeof AskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deepspace': {
@@ -389,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WeatherRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ask': {
+      id: '/api/ask'
+      path: '/api/ask'
+      fullPath: '/api/ask'
+      preLoaderRoute: typeof ApiAskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/deepspace/': {
       id: '/deepspace/'
       path: '/'
@@ -458,6 +498,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   AskRoute: AskRoute,
+  AuthRoute: AuthRoute,
   DeepspaceRoute: DeepspaceRouteWithChildren,
   EngineeringRoute: EngineeringRoute,
   IntelligenceRoute: IntelligenceRoute,
@@ -470,6 +511,7 @@ const rootRouteChildren: RootRouteChildren = {
   SkyRoute: SkyRoute,
   TrackerRoute: TrackerRouteWithChildren,
   WeatherRoute: WeatherRoute,
+  ApiAskRoute: ApiAskRoute,
   ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
 export const routeTree = rootRouteImport
