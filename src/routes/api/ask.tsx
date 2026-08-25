@@ -29,7 +29,7 @@ function parseBody(raw: unknown): { mode: AskMode; messages: ChatMessage[] } | n
     if (!trimmed || trimmed.length > MAX_CONTENT) return null;
     messages.push({ role, content: trimmed });
   }
-  if (messages[messages.length - 1].role !== "user") return null;
+  if (messages.at(-1)?.role !== "user") return null;
   return { mode, messages };
 }
 
