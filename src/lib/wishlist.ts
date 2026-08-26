@@ -1,8 +1,13 @@
-// The personal reading list for the textbook shelf. Stored in the browser so
-// it survives reloads without an account. The list can be shared as a link
-// (book ids in the URL) or exported to a small JSON file and imported again
-// later or on another device.
-import { useCallback, useEffect, useState } from "react";
+// The personal reading list for the textbook shelf. Signed out, it is stored
+// in the browser so it survives reloads without an account. Signed in, it is
+// kept in the user's account and follows them across devices, with anything
+// saved beforehand merged up on the first authenticated load. The list can
+// also be shared as a link (book ids in the URL) or exported to a small JSON
+// file and imported again later.
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export type WishlistEntry = { id: string; addedAt: number };
 
