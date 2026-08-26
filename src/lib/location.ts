@@ -56,29 +56,83 @@ function messageFor(err: GeolocationPositionError): string {
 }
 
 export function useObserverLocation() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [location, setLocation] = useState<ObserverLocation | null>(null);
   const [status, setStatus] = useState<GeoRequestStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
 
+  // The account copy wins when signed in; a location saved before signing in
+  // is carried up so the user does not have to set it again.
   useEffect(() => {
-    setLocation(read());
-  }, []);
-
-  const save = useCallback((lat: number, lon: number, source: "device" | "manual") => {
-    const loc = { lat: round4(lat), lon: round4(lon), source, savedAt: Date.now() };
-    setLocation(loc);
-    setError(null);
-    setStatus("idle");
-    try {
-      window.localStorage.setItem(KEY, JSON.stringify(loc));
-    } catch {
-      /* storage unavailable */
+    if (!userId) {
+      setLocation(read());
+      return;
     }
-  }, []);
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("user_settings")
+        .select("observer_lat, observer_lon, observer_source, updated_at")
+        .maybeSingle();
+      if (!active) return;
+      const local = read();
+      if (data && data.observer_lat !== null && data.observer_lon !== null) {
+        setLocation({
+          lat: data.observer_lat,
+          lon: data.observer_lon,
+          source: data.observer_source === "device" ? "device" : "manual",
+          savedAt: new Date(data.updated_at).getTime(),
+        });
+        return;
+      }
+      if (local) {
+        setLocation(local);
+        await supabase.from("user_settings").upsert(
+          {
+            user_id: userId,
+            observer_lat: local.lat,
+            observer_lon: local.lon,
+            observer_source: local.source,
+          },
+          { onConflict: "user_id" }
+        );
+      }
+    })().catch(() => {
+      if (active) setLocation(read());
+    });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
-  const requestDeviceLocation = useCallback(() => {
-    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+  const save = useCallback(
+    (lat: number, lon: number, source: "device" | "manual") => {
+      const loc = { lat: round4(lat), lon: round4(lon), source, savedAt: Date.now() };
+      setLocation(loc);
+      setError(null);
+      setStatus("idle");
+      try {
+        window.localStorage.setItem(KEY, JSON.stringify(loc));
+      } catch {
+        /* storage unavailable */
+      }
+      if (userId) {
+        void supabase.from("user_settings").upsert(
+          {
+            user_id: userId,
+            observer_lat: loc.lat,
+            observer_lon: loc.lon,
+            observer_source: loc.source,
+          },
+          { onConflict: "user_id" }
+        );
+      }
+    },
+    [userId]
+  );
+
       setStatus("error");
       setError(MSG_UNSUPPORTED);
       return;
