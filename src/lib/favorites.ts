@@ -1,7 +1,12 @@
-// Bookmarked satellites, stored in the browser so they survive reloads without
-// requiring an account. The list can be exported to a small JSON file and
-// imported again later or on another device.
-import { useCallback, useEffect, useState } from "react";
+// Bookmarked satellites. Signed out, the list lives in the browser so it
+// survives reloads without an account. Signed in, it is kept in the user's
+// account and follows them across devices; anything saved before signing in
+// is merged up on the first authenticated load. The list can also be
+// exported to a small JSON file and imported again later.
+import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export type FavoriteSat = { noradId: string; name: string; addedAt: number };
 export type FavoriteInput = { noradId: string; name: string };
