@@ -1,6 +1,10 @@
-// Saved observer location for personalized pass predictions. Coordinates are
-// stored only in the browser's localStorage; they never leave the device.
+// Saved observer location for personalized pass predictions. Signed out, the
+// coordinates stay in the browser and never leave the device. Signed in, they
+// are saved to the account so the same location is used on every device.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+
 
 export type ObserverLocation = {
   lat: number;
