@@ -92,41 +92,115 @@ export function parseFavoritesFile(text: string): FavoriteInput[] {
 }
 
 export function useFavorites() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [favorites, setFavorites] = useState<FavoriteSat[]>([]);
+  const mergedFor = useRef<string | null>(null);
 
+  // Signed out: browser storage. Signed in: the account copy, with any
+  // locally saved entries merged up once per session.
   useEffect(() => {
-    setFavorites(read());
-  }, []);
-
-  const toggle = useCallback((sat: FavoriteInput) => {
-    setFavorites((prev) => {
-      const exists = prev.some((f) => f.noradId === sat.noradId);
-      const next = exists
-        ? prev.filter((f) => f.noradId !== sat.noradId)
-        : [{ ...sat, addedAt: Date.now() }, ...prev].slice(0, MAX_FAVORITES);
-      write(next);
-      return next;
+    if (!userId) {
+      mergedFor.current = null;
+      setFavorites(read());
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("tracker_favorites")
+        .select("norad_id, name, added_at")
+        .order("added_at", { ascending: false });
+      if (!active) return;
+      const cloud: FavoriteSat[] = (data ?? []).map((r) => ({
+        noradId: r.norad_id,
+        name: r.name,
+        addedAt: new Date(r.added_at).getTime(),
+      }));
+      const local = read();
+      const pending = local.filter(
+        (l) => !cloud.some((c) => c.noradId === l.noradId)
+      );
+      if (mergedFor.current !== userId && pending.length > 0) {
+        mergedFor.current = userId;
+        await supabase.from("tracker_favorites").upsert(
+          pending.map((p) => ({ user_id: userId, norad_id: p.noradId, name: p.name })),
+          { onConflict: "user_id,norad_id" }
+        );
+      } else {
+        mergedFor.current = userId;
+      }
+      if (!active) return;
+      setFavorites([...cloud, ...pending].slice(0, MAX_FAVORITES));
+    })().catch(() => {
+      if (active) setFavorites(read());
     });
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const toggle = useCallback(
+    (sat: FavoriteInput) => {
+      setFavorites((prev) => {
+        const exists = prev.some((f) => f.noradId === sat.noradId);
+        const next = exists
+          ? prev.filter((f) => f.noradId !== sat.noradId)
+          : [{ ...sat, addedAt: Date.now() }, ...prev].slice(0, MAX_FAVORITES);
+        if (userId) {
+          void (exists
+            ? supabase
+                .from("tracker_favorites")
+                .delete()
+                .eq("user_id", userId)
+                .eq("norad_id", sat.noradId)
+            : supabase.from("tracker_favorites").upsert(
+                { user_id: userId, norad_id: sat.noradId, name: sat.name },
+                { onConflict: "user_id,norad_id" }
+              ));
+        } else {
+          write(next);
+        }
+        return next;
+      });
+    },
+    [userId]
+  );
 
   // Merge an imported list into the saved set. Returns how many new objects
   // were actually added; entries already saved are left untouched.
-  const importMany = useCallback((sats: FavoriteInput[]): number => {
-    const prev = read();
-    const existing = new Set(prev.map((f) => f.noradId));
-    const fresh = sats
-      .filter((s) => !existing.has(s.noradId))
-      .map((s) => ({ ...s, addedAt: Date.now() }));
-    const next = [...prev, ...fresh].slice(0, MAX_FAVORITES);
-    write(next);
-    setFavorites(next);
-    return next.length - prev.length;
-  }, []);
+  const importMany = useCallback(
+    (sats: FavoriteInput[]): number => {
+      let added = 0;
+      setFavorites((prev) => {
+        const existing = new Set(prev.map((f) => f.noradId));
+        const fresh = sats
+          .filter((s) => !existing.has(s.noradId))
+          .map((s) => ({ ...s, addedAt: Date.now() }));
+        const next = [...prev, ...fresh].slice(0, MAX_FAVORITES);
+        added = next.length - prev.length;
+        if (userId) {
+          if (fresh.length > 0) {
+            void supabase.from("tracker_favorites").upsert(
+              fresh.map((f) => ({ user_id: userId, norad_id: f.noradId, name: f.name })),
+              { onConflict: "user_id,norad_id" }
+            );
+          }
+        } else {
+          write(next);
+        }
+        return next;
+      });
+      return added;
+    },
+    [userId]
+  );
 
   const isFavorite = useCallback(
     (noradId: string) => favorites.some((f) => f.noradId === noradId),
     [favorites]
   );
 
-  return { favorites, toggle, importMany, isFavorite };
+  return { favorites, toggle, importMany, isFavorite, synced: !!userId };
 }
+
