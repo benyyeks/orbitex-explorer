@@ -119,41 +119,109 @@ export function decodeShareParam(raw: string, validIds: Set<string>): string[] {
 }
 
 export function useWishlist() {
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
   const [entries, setEntries] = useState<WishlistEntry[]>([]);
+  const mergedFor = useRef<string | null>(null);
 
   useEffect(() => {
-    setEntries(read());
-  }, []);
-
-  const toggle = useCallback((id: string) => {
-    setEntries((prev) => {
-      const exists = prev.some((e) => e.id === id);
-      const next = exists
-        ? prev.filter((e) => e.id !== id)
-        : [{ id, addedAt: Date.now() }, ...prev].slice(0, MAX_BOOKS);
-      write(next);
-      return next;
+    if (!userId) {
+      mergedFor.current = null;
+      setEntries(read());
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("reading_list")
+        .select("book_id, added_at")
+        .order("added_at", { ascending: false });
+      if (!active) return;
+      const cloud: WishlistEntry[] = (data ?? []).map((r) => ({
+        id: r.book_id,
+        addedAt: new Date(r.added_at).getTime(),
+      }));
+      const local = read();
+      const pending = local.filter((l) => !cloud.some((c) => c.id === l.id));
+      if (mergedFor.current !== userId && pending.length > 0) {
+        mergedFor.current = userId;
+        await supabase.from("reading_list").upsert(
+          pending.map((p) => ({ user_id: userId, book_id: p.id })),
+          { onConflict: "user_id,book_id" }
+        );
+      } else {
+        mergedFor.current = userId;
+      }
+      if (!active) return;
+      setEntries([...cloud, ...pending].slice(0, MAX_BOOKS));
+    })().catch(() => {
+      if (active) setEntries(read());
     });
-  }, []);
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const toggle = useCallback(
+    (id: string) => {
+      setEntries((prev) => {
+        const exists = prev.some((e) => e.id === id);
+        const next = exists
+          ? prev.filter((e) => e.id !== id)
+          : [{ id, addedAt: Date.now() }, ...prev].slice(0, MAX_BOOKS);
+        if (userId) {
+          void (exists
+            ? supabase
+                .from("reading_list")
+                .delete()
+                .eq("user_id", userId)
+                .eq("book_id", id)
+            : supabase
+                .from("reading_list")
+                .upsert({ user_id: userId, book_id: id }, { onConflict: "user_id,book_id" }));
+        } else {
+          write(next);
+        }
+        return next;
+      });
+    },
+    [userId]
+  );
 
   // Merge imported or shared ids into the saved list. Returns how many books
   // were actually added; entries already saved are left untouched.
-  const importMany = useCallback((ids: string[]): number => {
-    const prev = read();
-    const existing = new Set(prev.map((e) => e.id));
-    const fresh = ids
-      .filter((id) => !existing.has(id))
-      .map((id) => ({ id, addedAt: Date.now() }));
-    const next = [...prev, ...fresh].slice(0, MAX_BOOKS);
-    write(next);
-    setEntries(next);
-    return next.length - prev.length;
-  }, []);
+  const importMany = useCallback(
+    (ids: string[]): number => {
+      let added = 0;
+      setEntries((prev) => {
+        const existing = new Set(prev.map((e) => e.id));
+        const fresh = ids
+          .filter((id) => !existing.has(id))
+          .map((id) => ({ id, addedAt: Date.now() }));
+        const next = [...prev, ...fresh].slice(0, MAX_BOOKS);
+        added = next.length - prev.length;
+        if (userId) {
+          if (fresh.length > 0) {
+            void supabase.from("reading_list").upsert(
+              fresh.map((f) => ({ user_id: userId, book_id: f.id })),
+              { onConflict: "user_id,book_id" }
+            );
+          }
+        } else {
+          write(next);
+        }
+        return next;
+      });
+      return added;
+    },
+    [userId]
+  );
 
   const isSaved = useCallback(
     (id: string) => entries.some((e) => e.id === id),
     [entries]
   );
 
-  return { entries, toggle, importMany, isSaved };
+  return { entries, toggle, importMany, isSaved, synced: !!userId };
 }
+
