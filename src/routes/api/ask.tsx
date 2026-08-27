@@ -87,7 +87,7 @@ const BASE_PROMPT = [
   "- Never invent figures. If a number is an estimate, label it as an estimate and say what it is based on.",
   "- Plain punctuation only. Never use em dashes.",
   "- When live telemetry is supplied below, treat it as current and cite it naturally.",
-  "- When relevant, point users to ORBITEX pages: /tracker (live satellite tracking), /deepspace (solar system and deep space probes), /sky (tonight's sky), /mars (rover imagery), /weather (space weather), /neo (asteroid watch), /launches (launch schedule), /research (research library), /intelligence (mission intelligence), /engineering (engineering notes), /resources (learning resources and the textbook shelf).",
+  "- When relevant, point users to ORBITEX pages by their plain names, not by URL path: Orbit Tracker (live satellite tracking), Deep Space (solar system and deep space probes), Sky Tonight, Mars (rover imagery), Space Weather, Asteroid Watch, Launches, Research Library, Mission Intelligence, Engineering Notes, and Learning Resources (which includes the textbook shelf).",
 ].join("\n");
 
 const MODE_PROMPTS: Record<AskMode, string> = {
