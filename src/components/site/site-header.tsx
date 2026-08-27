@@ -81,6 +81,7 @@ export function SiteHeader() {
             ))}
           </nav>
           <div className="header-actions">
+            <AuthControl />
             <ThemeToggle />
             <button
               type="button"
