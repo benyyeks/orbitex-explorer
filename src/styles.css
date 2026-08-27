@@ -387,27 +387,20 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
   color: var(--color-text-faint); padding: 14px 16px 4px;
 }
 
-@media (min-width: 960px) {
-  /* The nav keeps every section reachable while never pushing the account and
-     theme controls off the edge: it shrinks and scrolls horizontally on
-     narrower laptops and sits fully expanded on wide screens. */
+@media (min-width: 1040px) {
+  /* The bar carries the primary destinations; the full grouped index stays one
+     click away in the drawer, so the account and theme controls always fit. */
   .nav-desktop {
     display: flex;
     flex: 0 1 auto;
     min-width: 0;
-    justify-content: flex-start;
     margin-left: auto;
-
-    overflow-x: auto;
-    scrollbar-width: none;
     margin-right: 10px;
   }
-  .nav-desktop::-webkit-scrollbar { display: none; }
-  .nav-desktop a { white-space: nowrap; padding: 8px 9px; font-size: 0.82rem; }
+  .nav-desktop a { white-space: nowrap; padding: 8px 10px; font-size: 0.85rem; }
   .header-actions { flex: 0 0 auto; }
-  .menu-toggle { display: none; }
-  .nav-mobile { display: none; }
 }
+
 
 
 /* --------------------------------- Footer --------------------------------- */
