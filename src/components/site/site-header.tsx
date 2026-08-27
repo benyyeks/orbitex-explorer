@@ -75,7 +75,7 @@ export function SiteHeader() {
             <BrandWord />
           </Link>
           <nav className="nav-desktop" aria-label="Primary">
-            {NAV_LINKS.map((l) => (
+            {NAV_LINKS.filter((l) => l.primary).map((l) => (
               <Link
                 key={l.id}
                 to={l.to}
