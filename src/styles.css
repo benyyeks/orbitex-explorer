@@ -393,9 +393,11 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
      narrower laptops and sits fully expanded on wide screens. */
   .nav-desktop {
     display: flex;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
     min-width: 0;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    margin-left: auto;
+
     overflow-x: auto;
     scrollbar-width: none;
     margin: 0 10px;
