@@ -133,7 +133,10 @@ export function useObserverLocation() {
     [userId]
   );
 
+  const requestDeviceLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setStatus("error");
+
       setError(MSG_UNSUPPORTED);
       return;
     }
@@ -210,7 +213,19 @@ export function useObserverLocation() {
     } catch {
       /* ignore */
     }
-  }, []);
+    if (userId) {
+      void supabase.from("user_settings").upsert(
+        {
+          user_id: userId,
+          observer_lat: null,
+          observer_lon: null,
+          observer_source: null,
+        },
+        { onConflict: "user_id" }
+      );
+    }
+  }, [userId]);
+
 
   return { location, status, error, requestDeviceLocation, setManual, clear };
 }
