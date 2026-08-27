@@ -133,7 +133,10 @@ export function useObserverLocation() {
     [userId]
   );
 
+  const requestDeviceLocation = useCallback(() => {
+    if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
       setStatus("error");
+
       setError(MSG_UNSUPPORTED);
       return;
     }
