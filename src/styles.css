@@ -388,10 +388,25 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
 }
 
 @media (min-width: 960px) {
-  .nav-desktop { display: flex; }
+  /* The nav keeps every section reachable while never pushing the account and
+     theme controls off the edge: it shrinks and scrolls horizontally on
+     narrower laptops and sits fully expanded on wide screens. */
+  .nav-desktop {
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin: 0 10px;
+  }
+  .nav-desktop::-webkit-scrollbar { display: none; }
+  .nav-desktop a { white-space: nowrap; padding: 8px 9px; font-size: 0.82rem; }
+  .header-actions { flex: 0 0 auto; }
   .menu-toggle { display: none; }
   .nav-mobile { display: none; }
 }
+
 
 /* --------------------------------- Footer --------------------------------- */
 .site-footer {
