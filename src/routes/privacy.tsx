@@ -48,16 +48,23 @@ function PrivacyPage() {
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
             <h2>Location</h2>
             <p>
-              The local sky conditions feature asks for your location through your browser's
-              geolocation prompt. Your latitude and longitude are sent only to ORBITEX's own
-              server, which forwards them to Open-Meteo to fetch weather, then discards them.
-              Your coordinates are never stored, logged, or shared with any other party.
+              Features such as local sky conditions and satellite pass predictions ask for
+              your location through your browser's geolocation prompt. Your latitude and
+              longitude stay on your device by default. When they are used for weather, they
+              are sent to ORBITEX's own server, which forwards them to Open-Meteo and then
+              discards them. Your coordinates are never shared with any other party.
+            </p>
+            <p>
+              If you are signed in, your saved observing location is stored with your account
+              so it carries across your devices. You can clear it at any time, which removes
+              it from both your device and your account.
             </p>
             <p>
               You can decline the location prompt and the rest of ORBITEX continues to work
               normally. Location is requested only when you tap the relevant button, never
               automatically.
             </p>
+
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
@@ -92,13 +99,25 @@ function PrivacyPage() {
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>Cookies and local storage</h2>
+            <h2>Accounts and saved items</h2>
             <p>
-              ORBITEX stores your light or dark theme preference in your browser's local
-              storage. No cookies are set for tracking. The app does not use advertising or
-              analytics cookies.
+              An account is optional. Without one, your theme preference, saved satellites,
+              and reading list are kept in your browser's local storage only. No cookies are
+              set for tracking, and the app does not use advertising or analytics cookies.
+            </p>
+            <p>
+              If you create an account, ORBITEX stores your email address and your saved
+              satellites, reading list, and observing location so they follow you across
+              devices. Access rules restrict each record to its owner, so no other user can
+              read your saved items. Nothing you save is sold or shared, and asking us to
+              delete your account removes these records.
+            </p>
+            <p>
+              Questions you send to the ORBITEX assistant are processed to generate a reply
+              and are not used to build a profile of you.
             </p>
           </div>
+
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
             <h2>Children and education</h2>
