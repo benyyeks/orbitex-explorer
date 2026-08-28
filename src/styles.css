@@ -372,6 +372,7 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
   transition: opacity 0.2s ease, transform 0.2s ease;
   overflow-y: auto;
 }
+.nav-group { display: flex; flex-direction: column; gap: 4px; }
 .nav-mobile.open { opacity: 1; transform: translateY(0); pointer-events: auto; }
 .nav-mobile a {
   padding: 14px 16px;
@@ -412,7 +413,8 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
-    gap: 2px 14px;
+    gap: 10px 14px;
+    padding: 14px;
   }
 
   .header-actions { flex: 0 0 auto; }
