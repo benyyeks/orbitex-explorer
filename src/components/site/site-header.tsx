@@ -33,6 +33,17 @@ const NAV_LINKS: NavLink[] = [
   { id: "resources", label: "Learning Resources", to: "/resources", section: "Learn", primary: true },
 ];
 
+// The drawer lists every destination grouped by section, so wide screens can
+// show the index as columns and small screens as a stacked sheet.
+const NAV_GROUPS: { section?: string; links: NavLink[] }[] = NAV_LINKS.reduce<
+  { section?: string; links: NavLink[] }[]
+>((groups, link) => {
+  const last = groups[groups.length - 1];
+  if (last && last.section === link.section) last.links.push(link);
+  else groups.push({ section: link.section, links: [link] });
+  return groups;
+}, []);
+
 
 function isMatch(pathname: string, to: string): boolean {
   if (to === "/") return pathname === "/";
