@@ -108,16 +108,49 @@ export type Database = {
         Row: {
           added_at: string
           book_id: string
+          note: string | null
           user_id: string
         }
         Insert: {
           added_at?: string
           book_id: string
+          note?: string | null
           user_id: string
         }
         Update: {
           added_at?: string
           book_id?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      shared_lists: {
+        Row: {
+          created_at: string
+          include_notes: boolean
+          is_public: boolean
+          share_id: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          include_notes?: boolean
+          is_public?: boolean
+          share_id: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          include_notes?: boolean
+          is_public?: boolean
+          share_id?: string
+          title?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -208,7 +241,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_shared_list_meta: {
+        Args: { _share_id: string }
+        Returns: {
+          book_count: number
+          include_notes: boolean
+          title: string
+        }[]
+      }
+      get_shared_reading_list: {
+        Args: { _share_id: string }
+        Returns: {
+          added_at: string
+          book_id: string
+          note: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
