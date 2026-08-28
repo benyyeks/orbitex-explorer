@@ -99,13 +99,25 @@ function PrivacyPage() {
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>Cookies and local storage</h2>
+            <h2>Accounts and saved items</h2>
             <p>
-              ORBITEX stores your light or dark theme preference in your browser's local
-              storage. No cookies are set for tracking. The app does not use advertising or
-              analytics cookies.
+              An account is optional. Without one, your theme preference, saved satellites,
+              and reading list are kept in your browser's local storage only. No cookies are
+              set for tracking, and the app does not use advertising or analytics cookies.
+            </p>
+            <p>
+              If you create an account, ORBITEX stores your email address and your saved
+              satellites, reading list, and observing location so they follow you across
+              devices. Access rules restrict each record to its owner, so no other user can
+              read your saved items. Nothing you save is sold or shared, and asking us to
+              delete your account removes these records.
+            </p>
+            <p>
+              Questions you send to the ORBITEX assistant are processed to generate a reply
+              and are not used to build a profile of you.
             </p>
           </div>
+
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
             <h2>Children and education</h2>
