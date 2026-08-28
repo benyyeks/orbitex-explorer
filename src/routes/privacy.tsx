@@ -3,13 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — ORBITEX" },
+      { title: "Privacy Policy - ORBITEX" },
       {
         name: "description",
         content:
           "ORBITEX privacy policy: what data is collected, how location is used, third-party providers, and your choices. No accounts required for core tools.",
       },
-      { property: "og:title", content: "Privacy Policy — ORBITEX" },
+      { property: "og:title", content: "Privacy Policy - ORBITEX" },
       {
         property: "og:description",
         content: "What ORBITEX collects, how location is used, and your choices.",
