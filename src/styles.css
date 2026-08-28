@@ -410,11 +410,13 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
     border: 1px solid var(--color-border);
     border-radius: 18px;
     box-shadow: var(--shadow-glass);
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-content: start;
-    gap: 10px 14px;
-    padding: 14px;
+    display: block;
+    column-count: 2;
+    column-gap: 22px;
+    padding: 16px;
+  }
+  .nav-group { break-inside: avoid; margin-bottom: 8px; }
+  .nav-mobile a { padding: 9px 12px; font-size: 0.92rem;
   }
 
   .header-actions { flex: 0 0 auto; }
