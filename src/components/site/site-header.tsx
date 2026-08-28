@@ -108,26 +108,25 @@ export function SiteHeader() {
           </div>
         </div>
       </header>
-      <nav className={`nav-mobile${menuOpen ? " open" : ""}`} aria-label="Primary, mobile">
-        {NAV_LINKS.map((link, i) => {
-          const prev = i > 0 ? NAV_LINKS[i - 1] : undefined;
-          const showLabel =
-            !!link.section && (!prev || prev.section !== link.section);
-          return (
-            <div key={link.id}>
-              {showLabel && (
-                <span className="nav-section-label">{link.section}</span>
-              )}
+      <nav className={`nav-mobile${menuOpen ? " open" : ""}`} aria-label="All sections">
+        {NAV_GROUPS.map((group) => (
+          <div className="nav-group" key={group.section ?? "top"}>
+            {group.section && (
+              <span className="nav-section-label">{group.section}</span>
+            )}
+            {group.links.map((link) => (
               <Link
+                key={link.id}
                 to={link.to}
                 aria-current={isMatch(pathname, link.to) ? "page" : undefined}
               >
                 {link.label}
               </Link>
-            </div>
-          );
-        })}
+            ))}
+          </div>
+        ))}
       </nav>
+
     </>
   );
 }
