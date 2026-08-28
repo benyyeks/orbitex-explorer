@@ -48,16 +48,23 @@ function PrivacyPage() {
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
             <h2>Location</h2>
             <p>
-              The local sky conditions feature asks for your location through your browser's
-              geolocation prompt. Your latitude and longitude are sent only to ORBITEX's own
-              server, which forwards them to Open-Meteo to fetch weather, then discards them.
-              Your coordinates are never stored, logged, or shared with any other party.
+              Features such as local sky conditions and satellite pass predictions ask for
+              your location through your browser's geolocation prompt. Your latitude and
+              longitude stay on your device by default. When they are used for weather, they
+              are sent to ORBITEX's own server, which forwards them to Open-Meteo and then
+              discards them. Your coordinates are never shared with any other party.
+            </p>
+            <p>
+              If you are signed in, your saved observing location is stored with your account
+              so it carries across your devices. You can clear it at any time, which removes
+              it from both your device and your account.
             </p>
             <p>
               You can decline the location prompt and the rest of ORBITEX continues to work
               normally. Location is requested only when you tap the relevant button, never
               automatically.
             </p>
+
           </div>
 
           <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
