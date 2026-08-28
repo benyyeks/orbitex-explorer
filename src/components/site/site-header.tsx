@@ -35,8 +35,8 @@ const NAV_LINKS: NavLink[] = [
 
 // The drawer lists every destination grouped by section, so wide screens can
 // show the index as columns and small screens as a stacked sheet.
-const NAV_GROUPS: { section?: string; links: NavLink[] }[] = NAV_LINKS.reduce<
-  { section?: string; links: NavLink[] }[]
+const NAV_GROUPS: { section?: string | undefined; links: NavLink[] }[] = NAV_LINKS.reduce<
+  { section?: string | undefined; links: NavLink[] }[]
 >((groups, link) => {
   const last = groups[groups.length - 1];
   if (last && last.section === link.section) last.links.push(link);
