@@ -233,9 +233,11 @@ export function useWishlist() {
     (id: string, note: string) => {
       const trimmed = note.slice(0, MAX_NOTE);
       setEntries((prev) => {
-        const next = prev.map((e) =>
-          e.id === id ? { ...e, note: trimmed || undefined } : e
-        );
+        const next: WishlistEntry[] = prev.map((e) => {
+          if (e.id !== id) return e;
+          const { note: _drop, ...rest } = e;
+          return trimmed ? { ...rest, note: trimmed } : rest;
+        });
         if (userId) {
           void supabase
             .from("reading_list")
