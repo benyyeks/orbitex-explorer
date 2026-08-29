@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import {
   BOOKS,
@@ -8,7 +8,9 @@ import {
   bookCoverUrl,
   type Book,
 } from "@/lib/books";
+import { useShareSettings } from "@/lib/share-settings";
 import {
+  MAX_NOTE,
   decodeShareParam,
   encodeShareParam,
   parseWishlistFile,
@@ -45,6 +47,8 @@ export const Route = createFileRoute("/resources")({
 
 // Copies text to the clipboard with a fallback for browsers that block the
 // async clipboard API outside secure gestures.
+type SortKey = "recent" | "title" | "author" | "topic";
+
 async function copyText(text: string): Promise<boolean> {
   try {
     await navigator.clipboard.writeText(text);
@@ -69,9 +73,22 @@ async function copyText(text: string): Promise<boolean> {
 function ResourcesPage() {
   const { list: sharedParam } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { entries, toggle, importMany, isSaved } = useWishlist();
+  const { entries, toggle, importMany, isSaved, setNote } = useWishlist();
+  const {
+    settings: shareSettings,
+    save,
+    available: shareAvailable,
+  } = useShareSettings();
   const [notice, setNotice] = useState("");
+  const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<SortKey>("recent");
+  const [shareTitle, setShareTitle] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Keep the title box in step with the stored setting once it loads.
+  useEffect(() => {
+    setShareTitle(shareSettings.title);
+  }, [shareSettings.title]);
 
   const validIds = useMemo(() => new Set(BOOKS.map((b) => b.id)), []);
   const sharedBooks = useMemo(
@@ -88,6 +105,47 @@ function ResourcesPage() {
         .filter((b): b is Book => !!b),
     [entries]
   );
+
+  const noteOf = (id: string) => entries.find((e) => e.id === id)?.note ?? "";
+
+  const topicLabel = (id: string) =>
+    BOOK_TOPICS.find((t) => t.id === id)?.label ?? "Aerospace";
+
+  const visibleBooks = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const order = new Map(entries.map((e, i) => [e.id, i]));
+    const filtered = q
+      ? savedBooks.filter((b) =>
+          [b.title, b.authors, topicLabel(b.topic)]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+        )
+      : savedBooks;
+    const sorted = [...filtered];
+    sorted.sort((a, b) => {
+      if (sort === "title") return a.title.localeCompare(b.title);
+      if (sort === "author") return a.authors.localeCompare(b.authors);
+      if (sort === "topic")
+        return (
+          topicLabel(a.topic).localeCompare(topicLabel(b.topic)) ||
+          a.title.localeCompare(b.title)
+        );
+      return (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0);
+    });
+    return sorted;
+  }, [entries, query, savedBooks, sort]);
+
+  const copyListPageLink = async () => {
+    if (!shareSettings.shareId) return;
+    const url = `${window.location.origin}/list/${shareSettings.shareId}`;
+    const ok = await copyText(url);
+    setNotice(
+      ok
+        ? "List page link copied. It will always open your current list."
+        : `Copy this link to share your list page: ${url}`
+    );
+  };
 
   const copyShareLink = async () => {
     const url = `${window.location.origin}/resources?list=${encodeShareParam(
