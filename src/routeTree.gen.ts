@@ -28,6 +28,7 @@ import { Route as WeatherRouteImport } from './routes/weather'
 import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as DeepspaceIndexRouteImport } from './routes/deepspace.index'
 import { Route as DeepspaceObjectIdRouteImport } from './routes/deepspace.$objectId'
+import { Route as ListShareIdRouteImport } from './routes/list.$shareId'
 import { Route as TrackerIndexRouteImport } from './routes/tracker.index'
 import { Route as TrackerNoradIdRouteImport } from './routes/tracker.$noradId'
 import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
@@ -127,6 +128,11 @@ const DeepspaceObjectIdRoute = DeepspaceObjectIdRouteImport.update({
   path: '/$objectId',
   getParentRoute: () => DeepspaceRoute,
 } as any)
+const ListShareIdRoute = ListShareIdRouteImport.update({
+  id: '/list/$shareId',
+  path: '/list/$shareId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const TrackerIndexRoute = TrackerIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/weather': typeof WeatherRoute
   '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
+  '/list/$shareId': typeof ListShareIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace/': typeof DeepspaceIndexRoute
   '/tracker/': typeof TrackerIndexRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByTo {
   '/weather': typeof WeatherRoute
   '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
+  '/list/$shareId': typeof ListShareIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace': typeof DeepspaceIndexRoute
   '/tracker': typeof TrackerIndexRoute
@@ -209,6 +217,7 @@ export interface FileRoutesById {
   '/weather': typeof WeatherRoute
   '/api/ask': typeof ApiAskRoute
   '/deepspace/$objectId': typeof DeepspaceObjectIdRoute
+  '/list/$shareId': typeof ListShareIdRoute
   '/tracker/$noradId': typeof TrackerNoradIdRoute
   '/deepspace/': typeof DeepspaceIndexRoute
   '/tracker/': typeof TrackerIndexRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/weather'
     | '/api/ask'
     | '/deepspace/$objectId'
+    | '/list/$shareId'
     | '/tracker/$noradId'
     | '/deepspace/'
     | '/tracker/'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/weather'
     | '/api/ask'
     | '/deepspace/$objectId'
+    | '/list/$shareId'
     | '/tracker/$noradId'
     | '/deepspace'
     | '/tracker'
@@ -281,6 +292,7 @@ export interface FileRouteTypes {
     | '/weather'
     | '/api/ask'
     | '/deepspace/$objectId'
+    | '/list/$shareId'
     | '/tracker/$noradId'
     | '/deepspace/'
     | '/tracker/'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   TrackerRoute: typeof TrackerRouteWithChildren
   WeatherRoute: typeof WeatherRoute
   ApiAskRoute: typeof ApiAskRoute
+  ListShareIdRoute: typeof ListShareIdRoute
   ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
 
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DeepspaceObjectIdRouteImport
       parentRoute: typeof DeepspaceRoute
     }
+    '/list/$shareId': {
+      id: '/list/$shareId'
+      path: '/list/$shareId'
+      fullPath: '/list/$shareId'
+      preLoaderRoute: typeof ListShareIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/tracker/': {
       id: '/tracker/'
       path: '/'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrackerRoute: TrackerRouteWithChildren,
   WeatherRoute: WeatherRoute,
   ApiAskRoute: ApiAskRoute,
+  ListShareIdRoute: ListShareIdRoute,
   ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
 export const routeTree = rootRouteImport
