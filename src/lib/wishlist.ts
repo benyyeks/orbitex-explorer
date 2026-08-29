@@ -9,10 +9,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
 
-export type WishlistEntry = { id: string; addedAt: number };
+export type WishlistEntry = { id: string; addedAt: number; note?: string };
 
 const KEY = "orbitex:reading-list";
 const MAX_BOOKS = 30;
+export const MAX_NOTE = 1200;
 
 // Payload shape of an exported list. The app tag lets us recognize our own
 // files on import; a bare array of ids or { id } entries is accepted too.
@@ -54,7 +55,10 @@ export function serializeWishlist(
 ): string {
   const books = entries.map((e) => {
     const b = lookup(e.id);
-    return b ? { id: e.id, title: b.title, authors: b.authors } : { id: e.id };
+    const note = e.note ? { note: e.note } : {};
+    return b
+      ? { id: e.id, title: b.title, authors: b.authors, ...note }
+      : { id: e.id, ...note };
   });
   return JSON.stringify(
     {
@@ -134,19 +138,24 @@ export function useWishlist() {
     (async () => {
       const { data } = await supabase
         .from("reading_list")
-        .select("book_id, added_at")
+        .select("book_id, added_at, note")
         .order("added_at", { ascending: false });
       if (!active) return;
       const cloud: WishlistEntry[] = (data ?? []).map((r) => ({
         id: r.book_id,
         addedAt: new Date(r.added_at).getTime(),
+        ...(r.note ? { note: r.note } : {}),
       }));
       const local = read();
       const pending = local.filter((l) => !cloud.some((c) => c.id === l.id));
       if (mergedFor.current !== userId && pending.length > 0) {
         mergedFor.current = userId;
         await supabase.from("reading_list").upsert(
-          pending.map((p) => ({ user_id: userId, book_id: p.id })),
+          pending.map((p) => ({
+            user_id: userId,
+            book_id: p.id,
+            note: p.note ?? null,
+          })),
           { onConflict: "user_id,book_id" }
         );
       } else {
@@ -217,11 +226,39 @@ export function useWishlist() {
     [userId]
   );
 
+  // Study notes for one saved book. Signed out they live in local storage;
+  // signed in they are written to the account row and stay private unless the
+  // owner explicitly shares notes along with the list.
+  const setNote = useCallback(
+    (id: string, note: string) => {
+      const trimmed = note.slice(0, MAX_NOTE);
+      setEntries((prev) => {
+        const next: WishlistEntry[] = prev.map((e) => {
+          if (e.id !== id) return e;
+          const { note: _drop, ...rest } = e;
+          return trimmed ? { ...rest, note: trimmed } : rest;
+        });
+        if (userId) {
+          void supabase
+            .from("reading_list")
+            .upsert(
+              { user_id: userId, book_id: id, note: trimmed || null },
+              { onConflict: "user_id,book_id" }
+            );
+        } else {
+          write(next);
+        }
+        return next;
+      });
+    },
+    [userId]
+  );
+
   const isSaved = useCallback(
     (id: string) => entries.some((e) => e.id === id),
     [entries]
   );
 
-  return { entries, toggle, importMany, isSaved, synced: !!userId };
+  return { entries, toggle, importMany, isSaved, setNote, synced: !!userId };
 }
 
