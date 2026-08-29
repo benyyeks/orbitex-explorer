@@ -316,38 +316,85 @@ function ResourcesPage() {
             {savedBooks.length === 0 ? (
               <p>
                 Nothing saved yet. Use the Save button beside any book on the
-                shelf below to start a personal reading list. Your list stays in
-                this browser, and you can share it with a link or move it to
-                another device with a file.
+                shelf below to start a personal reading list. Sign in to keep it
+                on your account, add a study note to each title, and publish a
+                permanent link others can open.
               </p>
             ) : (
-              <ul className="wishlist">
-                {savedBooks.map((b) => (
-                  <li key={b.id} className="book-row">
-                    <SkeletonImage
-                      src={bookCoverUrl(b.isbn13)}
-                      className="book-cover book-cover-sm"
-                      alt={`Cover of ${b.title}`}
+              <>
+                <div className="list-filters">
+                  <label className="field">
+                    <span className="field-label">Search saved books</span>
+                    <input
+                      type="search"
+                      value={query}
+                      placeholder="Title, author or discipline"
+                      onChange={(e) => setQuery(e.target.value)}
                     />
-                    <div className="book-meta">
-                      <strong>{b.title}</strong>
-                      <span className="book-author">{b.authors}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="book-save saved"
-                      aria-label={`Remove ${b.title} from the saved list`}
-                      onClick={() => {
-                        toggle(b.id);
-                        setNotice("");
-                      }}
+                  </label>
+                  <label className="field field-sm">
+                    <span className="field-label">Sort by</span>
+                    <select
+                      value={sort}
+                      onChange={(e) => setSort(e.target.value as SortKey)}
                     >
-                      Remove
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <option value="recent">Recently saved</option>
+                      <option value="title">Title</option>
+                      <option value="author">Author</option>
+                      <option value="topic">Discipline</option>
+                    </select>
+                  </label>
+                </div>
+
+                {visibleBooks.length === 0 ? (
+                  <p className="list-notice">
+                    No saved book matches that search. Clear the box to see the
+                    whole list again.
+                  </p>
+                ) : (
+                  <ul className="wishlist">
+                    {visibleBooks.map((b) => (
+                      <li key={b.id} className="book-row">
+                        <SkeletonImage
+                          src={bookCoverUrl(b.isbn13)}
+                          className="book-cover book-cover-sm"
+                          alt={`Cover of ${b.title}`}
+                        />
+                        <div className="book-meta">
+                          <strong>{b.title}</strong>
+                          <span className="book-author">{b.authors}</span>
+                          <span className="book-sub">{topicLabel(b.topic)}</span>
+                          <label className="note-field">
+                            <span className="visually-hidden">
+                              Study notes for {b.title}
+                            </span>
+                            <textarea
+                              rows={2}
+                              maxLength={MAX_NOTE}
+                              placeholder="Study notes: chapters to read, questions, page references"
+                              value={noteOf(b.id)}
+                              onChange={(e) => setNote(b.id, e.target.value)}
+                            />
+                          </label>
+                        </div>
+                        <button
+                          type="button"
+                          className="book-save saved"
+                          aria-label={`Remove ${b.title} from the saved list`}
+                          onClick={() => {
+                            toggle(b.id);
+                            setNotice("");
+                          }}
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
+
             <div className="list-actions">
               {savedBooks.length > 0 && (
                 <>
@@ -383,6 +430,75 @@ function ResourcesPage() {
                 onChange={onImportFile}
               />
             </div>
+
+            {shareAvailable && (
+              <div className="share-panel">
+                <h3>Permanent list page</h3>
+                <p>
+                  Publish your list to a fixed address. The link stays the same
+                  every time, so anyone you send it to always opens the current
+                  version of your list.
+                </p>
+                <label className="field">
+                  <span className="field-label">List title</span>
+                  <input
+                    type="text"
+                    maxLength={120}
+                    value={shareTitle}
+                    placeholder="For example: Second year astrodynamics reading"
+                    onChange={(e) => setShareTitle(e.target.value)}
+                    onBlur={() => void save({ title: shareTitle })}
+                  />
+                </label>
+                <div className="share-toggles">
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={shareSettings.isPublic}
+                      onChange={(e) =>
+                        void save({ isPublic: e.target.checked }).then((next) =>
+                          setNotice(
+                            e.target.checked && next?.shareId
+                              ? "Your list page is live. Use Copy list page link to share it."
+                              : "Your list page is now private. Existing links will no longer open it."
+                          )
+                        )
+                      }
+                    />
+                    <span>Publish this list to a permanent page</span>
+                  </label>
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={shareSettings.includeNotes}
+                      onChange={(e) =>
+                        void save({ includeNotes: e.target.checked })
+                      }
+                    />
+                    <span>Include my study notes on the shared page</span>
+                  </label>
+                </div>
+                {shareSettings.isPublic && shareSettings.shareId && (
+                  <div className="list-actions">
+                    <button
+                      type="button"
+                      className="btn btn-sm"
+                      onClick={copyListPageLink}
+                    >
+                      Copy list page link
+                    </button>
+                    <Link
+                      to="/list/$shareId"
+                      params={{ shareId: shareSettings.shareId }}
+                      className="btn btn-sm"
+                    >
+                      Open list page
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {notice && (
               <p className="list-notice" role="status">
                 {notice}
