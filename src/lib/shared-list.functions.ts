@@ -24,17 +24,25 @@ export const getSharedList = createServerFn({ method: "GET" })
     z.object({ shareId: z.string().min(6).max(64) }).parse(data)
   )
   .handler(async ({ data }): Promise<SharedListView> => {
-    const client = createClient<Database>(
-      process.env["SUPABASE_URL"]!,
-      process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-      {
-        auth: {
-          storage: undefined,
-          persistSession: false,
-          autoRefreshToken: false,
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
+    const client = createClient<Database>(process.env["SUPABASE_URL"]!, key, {
+      auth: {
+        storage: undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+      global: {
+        // Newer publishable keys are opaque, not JWTs: send them as apikey only.
+        fetch: (input, init) => {
+          const h = new Headers(init?.headers);
+          if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
+            h.delete("Authorization");
+          }
+          h.set("apikey", key);
+          return fetch(input, { ...init, headers: h });
         },
-      }
-    );
+      },
+    });
 
     const [meta, rows] = await Promise.all([
       client.rpc("get_shared_list_meta", { _share_id: data.shareId }),
