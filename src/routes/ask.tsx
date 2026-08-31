@@ -90,6 +90,14 @@ function AskPage() {
   const abortRef = useRef<AbortController | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
 
+  const history = useAskHistory();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const activeIdRef = useRef<string | null>(null);
+  activeIdRef.current = activeId;
+
   // Keep the latest exchange in view as tokens stream in.
   useEffect(() => {
     const el = threadRef.current;
@@ -99,14 +107,59 @@ function AskPage() {
   // Stop an in-flight answer if the page unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  const openConversation = async (id: string) => {
+    if (streaming) return;
+    const saved = history.conversations.find((c) => c.id === id);
+    setActiveId(id);
+    setError(null);
+    if (saved) setMode(saved.mode);
+    const thread = await history.loadMessages(id);
+    setMessages(thread);
+  };
+
+  const startNewChat = () => {
+    if (streaming) return;
+    setActiveId(null);
+    setMessages([]);
+    setError(null);
+  };
+
+  const removeConversation = async (id: string) => {
+    await history.deleteConversation(id);
+    if (activeIdRef.current === id) {
+      setActiveId(null);
+      setMessages([]);
+    }
+  };
+
+  const clearAllChats = async () => {
+    await history.clearAll();
+    setConfirmClear(false);
+    setActiveId(null);
+    setMessages([]);
+  };
+
   const send = async (rawText: string) => {
     const content = rawText.trim();
     if (!content || streaming) return;
-    const history = [...messages, { role: "user" as const, content }];
-    setMessages([...history, { role: "assistant", content: "" }]);
+    const thread = [...messages, { role: "user" as const, content }];
+    setMessages([...thread, { role: "assistant", content: "" }]);
     setInput("");
     setError(null);
     setStreaming(true);
+
+    // Signed-in accounts keep the thread; a new chat gets its conversation now
+    // so the question is saved even if the answer never arrives.
+    let conversationId = activeId;
+    if (history.signedIn) {
+      if (!conversationId) {
+        conversationId = await history.createConversation(content, mode);
+        if (conversationId) setActiveId(conversationId);
+      }
+      if (conversationId) {
+        await history.appendMessage(conversationId, { role: "user", content });
+      }
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
