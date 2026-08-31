@@ -167,7 +167,7 @@ function AskPage() {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode, messages: history.slice(-20) }),
+        body: JSON.stringify({ mode, messages: thread.slice(-20) }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -191,21 +191,25 @@ function AskPage() {
       if (!acc.trim()) {
         setMessages((prev) => prev.slice(0, -1));
         setError("No answer came back. Please try again.");
+      } else if (conversationId) {
+        await history.appendMessage(conversationId, { role: "assistant", content: acc });
       }
     } catch (err) {
+      let partial = "";
+      setMessages((prev) => {
+        const last = prev.at(-1);
+        if (last?.role === "assistant") partial = last.content;
+        return last?.role === "assistant" && !last.content ? prev.slice(0, -1) : prev;
+      });
       if ((err as Error).name === "AbortError") {
-        // User pressed stop: keep whatever partial answer arrived.
-        setMessages((prev) =>
-          prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content
-            ? prev.slice(0, -1)
-            : prev
-        );
+        // User pressed stop: keep and save whatever partial answer arrived.
+        if (conversationId && partial.trim()) {
+          await history.appendMessage(conversationId, {
+            role: "assistant",
+            content: partial,
+          });
+        }
       } else {
-        setMessages((prev) =>
-          prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content
-            ? prev.slice(0, -1)
-            : prev
-        );
         setError((err as Error).message || errorCopy(0, undefined));
       }
     } finally {
