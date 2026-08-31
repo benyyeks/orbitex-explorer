@@ -559,21 +559,20 @@ function AskPage() {
           </button>
         )}
         {messages.length > 0 && !streaming && (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              setMessages([]);
-              setError(null);
-            }}
-          >
+          <button type="button" className="btn btn-ghost" onClick={startNewChat}>
             Clear
           </button>
         )}
       </form>
       <p className="ask-scope-note">
         ORBITEX answers questions about space and space studies only.
+        {history.signedIn
+          ? " Saved chats stay on your account and can be deleted at any time."
+          : ""}
       </p>
+        </div>
+      </div>
     </main>
+
   );
 }
