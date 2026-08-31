@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
+import { useAskHistory } from "@/lib/ask-history";
 
 export const Route = createFileRoute("/ask")({
   head: () => ({
