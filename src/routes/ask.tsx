@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
+import { useAskHistory } from "@/lib/ask-history";
 
 export const Route = createFileRoute("/ask")({
   head: () => ({
@@ -89,6 +90,14 @@ function AskPage() {
   const abortRef = useRef<AbortController | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
 
+  const history = useAskHistory();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const activeIdRef = useRef<string | null>(null);
+  activeIdRef.current = activeId;
+
   // Keep the latest exchange in view as tokens stream in.
   useEffect(() => {
     const el = threadRef.current;
@@ -98,14 +107,59 @@ function AskPage() {
   // Stop an in-flight answer if the page unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  const openConversation = async (id: string) => {
+    if (streaming) return;
+    const saved = history.conversations.find((c) => c.id === id);
+    setActiveId(id);
+    setError(null);
+    if (saved) setMode(saved.mode);
+    const thread = await history.loadMessages(id);
+    setMessages(thread);
+  };
+
+  const startNewChat = () => {
+    if (streaming) return;
+    setActiveId(null);
+    setMessages([]);
+    setError(null);
+  };
+
+  const removeConversation = async (id: string) => {
+    await history.deleteConversation(id);
+    if (activeIdRef.current === id) {
+      setActiveId(null);
+      setMessages([]);
+    }
+  };
+
+  const clearAllChats = async () => {
+    await history.clearAll();
+    setConfirmClear(false);
+    setActiveId(null);
+    setMessages([]);
+  };
+
   const send = async (rawText: string) => {
     const content = rawText.trim();
     if (!content || streaming) return;
-    const history = [...messages, { role: "user" as const, content }];
-    setMessages([...history, { role: "assistant", content: "" }]);
+    const thread = [...messages, { role: "user" as const, content }];
+    setMessages([...thread, { role: "assistant", content: "" }]);
     setInput("");
     setError(null);
     setStreaming(true);
+
+    // Signed-in accounts keep the thread; a new chat gets its conversation now
+    // so the question is saved even if the answer never arrives.
+    let conversationId = activeId;
+    if (history.signedIn) {
+      if (!conversationId) {
+        conversationId = await history.createConversation(content, mode);
+        if (conversationId) setActiveId(conversationId);
+      }
+      if (conversationId) {
+        await history.appendMessage(conversationId, { role: "user", content });
+      }
+    }
 
     const controller = new AbortController();
     abortRef.current = controller;
@@ -113,7 +167,7 @@ function AskPage() {
       const res = await fetch("/api/ask", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode, messages: history.slice(-20) }),
+        body: JSON.stringify({ mode, messages: thread.slice(-20) }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -137,21 +191,25 @@ function AskPage() {
       if (!acc.trim()) {
         setMessages((prev) => prev.slice(0, -1));
         setError("No answer came back. Please try again.");
+      } else if (conversationId) {
+        await history.appendMessage(conversationId, { role: "assistant", content: acc });
       }
     } catch (err) {
+      let partial = "";
+      setMessages((prev) => {
+        const last = prev.at(-1);
+        if (last?.role === "assistant") partial = last.content;
+        return last?.role === "assistant" && !last.content ? prev.slice(0, -1) : prev;
+      });
       if ((err as Error).name === "AbortError") {
-        // User pressed stop: keep whatever partial answer arrived.
-        setMessages((prev) =>
-          prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content
-            ? prev.slice(0, -1)
-            : prev
-        );
+        // User pressed stop: keep and save whatever partial answer arrived.
+        if (conversationId && partial.trim()) {
+          await history.appendMessage(conversationId, {
+            role: "assistant",
+            content: partial,
+          });
+        }
       } else {
-        setMessages((prev) =>
-          prev.at(-1)?.role === "assistant" && !prev.at(-1)?.content
-            ? prev.slice(0, -1)
-            : prev
-        );
         setError((err as Error).message || errorCopy(0, undefined));
       }
     } finally {
@@ -189,6 +247,135 @@ function AskPage() {
         </p>
       </section>
 
+      <div className="ask-layout">
+        <aside className="glass glass-card ask-history" aria-label="Saved chats">
+          <div className="ask-history-head">
+            <h2>Saved chats</h2>
+            <button type="button" className="btn btn-ghost" onClick={startNewChat}>
+              New chat
+            </button>
+          </div>
+          {!history.signedIn ? (
+            <p className="ask-hint">
+              Sign in to save your questions and answers and pick them up on any
+              device. Without an account this conversation stays in this session
+              only.
+            </p>
+          ) : history.conversations.length === 0 ? (
+            <p className="ask-hint">
+              Your saved conversations appear here once you ask a question.
+            </p>
+          ) : (
+            <>
+              <ul className="ask-history-list">
+                {history.conversations.map((c) => (
+                  <li
+                    key={c.id}
+                    className={c.id === activeId ? "ask-history-row active" : "ask-history-row"}
+                  >
+                    {renamingId === c.id ? (
+                      <form
+                        className="ask-rename"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void history.renameConversation(c.id, renameValue);
+                          setRenamingId(null);
+                        }}
+                      >
+                        <label htmlFor={`rename-${c.id}`} className="sr-only">
+                          Chat title
+                        </label>
+                        <input
+                          id={`rename-${c.id}`}
+                          type="text"
+                          value={renameValue}
+                          maxLength={120}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          autoFocus
+                        />
+                        <button type="submit" className="btn btn-primary">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </form>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="ask-history-open"
+                          aria-current={c.id === activeId ? "true" : undefined}
+                          onClick={() => void openConversation(c.id)}
+                        >
+                          <span className="ask-history-title">{c.title}</span>
+                          <span className="ask-history-meta">
+                            {MODE_LABELS[c.mode]} ·{" "}
+                            {new Date(c.updatedAt).toLocaleDateString()}
+                          </span>
+                        </button>
+                        <span className="ask-history-actions">
+                          <button
+                            type="button"
+                            className="ask-icon-btn"
+                            aria-label={`Rename chat: ${c.title}`}
+                            onClick={() => {
+                              setRenamingId(c.id);
+                              setRenameValue(c.title);
+                            }}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            type="button"
+                            className="ask-icon-btn"
+                            aria-label={`Delete chat: ${c.title}`}
+                            onClick={() => void removeConversation(c.id)}
+                          >
+                            Delete
+                          </button>
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {confirmClear ? (
+                <div className="ask-confirm">
+                  <p>Delete every saved chat? This cannot be undone.</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => void clearAllChats()}
+                  >
+                    Delete all
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setConfirmClear(false)}
+                  >
+                    Keep them
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-ghost ask-clear-all"
+                  onClick={() => setConfirmClear(true)}
+                >
+                  Delete all chats
+                </button>
+              )}
+            </>
+          )}
+        </aside>
+
+        <div className="ask-main">
       <div className="ask-modes" role="tablist" aria-label="Assistant mode">
         {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
           <button
@@ -197,12 +384,16 @@ function AskPage() {
             role="tab"
             aria-selected={mode === m}
             className={mode === m ? "active" : ""}
-            onClick={() => setMode(m)}
+            onClick={() => {
+              setMode(m);
+              if (activeId) void history.setConversationMode(activeId, m);
+            }}
           >
             {MODE_LABELS[m]}
           </button>
         ))}
       </div>
+
 
       {mode === "quiz" && (
         <section className="glass glass-card ask-controls" aria-label="Quiz settings">
@@ -368,21 +559,20 @@ function AskPage() {
           </button>
         )}
         {messages.length > 0 && !streaming && (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            onClick={() => {
-              setMessages([]);
-              setError(null);
-            }}
-          >
+          <button type="button" className="btn btn-ghost" onClick={startNewChat}>
             Clear
           </button>
         )}
       </form>
       <p className="ask-scope-note">
         ORBITEX answers questions about space and space studies only.
+        {history.signedIn
+          ? " Saved chats stay on your account and can be deleted at any time."
+          : ""}
       </p>
+        </div>
+      </div>
     </main>
+
   );
 }
