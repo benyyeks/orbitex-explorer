@@ -247,6 +247,135 @@ function AskPage() {
         </p>
       </section>
 
+      <div className="ask-layout">
+        <aside className="glass glass-card ask-history" aria-label="Saved chats">
+          <div className="ask-history-head">
+            <h2>Saved chats</h2>
+            <button type="button" className="btn btn-ghost" onClick={startNewChat}>
+              New chat
+            </button>
+          </div>
+          {!history.signedIn ? (
+            <p className="ask-hint">
+              Sign in to save your questions and answers and pick them up on any
+              device. Without an account this conversation stays in this session
+              only.
+            </p>
+          ) : history.conversations.length === 0 ? (
+            <p className="ask-hint">
+              Your saved conversations appear here once you ask a question.
+            </p>
+          ) : (
+            <>
+              <ul className="ask-history-list">
+                {history.conversations.map((c) => (
+                  <li
+                    key={c.id}
+                    className={c.id === activeId ? "ask-history-row active" : "ask-history-row"}
+                  >
+                    {renamingId === c.id ? (
+                      <form
+                        className="ask-rename"
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void history.renameConversation(c.id, renameValue);
+                          setRenamingId(null);
+                        }}
+                      >
+                        <label htmlFor={`rename-${c.id}`} className="sr-only">
+                          Chat title
+                        </label>
+                        <input
+                          id={`rename-${c.id}`}
+                          type="text"
+                          value={renameValue}
+                          maxLength={120}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          autoFocus
+                        />
+                        <button type="submit" className="btn btn-primary">
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          Cancel
+                        </button>
+                      </form>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className="ask-history-open"
+                          aria-current={c.id === activeId ? "true" : undefined}
+                          onClick={() => void openConversation(c.id)}
+                        >
+                          <span className="ask-history-title">{c.title}</span>
+                          <span className="ask-history-meta">
+                            {MODE_LABELS[c.mode]} ·{" "}
+                            {new Date(c.updatedAt).toLocaleDateString()}
+                          </span>
+                        </button>
+                        <span className="ask-history-actions">
+                          <button
+                            type="button"
+                            className="ask-icon-btn"
+                            aria-label={`Rename chat: ${c.title}`}
+                            onClick={() => {
+                              setRenamingId(c.id);
+                              setRenameValue(c.title);
+                            }}
+                          >
+                            Rename
+                          </button>
+                          <button
+                            type="button"
+                            className="ask-icon-btn"
+                            aria-label={`Delete chat: ${c.title}`}
+                            onClick={() => void removeConversation(c.id)}
+                          >
+                            Delete
+                          </button>
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {confirmClear ? (
+                <div className="ask-confirm">
+                  <p>Delete every saved chat? This cannot be undone.</p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => void clearAllChats()}
+                  >
+                    Delete all
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => setConfirmClear(false)}
+                  >
+                    Keep them
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="btn btn-ghost ask-clear-all"
+                  onClick={() => setConfirmClear(true)}
+                >
+                  Delete all chats
+                </button>
+              )}
+            </>
+          )}
+        </aside>
+
+        <div className="ask-main">
       <div className="ask-modes" role="tablist" aria-label="Assistant mode">
         {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
           <button
@@ -255,12 +384,16 @@ function AskPage() {
             role="tab"
             aria-selected={mode === m}
             className={mode === m ? "active" : ""}
-            onClick={() => setMode(m)}
+            onClick={() => {
+              setMode(m);
+              if (activeId) void history.setConversationMode(activeId, m);
+            }}
           >
             {MODE_LABELS[m]}
           </button>
         ))}
       </div>
+
 
       {mode === "quiz" && (
         <section className="glass glass-card ask-controls" aria-label="Quiz settings">
