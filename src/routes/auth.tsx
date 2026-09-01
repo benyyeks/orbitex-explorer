@@ -1,25 +1,38 @@
 // Account page: sign in, create an account, or manage the signed-in session.
-// An account syncs the reading list, saved satellites, and observing location
-// across devices. Everything on ORBITEX still works without one.
-import { useState, type FormEvent } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+// An ORBITEX account is required for every page except the landing page, and
+// it keeps the reading list, saved satellites, and observing location in sync.
+import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
+// Only same-origin paths are ever followed after sign-in. Anything else, an
+// absolute URL or a protocol-relative path, falls back to the landing page.
+function safePath(raw: unknown): string {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 300) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
+  if (raw.startsWith("/auth")) return "/";
+  return raw;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const target = safePath(search["redirect"]);
+    return target === "/" ? {} : { redirect: target };
+  },
   head: () => ({
     meta: [
       { title: "Sign in - ORBITEX" },
       {
         name: "description",
         content:
-          "Sign in to ORBITEX to sync your reading list, saved satellites, and observing location across devices.",
+          "Sign in to ORBITEX to open the live tracking, mission, and study tools, and to sync your reading list and saved objects across devices.",
       },
       { property: "og:title", content: "Sign in - ORBITEX" },
       {
         property: "og:description",
         content:
-          "An ORBITEX account keeps your reading list, saved satellites, and observing location in sync.",
+          "An ORBITEX account unlocks the dashboard and keeps your reading list, saved satellites, and observing location in sync.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -27,29 +40,34 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-// Professional copy only: no provider jargon, no internal detail.
+
+// Professional copy only: no provider jargon, no internal detail, and nothing
+// that reveals whether an account exists for a given address.
 function friendlyError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("invalid login")) {
-    return "That email and password combination did not match an account.";
-  }
-  if (m.includes("already registered") || m.includes("already been registered")) {
-    return "An account already exists for that email. Try signing in instead.";
-  }
-  if (m.includes("password")) {
-    return "Passwords need at least 6 characters.";
-  }
-  if (m.includes("email")) {
-    return "That does not look like a valid email address.";
-  }
-  if (m.includes("rate limit")) {
+  if (m.includes("rate limit") || m.includes("too many")) {
     return "Too many attempts in a short time. Please wait a moment and try again.";
   }
-  return "That did not work. Please check the details and try again.";
+  if (m.includes("password") && m.includes("6")) {
+    return "Passwords need at least 6 characters.";
+  }
+  if (m.includes("confirm")) {
+    return "Please confirm your email address first, then sign in.";
+  }
+  return "Those details did not work. Please check them and try again.";
 }
 
 function AuthPage() {
   const { user, loading } = useAuth();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const target = safePath(search.redirect);
+
+  useEffect(() => {
+    if (!loading && user && target !== "/") {
+      void navigate({ to: target, replace: true });
+    }
+  }, [loading, user, target, navigate]);
 
   if (loading) {
     return (
@@ -64,10 +82,15 @@ function AuthPage() {
 
   return (
     <main className="container page-scaffold">
-      {user ? <AccountView email={user.email ?? ""} /> : <SignInView />}
+      {user ? (
+        <AccountView email={user.email ?? ""} />
+      ) : (
+        <SignInView gated={target !== "/"} />
+      )}
     </main>
   );
 }
+
 
 function AccountView({ email }: { email: string }) {
   const [busy, setBusy] = useState(false);
@@ -93,7 +116,8 @@ function AccountView({ email }: { email: string }) {
           <li>Your observing location for sky and pass predictions</li>
         </ul>
         <p className="auth-note">
-          Signed out visitors keep the same data in their browser instead.
+          Your account details are never used by the ORBITEX assistant, and it has
+          no access to accounts, saved lists, or notes.
         </p>
         <div className="auth-actions">
           <button
@@ -113,7 +137,7 @@ function AccountView({ email }: { email: string }) {
   );
 }
 
-function SignInView() {
+function SignInView({ gated }: { gated: boolean }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -124,23 +148,36 @@ function SignInView() {
     e.preventDefault();
     if (busy) return;
     setStatus(null);
-    if (password.length < 6) {
-      setStatus({ kind: "error", text: "Passwords need at least 6 characters." });
+    // Client-side bounds keep malformed input out of the request entirely.
+    const cleanEmail = email.trim().toLowerCase().slice(0, 254);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
+      setStatus({ kind: "error", text: "Please enter a valid email address." });
+      return;
+    }
+    if (password.length < 6 || password.length > 128) {
+      setStatus({ kind: "error", text: "Passwords need between 6 and 128 characters." });
       return;
     }
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
         if (error) setStatus({ kind: "error", text: friendlyError(error.message) });
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
         if (error) {
           setStatus({ kind: "error", text: friendlyError(error.message) });
         } else if (!data.session) {
           setStatus({
             kind: "success",
-            text: "Account created. Check your inbox for a confirmation link to finish signing in.",
+            text: "Check your inbox for a confirmation link to finish signing in.",
           });
         }
       }
@@ -156,10 +193,12 @@ function SignInView() {
       <section className="page-hero">
         <h1>{mode === "signin" ? "Sign in" : "Create your account"}</h1>
         <p className="tagline">
-          Sync your reading list, saved satellites, and observing location across
-          devices. Every ORBITEX tool also works without an account.
+          {gated
+            ? "That page is part of the ORBITEX dashboard. Sign in to continue, and you will be taken straight there."
+            : "An ORBITEX account opens the live tracking, mission, and study tools, and keeps your reading list, saved objects, and observing location in sync across devices."}
         </p>
       </section>
+
       <section className="glass glass-card auth-card">
         <div className="auth-tabs" role="tablist" aria-label="Sign in or create an account">
           <button
@@ -197,6 +236,7 @@ function SignInView() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              maxLength={254}
               placeholder="you@example.com"
             />
           </div>
@@ -208,6 +248,7 @@ function SignInView() {
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
               required
               minLength={6}
+              maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"

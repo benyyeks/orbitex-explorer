@@ -19,7 +19,7 @@ import { useNow } from "@/hooks/use-now";
 // One route serves every NORAD catalog number: live telemetry, a rendered
 // ground track, pass predictions, and the full orbital element set.
 
-export const Route = createFileRoute("/tracker/$noradId")({
+export const Route = createFileRoute("/_authenticated/tracker/$noradId")({
   head: ({ params }) => ({
     meta: [
       { title: `Catalog Object ${params.noradId} - ORBITEX` },

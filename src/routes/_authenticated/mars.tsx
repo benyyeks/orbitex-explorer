@@ -15,7 +15,7 @@ import { FeedError } from "@/components/site/data-state";
 import { MapSkeleton, DetailRowsSkeleton, PhotoGridSkeleton } from "@/components/site/page-skeleton";
 import { useNow } from "@/hooks/use-now";
 
-export const Route = createFileRoute("/mars")({
+export const Route = createFileRoute("/_authenticated/mars")({
   head: () => ({
     meta: [
       { title: "Mars - ORBITEX" },

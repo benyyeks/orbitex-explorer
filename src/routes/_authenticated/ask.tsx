@@ -7,7 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
 import { useAskHistory } from "@/lib/ask-history";
 
-export const Route = createFileRoute("/ask")({
+export const Route = createFileRoute("/_authenticated/ask")({
   head: () => ({
     meta: [
       { title: "Ask ORBITEX - ORBITEX" },
