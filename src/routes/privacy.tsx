@@ -114,8 +114,12 @@ function PrivacyPage() {
             </p>
             <p>
               Questions you send to the ORBITEX assistant are processed to generate a reply
-              and are not used to build a profile of you.
+              and are not used to build a profile of you. With an account, your assistant
+              conversations are saved to your account so they are available on any device.
+              You can delete a single conversation, or all of them, from the Ask ORBITEX
+              page at any time. Signed out, nothing from the assistant is stored.
             </p>
+
           </div>
 
 
