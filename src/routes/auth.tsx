@@ -136,7 +136,7 @@ function AccountView({ email }: { email: string }) {
   );
 }
 
-function SignInView() {
+function SignInView({ gated }: { gated: boolean }) {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -147,23 +147,36 @@ function SignInView() {
     e.preventDefault();
     if (busy) return;
     setStatus(null);
-    if (password.length < 6) {
-      setStatus({ kind: "error", text: "Passwords need at least 6 characters." });
+    // Client-side bounds keep malformed input out of the request entirely.
+    const cleanEmail = email.trim().toLowerCase().slice(0, 254);
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(cleanEmail)) {
+      setStatus({ kind: "error", text: "Please enter a valid email address." });
+      return;
+    }
+    if (password.length < 6 || password.length > 128) {
+      setStatus({ kind: "error", text: "Passwords need between 6 and 128 characters." });
       return;
     }
     setBusy(true);
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
+        });
         if (error) setStatus({ kind: "error", text: friendlyError(error.message) });
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: { emailRedirectTo: window.location.origin },
+        });
         if (error) {
           setStatus({ kind: "error", text: friendlyError(error.message) });
         } else if (!data.session) {
           setStatus({
             kind: "success",
-            text: "Account created. Check your inbox for a confirmation link to finish signing in.",
+            text: "Check your inbox for a confirmation link to finish signing in.",
           });
         }
       }
@@ -179,10 +192,12 @@ function SignInView() {
       <section className="page-hero">
         <h1>{mode === "signin" ? "Sign in" : "Create your account"}</h1>
         <p className="tagline">
-          Sync your reading list, saved satellites, and observing location across
-          devices. Every ORBITEX tool also works without an account.
+          {gated
+            ? "That page is part of the ORBITEX dashboard. Sign in to continue, and you will be taken straight there."
+            : "An ORBITEX account opens the live tracking, mission, and study tools, and keeps your reading list, saved objects, and observing location in sync across devices."}
         </p>
       </section>
+
       <section className="glass glass-card auth-card">
         <div className="auth-tabs" role="tablist" aria-label="Sign in or create an account">
           <button
