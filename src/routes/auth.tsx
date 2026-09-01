@@ -41,29 +41,33 @@ export const Route = createFileRoute("/auth")({
 });
 
 
-// Professional copy only: no provider jargon, no internal detail.
+// Professional copy only: no provider jargon, no internal detail, and nothing
+// that reveals whether an account exists for a given address.
 function friendlyError(message: string): string {
   const m = message.toLowerCase();
-  if (m.includes("invalid login")) {
-    return "That email and password combination did not match an account.";
-  }
-  if (m.includes("already registered") || m.includes("already been registered")) {
-    return "An account already exists for that email. Try signing in instead.";
-  }
-  if (m.includes("password")) {
-    return "Passwords need at least 6 characters.";
-  }
-  if (m.includes("email")) {
-    return "That does not look like a valid email address.";
-  }
-  if (m.includes("rate limit")) {
+  if (m.includes("rate limit") || m.includes("too many")) {
     return "Too many attempts in a short time. Please wait a moment and try again.";
   }
-  return "That did not work. Please check the details and try again.";
+  if (m.includes("password") && m.includes("6")) {
+    return "Passwords need at least 6 characters.";
+  }
+  if (m.includes("confirm")) {
+    return "Please confirm your email address first, then sign in.";
+  }
+  return "Those details did not work. Please check them and try again.";
 }
 
 function AuthPage() {
   const { user, loading } = useAuth();
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const target = safePath(search.redirect);
+
+  useEffect(() => {
+    if (!loading && user && target !== "/") {
+      void navigate({ to: target, replace: true });
+    }
+  }, [loading, user, target, navigate]);
 
   if (loading) {
     return (
@@ -78,10 +82,15 @@ function AuthPage() {
 
   return (
     <main className="container page-scaffold">
-      {user ? <AccountView email={user.email ?? ""} /> : <SignInView />}
+      {user ? (
+        <AccountView email={user.email ?? ""} />
+      ) : (
+        <SignInView gated={target !== "/"} />
+      )}
     </main>
   );
 }
+
 
 function AccountView({ email }: { email: string }) {
   const [busy, setBusy] = useState(false);
