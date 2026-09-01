@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EngineeringRouteImport } from './routes/engineering'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -38,6 +39,10 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -54,65 +59,65 @@ const PrivacyRoute = PrivacyRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAboutRoute = AuthenticatedAboutRouteImport.update({
-  id: '/_authenticated/about',
+  id: '/about',
   path: '/about',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
-  id: '/_authenticated/ask',
+  id: '/ask',
   path: '/ask',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDeepspaceRoute = AuthenticatedDeepspaceRouteImport.update({
-  id: '/_authenticated/deepspace',
+  id: '/deepspace',
   path: '/deepspace',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedIntelligenceRoute =
   AuthenticatedIntelligenceRouteImport.update({
-    id: '/_authenticated/intelligence',
+    id: '/intelligence',
     path: '/intelligence',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLaunchesRoute = AuthenticatedLaunchesRouteImport.update({
-  id: '/_authenticated/launches',
+  id: '/launches',
   path: '/launches',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMarsRoute = AuthenticatedMarsRouteImport.update({
-  id: '/_authenticated/mars',
+  id: '/mars',
   path: '/mars',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNeoRoute = AuthenticatedNeoRouteImport.update({
-  id: '/_authenticated/neo',
+  id: '/neo',
   path: '/neo',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedResearchRoute = AuthenticatedResearchRouteImport.update({
-  id: '/_authenticated/research',
+  id: '/research',
   path: '/research',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
-  id: '/_authenticated/resources',
+  id: '/resources',
   path: '/resources',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSkyRoute = AuthenticatedSkyRouteImport.update({
-  id: '/_authenticated/sky',
+  id: '/sky',
   path: '/sky',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedTrackerRoute = AuthenticatedTrackerRouteImport.update({
-  id: '/_authenticated/tracker',
+  id: '/tracker',
   path: '/tracker',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedWeatherRoute = AuthenticatedWeatherRouteImport.update({
-  id: '/_authenticated/weather',
+  id: '/weather',
   path: '/weather',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiAskRoute = ApiAskRouteImport.update({
   id: '/api/ask',
@@ -205,6 +210,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/engineering': typeof EngineeringRoute
   '/privacy': typeof PrivacyRoute
@@ -280,6 +286,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/auth'
     | '/engineering'
     | '/privacy'
@@ -306,21 +313,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   EngineeringRoute: typeof EngineeringRoute
   PrivacyRoute: typeof PrivacyRoute
-  AuthenticatedAboutRoute: typeof AuthenticatedAboutRoute
-  AuthenticatedAskRoute: typeof AuthenticatedAskRoute
-  AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
-  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
-  AuthenticatedLaunchesRoute: typeof AuthenticatedLaunchesRoute
-  AuthenticatedMarsRoute: typeof AuthenticatedMarsRoute
-  AuthenticatedNeoRoute: typeof AuthenticatedNeoRoute
-  AuthenticatedResearchRoute: typeof AuthenticatedResearchRoute
-  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
-  AuthenticatedSkyRoute: typeof AuthenticatedSkyRoute
-  AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRouteWithChildren
-  AuthenticatedWeatherRoute: typeof AuthenticatedWeatherRoute
   ApiAskRoute: typeof ApiAskRoute
   ListShareIdRoute: typeof ListShareIdRoute
   ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
@@ -333,6 +329,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -361,84 +364,84 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AuthenticatedAboutRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ask': {
       id: '/_authenticated/ask'
       path: '/ask'
       fullPath: '/ask'
       preLoaderRoute: typeof AuthenticatedAskRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/deepspace': {
       id: '/_authenticated/deepspace'
       path: '/deepspace'
       fullPath: '/deepspace'
       preLoaderRoute: typeof AuthenticatedDeepspaceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/intelligence': {
       id: '/_authenticated/intelligence'
       path: '/intelligence'
       fullPath: '/intelligence'
       preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/launches': {
       id: '/_authenticated/launches'
       path: '/launches'
       fullPath: '/launches'
       preLoaderRoute: typeof AuthenticatedLaunchesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mars': {
       id: '/_authenticated/mars'
       path: '/mars'
       fullPath: '/mars'
       preLoaderRoute: typeof AuthenticatedMarsRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/neo': {
       id: '/_authenticated/neo'
       path: '/neo'
       fullPath: '/neo'
       preLoaderRoute: typeof AuthenticatedNeoRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/research': {
       id: '/_authenticated/research'
       path: '/research'
       fullPath: '/research'
       preLoaderRoute: typeof AuthenticatedResearchRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resources': {
       id: '/_authenticated/resources'
       path: '/resources'
       fullPath: '/resources'
       preLoaderRoute: typeof AuthenticatedResourcesRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sky': {
       id: '/_authenticated/sky'
       path: '/sky'
       fullPath: '/sky'
       preLoaderRoute: typeof AuthenticatedSkyRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tracker': {
       id: '/_authenticated/tracker'
       path: '/tracker'
       fullPath: '/tracker'
       preLoaderRoute: typeof AuthenticatedTrackerRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/weather': {
       id: '/_authenticated/weather'
       path: '/weather'
       fullPath: '/weather'
       preLoaderRoute: typeof AuthenticatedWeatherRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/ask': {
       id: '/api/ask'
@@ -521,11 +524,22 @@ const AuthenticatedTrackerRouteChildren: AuthenticatedTrackerRouteChildren = {
 const AuthenticatedTrackerRouteWithChildren =
   AuthenticatedTrackerRoute._addFileChildren(AuthenticatedTrackerRouteChildren)
 
-const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  AuthRoute: AuthRoute,
-  EngineeringRoute: EngineeringRoute,
-  PrivacyRoute: PrivacyRoute,
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAboutRoute: typeof AuthenticatedAboutRoute
+  AuthenticatedAskRoute: typeof AuthenticatedAskRoute
+  AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
+  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
+  AuthenticatedLaunchesRoute: typeof AuthenticatedLaunchesRoute
+  AuthenticatedMarsRoute: typeof AuthenticatedMarsRoute
+  AuthenticatedNeoRoute: typeof AuthenticatedNeoRoute
+  AuthenticatedResearchRoute: typeof AuthenticatedResearchRoute
+  AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedSkyRoute: typeof AuthenticatedSkyRoute
+  AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRouteWithChildren
+  AuthenticatedWeatherRoute: typeof AuthenticatedWeatherRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAboutRoute: AuthenticatedAboutRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedDeepspaceRoute: AuthenticatedDeepspaceRouteWithChildren,
@@ -538,6 +552,17 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedSkyRoute: AuthenticatedSkyRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRouteWithChildren,
   AuthenticatedWeatherRoute: AuthenticatedWeatherRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  EngineeringRoute: EngineeringRoute,
+  PrivacyRoute: PrivacyRoute,
   ApiAskRoute: ApiAskRoute,
   ListShareIdRoute: ListShareIdRoute,
   ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
