@@ -18,7 +18,7 @@ import {
   useWishlist,
 } from "@/lib/wishlist";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/resources")({
+export const Route = createFileRoute("/_authenticated/resources")({
   validateSearch: (search: Record<string, unknown>) => ({
     list:
       typeof search["list"] === "string" && search["list"].length <= 2000

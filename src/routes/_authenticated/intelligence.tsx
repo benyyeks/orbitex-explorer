@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/intelligence")({
+export const Route = createFileRoute("/_authenticated/intelligence")({
   head: () => ({
     meta: [
       { title: "Mission Intelligence — ORBITEX" },

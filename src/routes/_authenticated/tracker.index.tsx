@@ -17,7 +17,7 @@ import { SceneSkeleton, SceneBootOverlay } from "@/components/site/page-skeleton
 // three.js is browser-only; the globe mounts after hydration.
 const TrackerGlobe = lazy(() => import("@/components/tracker/tracker-globe"));
 
-export const Route = createFileRoute("/_authenticated/_authenticated/tracker/")({
+export const Route = createFileRoute("/_authenticated/tracker/")({
   head: () => ({
     meta: [
       { title: "Orbit Tracker - ORBITEX" },

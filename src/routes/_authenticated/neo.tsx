@@ -7,7 +7,7 @@ import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
 import { PageHeroSkeleton, StatGridSkeleton, TableSkeleton } from "@/components/site/page-skeleton";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/neo")({
+export const Route = createFileRoute("/_authenticated/neo")({
   head: () => ({
     meta: [
       { title: "Asteroid Watch - ORBITEX" },

@@ -25,7 +25,7 @@ import { SceneSkeleton, SceneBootOverlay } from "@/components/site/page-skeleton
 
 const SolarSystemScene = lazy(() => import("@/components/deepspace/solar-system"));
 
-export const Route = createFileRoute("/_authenticated/_authenticated/deepspace/")({
+export const Route = createFileRoute("/_authenticated/deepspace/")({
   head: () => ({
     meta: [
       { title: "Deep Space - ORBITEX" },

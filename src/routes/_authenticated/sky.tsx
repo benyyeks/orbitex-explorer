@@ -14,7 +14,7 @@ import {
 import { fmtAU, fmtNum, utcClock, lightTimeFromAU } from "@/lib/format";
 import { useObserverLocation } from "@/lib/location";
 
-export const Route = createFileRoute("/_authenticated/_authenticated/sky")({
+export const Route = createFileRoute("/_authenticated/sky")({
   head: () => ({
     meta: [
       { title: "Sky Tonight - ORBITEX" },
