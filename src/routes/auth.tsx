@@ -1,31 +1,45 @@
 // Account page: sign in, create an account, or manage the signed-in session.
-// An account syncs the reading list, saved satellites, and observing location
-// across devices. Everything on ORBITEX still works without one.
-import { useState, type FormEvent } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+// An ORBITEX account is required for every page except the landing page, and
+// it keeps the reading list, saved satellites, and observing location in sync.
+import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 
+// Only same-origin paths are ever followed after sign-in. Anything else, an
+// absolute URL or a protocol-relative path, falls back to the landing page.
+function safePath(raw: unknown): string {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 300) return "/";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/";
+  if (raw.startsWith("/auth")) return "/";
+  return raw;
+}
+
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const target = safePath(search["redirect"]);
+    return target === "/" ? {} : { redirect: target };
+  },
   head: () => ({
     meta: [
       { title: "Sign in - ORBITEX" },
       {
         name: "description",
         content:
-          "Sign in to ORBITEX to sync your reading list, saved satellites, and observing location across devices.",
+          "Sign in to ORBITEX to open the live tracking, mission, and study tools, and to sync your reading list and saved objects across devices.",
       },
       { property: "og:title", content: "Sign in - ORBITEX" },
       {
         property: "og:description",
         content:
-          "An ORBITEX account keeps your reading list, saved satellites, and observing location in sync.",
+          "An ORBITEX account unlocks the dashboard and keeps your reading list, saved satellites, and observing location in sync.",
       },
       { name: "robots", content: "noindex" },
     ],
   }),
   component: AuthPage,
 });
+
 
 // Professional copy only: no provider jargon, no internal detail.
 function friendlyError(message: string): string {
