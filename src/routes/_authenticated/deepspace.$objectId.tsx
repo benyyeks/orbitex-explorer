@@ -47,7 +47,7 @@ function eyebrow(r: Resolved): string {
   return "Deep space probe · JPL Horizons telemetry";
 }
 
-export const Route = createFileRoute("/deepspace/$objectId")({
+export const Route = createFileRoute("/_authenticated/_authenticated/deepspace/$objectId")({
   head: ({ params }) => {
     const r = resolveObject(params.objectId);
     const name = r ? displayName(r) : "Object";

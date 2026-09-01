@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/research")({
+export const Route = createFileRoute("/_authenticated/_authenticated/research")({
   head: () => ({
     meta: [
       { title: "Research Library — ORBITEX" },

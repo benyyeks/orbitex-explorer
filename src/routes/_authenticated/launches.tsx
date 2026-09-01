@@ -8,7 +8,7 @@ import { FeedError, EmptyState } from "@/components/site/data-state";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { PageHeroSkeleton, StatGridSkeleton, LaunchListSkeleton } from "@/components/site/page-skeleton";
 
-export const Route = createFileRoute("/launches")({
+export const Route = createFileRoute("/_authenticated/_authenticated/launches")({
   head: () => ({
     meta: [
       { title: "Launch Schedule - ORBITEX" },

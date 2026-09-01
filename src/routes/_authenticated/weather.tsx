@@ -6,7 +6,7 @@ import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
 import { PageHeroSkeleton, StatGridSkeleton, PanelSkeleton } from "@/components/site/page-skeleton";
 
-export const Route = createFileRoute("/weather")({
+export const Route = createFileRoute("/_authenticated/_authenticated/weather")({
   head: () => ({
     meta: [
       { title: "Space Weather - ORBITEX" },
