@@ -116,7 +116,8 @@ function AccountView({ email }: { email: string }) {
           <li>Your observing location for sky and pass predictions</li>
         </ul>
         <p className="auth-note">
-          Signed out visitors keep the same data in their browser instead.
+          Your account details are never used by the ORBITEX assistant, and it has
+          no access to accounts, saved lists, or notes.
         </p>
         <div className="auth-actions">
           <button
@@ -235,6 +236,7 @@ function SignInView({ gated }: { gated: boolean }) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              maxLength={254}
               placeholder="you@example.com"
             />
           </div>
@@ -246,6 +248,7 @@ function SignInView({ gated }: { gated: boolean }) {
               autoComplete={mode === "signin" ? "current-password" : "new-password"}
               required
               minLength={6}
+              maxLength={128}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="At least 6 characters"
