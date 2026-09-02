@@ -4,7 +4,13 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/engineering")({
   beforeLoad: () => {
-    throw redirect({ to: "/resources", hash: "orbital-mechanics", replace: true });
+    throw redirect({
+      to: "/resources",
+      search: {},
+      hash: "orbital-mechanics",
+      replace: true,
+    });
+
   },
   component: () => null,
 });
