@@ -6,7 +6,7 @@ export const Route = createFileRoute("/engineering")({
   beforeLoad: () => {
     throw redirect({
       to: "/resources",
-      search: {},
+      search: { list: undefined },
       hash: "orbital-mechanics",
       replace: true,
     });
