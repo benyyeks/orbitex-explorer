@@ -18,6 +18,44 @@ import {
   useWishlist,
 } from "@/lib/wishlist";
 
+// Orbital regime reference, merged in from the former engineering notes page.
+type Regime = { name: string; altRange: string; use: string };
+
+const REGIMES: Regime[] = [
+  {
+    name: "Low Earth Orbit (LEO)",
+    altRange: "200 to 2,000 km",
+    use: "The ISS, Starlink, Earth observation satellites, and most human spaceflight. Orbits at this altitude complete a revolution in roughly 90 minutes.",
+  },
+  {
+    name: "Medium Earth Orbit (MEO)",
+    altRange: "2,000 to 35,786 km",
+    use: "Navigation constellations including GPS, Galileo, GLONASS, and BeiDou. Orbits at 20,000 to 23,000 km with periods near 12 hours.",
+  },
+  {
+    name: "Geostationary Orbit (GEO)",
+    altRange: "35,786 km above the equator",
+    use: "Communications, weather, and broadcast satellites that match Earth's rotation, appearing fixed in the sky from the ground.",
+  },
+  {
+    name: "Sun-Synchronous Orbit (SSO)",
+    altRange: "600 to 800 km, near-polar inclination",
+    use: "Earth observation and weather satellites that pass over any given latitude at the same local solar time, ensuring consistent lighting for imaging.",
+  },
+];
+
+// Section index for the jump menu. Order matches the page.
+const SECTIONS: { id: string; label: string }[] = [
+  { id: "orbital-mechanics", label: "Orbital mechanics" },
+  { id: "orbital-regimes", label: "Orbital regimes" },
+  { id: "spacecraft-engineering", label: "Spacecraft engineering" },
+  { id: "shelf", label: "Textbook shelf" },
+  { id: "reading-list", label: "My reading list" },
+  { id: "stem", label: "STEM programs" },
+  { id: "citizen-science", label: "Citizen science" },
+  { id: "competitions", label: "Student competitions" },
+];
+
 export const Route = createFileRoute("/_authenticated/resources")({
   validateSearch: (search: Record<string, unknown>) => ({
     list:
@@ -27,21 +65,25 @@ export const Route = createFileRoute("/_authenticated/resources")({
   }),
   head: () => ({
     meta: [
-      { title: "Learning Resources — ORBITEX" },
+      { title: "Learning Resources and Engineering Notes - ORBITEX" },
       {
         name: "description",
         content:
-          "A curated guide to space education programs, citizen science projects, student competitions, and hands-on learning tools from NASA and partner organizations.",
+          "Orbital mechanics and spacecraft engineering explainers, a curated aerospace textbook shelf with reading list, plus STEM programs, citizen science, and student competitions.",
       },
-      { property: "og:title", content: "Learning Resources — ORBITEX" },
+      {
+        property: "og:title",
+        content: "Learning Resources and Engineering Notes - ORBITEX",
+      },
       {
         property: "og:description",
         content:
-          "Space education programs, citizen science, student competitions, and hands-on learning tools from NASA and partners.",
+          "Engineering explainers, an aerospace textbook shelf, and space education programs in one reference desk.",
       },
       { property: "og:type", content: "website" },
     ],
   }),
+
   component: ResourcesPage,
 });
 
@@ -209,13 +251,175 @@ function ResourcesPage() {
             <span className="eyebrow">Reference</span>
             <h1>Learning resources</h1>
             <p className="tagline">
-              A curated guide to educational programs, citizen science projects,
-              and student competitions for anyone who wants to get closer to
-              space exploration.
+              One reference desk for ORBITEX: the engineering notes behind the
+              visualizations, a textbook shelf with your reading list, and the
+              programs, citizen science projects, and competitions that put you
+              closer to space exploration.
+            </p>
+            <nav className="section-jump" aria-label="Sections on this page">
+              {SECTIONS.map((sec) => (
+                <a key={sec.id} href={`#${sec.id}`} className="section-jump-link">
+                  {sec.label}
+                </a>
+              ))}
+            </nav>
+          </div>
+
+          <div className="glass glass-card scaffold-card" id="orbital-mechanics">
+            <h2>Orbital mechanics</h2>
+            <p>
+              NASA's Basics of Spaceflight is a comprehensive tutorial covering
+              the physics of interplanetary flight. The Gravity and Mechanics
+              chapter introduces gravitation, elliptical orbits, eccentricity,
+              and Newton's principles of motion as they apply to spacecraft
+              trajectories.
+            </p>
+            <ul className="feature-list">
+              <li>
+                <strong>
+                  <a
+                    href="https://science.nasa.gov/learn/basics-of-space-flight/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent"
+                  >
+                    Basics of Spaceflight (NASA)
+                  </a>
+                  :{" "}
+                </strong>
+                The full tutorial by Dave Doody, covering the framework of
+                interplanetary exploration.
+              </li>
+              <li>
+                <strong>
+                  <a
+                    href="https://science.nasa.gov/learn/basics-of-space-flight/chapter3-1/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent"
+                  >
+                    Gravity and Mechanics (Chapter 3)
+                  </a>
+                  :{" "}
+                </strong>
+                Gravitation, ellipses, eccentricity, and acceleration in orbit.
+              </li>
+              <li>
+                <strong>
+                  <a
+                    href="https://ntrs.nasa.gov/citations/19940011020"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent"
+                  >
+                    Space Flight: The Application of Orbital Mechanics
+                  </a>
+                  :{" "}
+                </strong>
+                A NASA primer on orbital mechanics originally written for
+                college-level physics students, available through NTRS.
+              </li>
+            </ul>
+          </div>
+
+          <div
+            className="glass glass-card scaffold-card"
+            id="orbital-regimes"
+            style={{ marginTop: 24 }}
+          >
+            <h2>Orbital regimes</h2>
+            <p>
+              The Orbit Tracker groups satellites by regime. Each regime is
+              defined by altitude and inclination, which together determine the
+              orbit's period, ground coverage, and stability.
+            </p>
+            <div className="source-table-wrap">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Regime</th>
+                    <th>Altitude</th>
+                    <th>Typical use</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {REGIMES.map((r) => (
+                    <tr key={r.name}>
+                      <td>{r.name}</td>
+                      <td className="mono">{r.altRange}</td>
+                      <td>{r.use}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="scaffold-note" style={{ marginTop: 16 }}>
+              <Link to="/tracker" className="text-accent">
+                Explore live satellites by regime in the Orbit Tracker
+              </Link>
+              .
             </p>
           </div>
 
-          <div className="glass glass-card scaffold-card">
+          <div
+            className="glass glass-card scaffold-card"
+            id="spacecraft-engineering"
+            style={{ marginTop: 24 }}
+          >
+            <h2>Spacecraft engineering</h2>
+            <p>
+              NASA's Small Spacecraft Technology program publishes a
+              state-of-the-art report covering every subsystem of modern
+              smallsats. The 2026 edition (NASA/TP-20260003140, May 2026)
+              documents the state of propulsion, power, guidance navigation and
+              control, structures, thermal control, and communications as of
+              April 2026.
+            </p>
+            <ul className="feature-list">
+              <li>
+                <a
+                  href="https://www.nasa.gov/smallsat-institute/sst-soa/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent"
+                >
+                  State-of-the-Art Small Spacecraft Technology (2026 report)
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://standards.nasa.gov/all-standards"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent"
+                >
+                  NASA Technical Standards
+                </a>
+                : the engineering standards used across flight projects, from
+                structures and materials to software assurance.
+              </li>
+              <li>
+                <a
+                  href="https://www.nasa.gov/reference/systems-engineering-handbook/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent"
+                >
+                  NASA Systems Engineering Handbook
+                </a>
+                : the lifecycle framework behind mission design reviews.
+              </li>
+            </ul>
+            <p className="scaffold-note" style={{ marginTop: 16 }}>
+              The textbook shelf below covers the same subsystems in depth.
+            </p>
+          </div>
+
+          <div
+            className="glass glass-card scaffold-card"
+            id="stem"
+            style={{ marginTop: 24 }}
+          >
             <h2>STEM programs</h2>
             <p>
               NASA offers programs for students from middle school through
@@ -271,7 +475,11 @@ function ResourcesPage() {
             </ul>
           </div>
 
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
+          <div
+            className="glass glass-card scaffold-card"
+            id="citizen-science"
+            style={{ marginTop: 24 }}
+          >
             <h2>Citizen science</h2>
             <p>
               NASA sponsors dozens of citizen science projects open to everyone,
@@ -295,7 +503,11 @@ function ResourcesPage() {
             </ul>
           </div>
 
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
+          <div
+            className="glass glass-card scaffold-card"
+            id="competitions"
+            style={{ marginTop: 24 }}
+          >
             <h2>Student competitions</h2>
             <p>
               These are verified, active competitions for student teams
@@ -369,7 +581,11 @@ function ResourcesPage() {
             </div>
           )}
 
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
+          <div
+            className="glass glass-card scaffold-card"
+            id="reading-list"
+            style={{ marginTop: 24 }}
+          >
             <h2>My reading list</h2>
             {savedBooks.length === 0 ? (
               <p>
@@ -564,7 +780,11 @@ function ResourcesPage() {
             )}
           </div>
 
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
+          <div
+            className="glass glass-card scaffold-card"
+            id="shelf"
+            style={{ marginTop: 24 }}
+          >
             <h2>Textbook shelf</h2>
             <p>
               A reading list of the standard references in each discipline of

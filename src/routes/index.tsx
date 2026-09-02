@@ -1,3 +1,4 @@
+import { useAuth } from "@/hooks/use-auth";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -708,6 +709,8 @@ function FeedbackSection() {
 // ------------------------------ Landing page ---------------------------------
 function LandingPage() {
   const clock = useUtcClock();
+  const { user, loading } = useAuth();
+  const signedOut = !loading && !user;
 
   return (
     <main className="page-main">
@@ -726,9 +729,29 @@ function LandingPage() {
               simulation.
             </p>
             <div className="hero-actions">
-              <Link to="/tracker" className="btn btn-primary">Open Orbit Tracker</Link>
-              <Link to="/about" className="btn">How the data works</Link>
+              {signedOut ? (
+                <>
+                  <Link to="/auth" className="btn btn-primary">
+                    Sign in to open the dashboard
+                  </Link>
+                  <Link to="/auth" search={{ redirect: "/tracker" }} className="btn">
+                    Preview the Orbit Tracker
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/tracker" className="btn btn-primary">Open Orbit Tracker</Link>
+                  <Link to="/about" className="btn">How the data works</Link>
+                </>
+              )}
             </div>
+            {signedOut && (
+              <p className="hero-note">
+                An account keeps your tracked objects, reading list, and observing
+                location in sync across devices. The landing page stays open to
+                everyone.
+              </p>
+            )}
             <div className="hero-clock glass-pill mono" aria-live="off">{clock}</div>
           </div>
           <HeroOrbit />
@@ -750,13 +773,27 @@ function LandingPage() {
             <h2>Every tool, one platform</h2>
           </div>
           <div className="explore-grid">
-            {EXPLORE.map((c) => (
-              <Link key={c.to} to={c.to} className="glass glass-card interactive explore-card">
-                <span className="explore-icon">{ICONS[c.icon]}</span>
-                <h3>{c.title}</h3>
-                <p>{c.blurb}</p>
-              </Link>
-            ))}
+            {EXPLORE.map((c) =>
+              signedOut ? (
+                <Link
+                  key={c.to}
+                  to="/auth"
+                  search={{ redirect: c.to }}
+                  className="glass glass-card interactive explore-card"
+                >
+                  <span className="explore-icon">{ICONS[c.icon]}</span>
+                  <h3>{c.title}</h3>
+                  <p>{c.blurb}</p>
+                  <span className="explore-lock">Sign in to open</span>
+                </Link>
+              ) : (
+                <Link key={c.to} to={c.to} className="glass glass-card interactive explore-card">
+                  <span className="explore-icon">{ICONS[c.icon]}</span>
+                  <h3>{c.title}</h3>
+                  <p>{c.blurb}</p>
+                </Link>
+              )
+            )}
           </div>
         </div>
       </section>

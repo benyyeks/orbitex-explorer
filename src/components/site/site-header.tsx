@@ -3,6 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LogoMark, BrandWord } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthControl } from "./auth-control";
+import { useAuth } from "@/hooks/use-auth";
 
 type NavLink = {
   id: string;
@@ -29,20 +30,29 @@ const NAV_LINKS: NavLink[] = [
   { id: "about", label: "About & Sources", to: "/about", section: "More" },
   { id: "research", label: "Research", to: "/research", section: "Learn" },
   { id: "intelligence", label: "Mission Intelligence", to: "/intelligence", section: "Learn" },
-  { id: "engineering", label: "Engineering", to: "/engineering", section: "Learn" },
-  { id: "resources", label: "Learning Resources", to: "/resources", section: "Learn", primary: true },
+  {
+    id: "resources",
+    label: "Learning Resources",
+    to: "/resources",
+    section: "Learn",
+    primary: true,
+  },
 ];
+
+// Signed out visitors only see the public surfaces. Everything else needs an
+// account, so listing it would only lead to the sign in page.
+const PUBLIC_IDS = new Set(["home"]);
 
 // The drawer lists every destination grouped by section, so wide screens can
 // show the index as columns and small screens as a stacked sheet.
-const NAV_GROUPS: { section?: string | undefined; links: NavLink[] }[] = NAV_LINKS.reduce<
-  { section?: string | undefined; links: NavLink[] }[]
->((groups, link) => {
-  const last = groups[groups.length - 1];
-  if (last && last.section === link.section) last.links.push(link);
-  else groups.push({ section: link.section, links: [link] });
-  return groups;
-}, []);
+function groupLinks(links: NavLink[]): { section?: string | undefined; links: NavLink[] }[] {
+  return links.reduce<{ section?: string | undefined; links: NavLink[] }[]>((groups, link) => {
+    const last = groups[groups.length - 1];
+    if (last && last.section === link.section) last.links.push(link);
+    else groups.push({ section: link.section, links: [link] });
+    return groups;
+  }, []);
+}
 
 
 function isMatch(pathname: string, to: string): boolean {
@@ -53,6 +63,9 @@ function isMatch(pathname: string, to: string): boolean {
 export function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
+  const links = user || loading ? NAV_LINKS : NAV_LINKS.filter((l) => PUBLIC_IDS.has(l.id));
+  const groups = groupLinks(links);
 
   // Close the drawer on any route change.
   useEffect(() => {
@@ -86,15 +99,17 @@ export function SiteHeader() {
             <BrandWord />
           </Link>
           <nav className="nav-desktop" aria-label="Primary">
-            {NAV_LINKS.filter((l) => l.primary).map((l) => (
-              <Link
-                key={l.id}
-                to={l.to}
-                aria-current={isMatch(pathname, l.to) ? "page" : undefined}
-              >
-                {l.label}
-              </Link>
-            ))}
+            {links
+              .filter((l) => l.primary)
+              .map((l) => (
+                <Link
+                  key={l.id}
+                  to={l.to}
+                  aria-current={isMatch(pathname, l.to) ? "page" : undefined}
+                >
+                  {l.label}
+                </Link>
+              ))}
           </nav>
           <div className="header-actions">
             <AuthControl />
@@ -120,7 +135,7 @@ export function SiteHeader() {
         </div>
       </header>
       <nav className={`nav-mobile${menuOpen ? " open" : ""}`} aria-label="All sections">
-        {NAV_GROUPS.map((group) => (
+        {groups.map((group) => (
           <div className="nav-group" key={group.section ?? "top"}>
             {group.section && (
               <span className="nav-section-label">{group.section}</span>
