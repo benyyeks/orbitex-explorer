@@ -1965,3 +1965,46 @@ a.side-item { text-decoration: none; color: inherit; }
   .ask-history { position: static; }
   .ask-history-list { max-height: 240px; }
 }
+
+/* Section jump menu on the merged Learning Resources page */
+.section-jump {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.section-jump-link {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card) / 0.5);
+  color: hsl(var(--muted-foreground));
+  text-decoration: none;
+  transition: color 0.18s ease, border-color 0.18s ease;
+}
+.section-jump-link:hover,
+.section-jump-link:focus-visible {
+  color: hsl(var(--accent));
+  border-color: hsl(var(--accent) / 0.5);
+}
+
+/* Signed out landing page prompts */
+.hero-note {
+  margin-top: 16px;
+  max-width: 46ch;
+  font-size: 0.86rem;
+  color: hsl(var(--muted-foreground));
+}
+.explore-lock {
+  display: inline-block;
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: hsl(var(--accent));
+}
