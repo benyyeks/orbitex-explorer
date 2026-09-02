@@ -65,21 +65,25 @@ export const Route = createFileRoute("/_authenticated/resources")({
   }),
   head: () => ({
     meta: [
-      { title: "Learning Resources — ORBITEX" },
+      { title: "Learning Resources and Engineering Notes - ORBITEX" },
       {
         name: "description",
         content:
-          "A curated guide to space education programs, citizen science projects, student competitions, and hands-on learning tools from NASA and partner organizations.",
+          "Orbital mechanics and spacecraft engineering explainers, a curated aerospace textbook shelf with reading list, plus STEM programs, citizen science, and student competitions.",
       },
-      { property: "og:title", content: "Learning Resources — ORBITEX" },
+      {
+        property: "og:title",
+        content: "Learning Resources and Engineering Notes - ORBITEX",
+      },
       {
         property: "og:description",
         content:
-          "Space education programs, citizen science, student competitions, and hands-on learning tools from NASA and partners.",
+          "Engineering explainers, an aerospace textbook shelf, and space education programs in one reference desk.",
       },
       { property: "og:type", content: "website" },
     ],
   }),
+
   component: ResourcesPage,
 });
 
