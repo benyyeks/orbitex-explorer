@@ -3,6 +3,7 @@
 // grounds answers in live ORBITEX telemetry and enforces the space-only
 // scope. Replies stream in token by token.
 import { useEffect, useRef, useState } from "react";
+import { AnswerText } from "@/components/site/answer-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
 import { useAskHistory } from "@/lib/ask-history";
@@ -492,7 +493,11 @@ function AskPage() {
           messages.map((m, i) => (
             <div key={i} className={m.role === "user" ? "msg msg-user" : "msg msg-ai"}>
               {m.role === "assistant" && <span className="msg-who">ORBITEX</span>}
-              <p>{m.content}</p>
+              {m.role === "assistant" ? (
+                <AnswerText text={m.content} />
+              ) : (
+                <p>{m.content}</p>
+              )}
               {streaming && i === messages.length - 1 && m.role === "assistant" && (
                 <span className="msg-cursor" aria-hidden="true" />
               )}

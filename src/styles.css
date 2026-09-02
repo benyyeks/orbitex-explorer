@@ -2008,3 +2008,47 @@ a.side-item { text-decoration: none; color: inherit; }
   text-transform: uppercase;
   color: hsl(var(--accent));
 }
+
+/* Assistant answer formatting */
+.answer-body > * + * { margin-top: 12px; }
+.answer-body h3 { font-size: 1.02rem; }
+.answer-body h4 { font-size: 0.95rem; }
+.answer-body h5 {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+.answer-body ul,
+.answer-body ol { padding-left: 20px; }
+.answer-body ul { list-style: disc; }
+.answer-body ol { list-style: decimal; }
+.answer-body li + li { margin-top: 6px; }
+.answer-body blockquote {
+  border-left: 2px solid hsl(var(--accent) / 0.6);
+  padding-left: 12px;
+  color: hsl(var(--muted-foreground));
+}
+.answer-body hr {
+  border: 0;
+  border-top: 1px solid hsl(var(--border));
+}
+.answer-body a { color: hsl(var(--accent)); }
+.answer-code-inline {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: hsl(var(--muted) / 0.5);
+}
+.answer-code-block {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  overflow-x: auto;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--muted) / 0.4);
+}
+.answer-table-wrap { overflow-x: auto; }
