@@ -3,6 +3,7 @@
 // grounds answers in live ORBITEX telemetry and enforces the space-only
 // scope. Replies stream in token by token.
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { AnswerText } from "@/components/site/answer-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
@@ -165,9 +166,15 @@ function AskPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
+      // The endpoint only answers signed in accounts, so attach the session token.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
       const res = await fetch("/api/ask", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(token ? { authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ mode, messages: thread.slice(-20) }),
         signal: controller.signal,
       });
