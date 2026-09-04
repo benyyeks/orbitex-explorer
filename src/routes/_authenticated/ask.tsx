@@ -74,9 +74,13 @@ function errorCopy(status: number, code: string | undefined): string {
   if (status === 429 || code === "rate_limited") {
     return "ORBITEX is answering a high volume of questions right now. Please try again in a moment.";
   }
+  if (status === 401 || code === "unauthorized") {
+    return "Your session has expired. Sign in again to continue the conversation.";
+  }
   if (status === 503 || code === "assistant_unavailable") {
     return "The assistant is temporarily unavailable. Please try again later.";
   }
+
   return "The answer link failed. Check your connection and try again.";
 }
 
