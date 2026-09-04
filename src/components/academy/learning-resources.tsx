@@ -18,8 +18,6 @@ import {
   useWishlist,
 } from "@/lib/wishlist";
 
-// Orbital regime reference, merged in from the former engineering notes page.
-type Regime = { name: string; altRange: string; use: string };
 const SECTIONS: { id: string; label: string }[] = [
   { id: "shelf", label: "Textbook shelf" },
   { id: "reading-list", label: "My reading list" },
