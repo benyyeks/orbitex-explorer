@@ -69,7 +69,7 @@ function AcademyPage() {
             <Link
               key={t.id}
               to="/academy"
-              search={(prev) => ({ ...prev, tab: t.id })}
+              search={{ tab: t.id, list }}
               className="academy-tab"
               data-active={tab === t.id ? "true" : undefined}
               aria-current={tab === t.id ? "page" : undefined}
