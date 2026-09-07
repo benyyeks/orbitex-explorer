@@ -1,16 +1,13 @@
-// Engineering notes now live inside Learning Resources. This route keeps every
-// existing link and bookmark working by forwarding to the merged page.
+// Engineering notes now live inside The Academy learning resources tab.
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/engineering")({
   beforeLoad: () => {
     throw redirect({
-      to: "/resources",
-      search: { list: undefined },
-      hash: "orbital-mechanics",
+      to: "/academy",
+      search: { tab: "resources", list: undefined },
       replace: true,
     });
-
   },
   component: () => null,
 });

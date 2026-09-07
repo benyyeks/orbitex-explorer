@@ -175,11 +175,11 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
         ? `Added ${added} ${added === 1 ? "book" : "books"} to your reading list.`
         : "Every shared book was already on your list."
     );
-    navigate({ to: "/academy", search: (prev: Record<string, unknown>) => ({ ...prev, list: undefined }), replace: true });
+    navigate({ to: "/academy", search: { tab: "resources", list: undefined }, replace: true });
   };
 
   const dismissSharedList = () =>
-    navigate({ to: "/academy", search: (prev: Record<string, unknown>) => ({ ...prev, list: undefined }), replace: true });
+    navigate({ to: "/academy", search: { tab: "resources", list: undefined }, replace: true });
 
   return (
     <section className="academy-tab-body">

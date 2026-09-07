@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as EngineeringRouteImport } from './routes/engineering'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedAboutRouteImport } from './routes/_authenticated/about'
+import { Route as AuthenticatedAcademyRouteImport } from './routes/_authenticated/academy'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
 import { Route as AuthenticatedDeepspaceRouteImport } from './routes/_authenticated/deepspace'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
@@ -61,6 +62,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const AuthenticatedAboutRoute = AuthenticatedAboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAcademyRoute = AuthenticatedAcademyRouteImport.update({
+  id: '/academy',
+  path: '/academy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/engineering': typeof EngineeringRoute
   '/privacy': typeof PrivacyRoute
   '/about': typeof AuthenticatedAboutRoute
+  '/academy': typeof AuthenticatedAcademyRoute
   '/ask': typeof AuthenticatedAskRoute
   '/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -190,6 +197,7 @@ export interface FileRoutesByTo {
   '/engineering': typeof EngineeringRoute
   '/privacy': typeof PrivacyRoute
   '/about': typeof AuthenticatedAboutRoute
+  '/academy': typeof AuthenticatedAcademyRoute
   '/ask': typeof AuthenticatedAskRoute
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/launches': typeof AuthenticatedLaunchesRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/engineering': typeof EngineeringRoute
   '/privacy': typeof PrivacyRoute
   '/_authenticated/about': typeof AuthenticatedAboutRoute
+  '/_authenticated/academy': typeof AuthenticatedAcademyRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
   '/_authenticated/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -242,6 +251,7 @@ export interface FileRouteTypes {
     | '/engineering'
     | '/privacy'
     | '/about'
+    | '/academy'
     | '/ask'
     | '/deepspace'
     | '/intelligence'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/engineering'
     | '/privacy'
     | '/about'
+    | '/academy'
     | '/ask'
     | '/intelligence'
     | '/launches'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/engineering'
     | '/privacy'
     | '/_authenticated/about'
+    | '/_authenticated/academy'
     | '/_authenticated/ask'
     | '/_authenticated/deepspace'
     | '/_authenticated/intelligence'
@@ -364,6 +376,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AuthenticatedAboutRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/academy': {
+      id: '/_authenticated/academy'
+      path: '/academy'
+      fullPath: '/academy'
+      preLoaderRoute: typeof AuthenticatedAcademyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ask': {
@@ -526,6 +545,7 @@ const AuthenticatedTrackerRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAboutRoute: typeof AuthenticatedAboutRoute
+  AuthenticatedAcademyRoute: typeof AuthenticatedAcademyRoute
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
   AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
@@ -541,6 +561,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAboutRoute: AuthenticatedAboutRoute,
+  AuthenticatedAcademyRoute: AuthenticatedAcademyRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedDeepspaceRoute: AuthenticatedDeepspaceRouteWithChildren,
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
