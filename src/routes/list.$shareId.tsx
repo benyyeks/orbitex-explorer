@@ -64,7 +64,7 @@ function SharedListMissing() {
             </p>
           </div>
           <div className="list-actions">
-            <Link to="/resources" search={{ list: undefined }} className="btn btn-primary btn-sm">
+            <Link to="/academy" search={{ tab: "resources", list: undefined }} className="btn btn-primary btn-sm">
               Open the textbook shelf
             </Link>
           </div>
@@ -133,7 +133,7 @@ function SharedListPage() {
               </ul>
             )}
             <div className="list-actions">
-              <Link to="/resources" search={{ list: undefined }} className="btn btn-primary btn-sm">
+              <Link to="/academy" search={{ tab: "resources", list: undefined }} className="btn btn-primary btn-sm">
                 Browse the full shelf
               </Link>
             </div>
