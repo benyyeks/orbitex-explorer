@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogoMark, BrandWord } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
@@ -9,51 +9,61 @@ type NavLink = {
   id: string;
   label: string;
   to: string;
-  section?: string;
-  // Shown in the always-visible desktop bar. Everything else stays in the
-  // grouped drawer so the bar never crowds out the account controls.
-  primary?: boolean;
+  hint: string;
 };
 
-// Matches the navigation structure of the original site, grouped under
-// section labels in the drawer.
-const NAV_LINKS: NavLink[] = [
-  { id: "home", label: "Home", to: "/", primary: true },
-  { id: "tracker", label: "Orbit Tracker", to: "/tracker", section: "Live Tracking", primary: true },
-  { id: "deepspace", label: "Deep Space", to: "/deepspace", section: "Live Tracking", primary: true },
-  { id: "sky", label: "Sky Tonight", to: "/sky", section: "Live Tracking" },
-  { id: "mars", label: "Mars", to: "/mars", section: "Data & Missions" },
-  { id: "weather", label: "Space Weather", to: "/weather", section: "Data & Missions", primary: true },
-  { id: "neo", label: "Asteroid Watch", to: "/neo", section: "Data & Missions" },
-  { id: "launches", label: "Launches", to: "/launches", section: "Data & Missions", primary: true },
-  { id: "ask", label: "Ask ORBITEX", to: "/ask", section: "More", primary: true },
-  { id: "about", label: "About & Sources", to: "/about", section: "More" },
-  { id: "research", label: "Research", to: "/research", section: "Learn" },
-  { id: "intelligence", label: "Mission Intelligence", to: "/intelligence", section: "Learn" },
+type Pillar = {
+  id: string;
+  label: string;
+  links: NavLink[];
+};
+
+// Four pillars carry every destination. Anything outside them is a standalone
+// link, so the bar stays short and the hierarchy reads at a glance.
+const PILLARS: Pillar[] = [
   {
-    id: "resources",
-    label: "Learning Resources",
-    to: "/resources",
-    section: "Learn",
-    primary: true,
+    id: "mission-control",
+    label: "Mission Control",
+    links: [
+      { id: "tracker", label: "Orbit Tracker", to: "/tracker", hint: "Live satellite positions by regime" },
+      { id: "deepspace", label: "Deep Space", to: "/deepspace", hint: "Probes and spacecraft beyond Earth" },
+      { id: "sky", label: "Sky Tonight", to: "/sky", hint: "What is visible from your location" },
+    ],
+  },
+  {
+    id: "planetary-data",
+    label: "Planetary Data",
+    links: [
+      { id: "weather", label: "Space Weather", to: "/weather", hint: "Solar activity and geomagnetic conditions" },
+      { id: "neo", label: "Asteroid Watch", to: "/neo", hint: "Near-Earth object close approaches" },
+      { id: "mars", label: "Mars", to: "/mars", hint: "Surface conditions and active missions" },
+    ],
+  },
+  {
+    id: "academy",
+    label: "The Academy",
+    links: [
+      { id: "academy-terms", label: "Aerospace Terminologies", to: "/academy", hint: "Working glossary of orbital and spacecraft terms" },
+      { id: "academy-library", label: "Research Library", to: "/academy", hint: "Accredited archives and mission breakdowns" },
+      { id: "academy-resources", label: "Learning Resources", to: "/academy", hint: "Textbooks, programs, and competitions" },
+    ],
+  },
+  {
+    id: "operations",
+    label: "Operations",
+    links: [
+      { id: "launches", label: "Launch Schedule", to: "/launches", hint: "Upcoming and recent launches" },
+      { id: "intelligence", label: "Mission Intelligence", to: "/intelligence", hint: "Mission profiles and flight telemetry" },
+    ],
   },
 ];
 
-// Signed out visitors only see the public surfaces. Everything else needs an
-// account, so listing it would only lead to the sign in page.
-const PUBLIC_IDS = new Set(["home"]);
-
-// The drawer lists every destination grouped by section, so wide screens can
-// show the index as columns and small screens as a stacked sheet.
-function groupLinks(links: NavLink[]): { section?: string | undefined; links: NavLink[] }[] {
-  return links.reduce<{ section?: string | undefined; links: NavLink[] }[]>((groups, link) => {
-    const last = groups[groups.length - 1];
-    if (last && last.section === link.section) last.links.push(link);
-    else groups.push({ section: link.section, links: [link] });
-    return groups;
-  }, []);
-}
-
+// Academy links carry a tab so each menu entry opens its own view.
+const ACADEMY_TAB: Record<string, "terminologies" | "library" | "resources"> = {
+  "academy-terms": "terminologies",
+  "academy-library": "library",
+  "academy-resources": "resources",
+};
 
 function isMatch(pathname: string, to: string): boolean {
   if (to === "/") return pathname === "/";
@@ -63,16 +73,21 @@ function isMatch(pathname: string, to: string): boolean {
 export function SiteHeader() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openPillar, setOpenPillar] = useState<string | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, loading } = useAuth();
-  const links = user || loading ? NAV_LINKS : NAV_LINKS.filter((l) => PUBLIC_IDS.has(l.id));
-  const groups = groupLinks(links);
+  const signedIn = Boolean(user) || loading;
 
-  // Close the drawer on any route change.
+  // Signed out visitors are sent to the sign in page by the route gate, so the
+  // pillars only appear once an account is present.
+  const pillars = signedIn ? PILLARS : [];
+
   useEffect(() => {
     setMenuOpen(false);
+    setOpenPillar(null);
   }, [pathname]);
 
-  // Lock body scroll while the mobile drawer is open.
   useEffect(() => {
     document.documentElement.classList.toggle("nav-open-lock", menuOpen);
     return () => {
@@ -80,15 +95,60 @@ export function SiteHeader() {
     };
   }, [menuOpen]);
 
-  // Close on Escape.
   useEffect(() => {
-    if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setMenuOpen(false);
+      if (e.key !== "Escape") return;
+      setMenuOpen(false);
+      setOpenPillar(null);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [menuOpen]);
+  }, []);
+
+  const openNow = (id: string) => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    setOpenPillar(id);
+  };
+  const closeSoon = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpenPillar(null), 140);
+  };
+
+  const renderLink = (link: NavLink, withHint: boolean) => {
+    const tab = ACADEMY_TAB[link.id];
+    const active = tab
+      ? isMatch(pathname, "/academy")
+      : isMatch(pathname, link.to);
+    const common = {
+      className: withHint ? undefined : "nav-mobile-link",
+      "aria-current": active ? ("page" as const) : undefined,
+      onClick: () => {
+        setOpenPillar(null);
+        setMenuOpen(false);
+      },
+    };
+    const body = withHint ? (
+      <>
+        <span>{link.label}</span>
+        <small>{link.hint}</small>
+      </>
+    ) : (
+      link.label
+    );
+
+    if (tab) {
+      return (
+        <Link key={link.id} to="/academy" search={{ tab, list: undefined }} {...common}>
+          {body}
+        </Link>
+      );
+    }
+    return (
+      <Link key={link.id} to={link.to} {...common}>
+        {body}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -99,17 +159,51 @@ export function SiteHeader() {
             <BrandWord />
           </Link>
           <nav className="nav-desktop" aria-label="Primary">
-            {links
-              .filter((l) => l.primary)
-              .map((l) => (
-                <Link
-                  key={l.id}
-                  to={l.to}
-                  aria-current={isMatch(pathname, l.to) ? "page" : undefined}
+            {pillars.map((pillar) => {
+              const isOpen = openPillar === pillar.id;
+              const hasActive = pillar.links.some((l) => isMatch(pathname, l.to));
+              return (
+                <div
+                  key={pillar.id}
+                  className="nav-pillar"
+                  data-open={isOpen ? "true" : undefined}
+                  data-active={hasActive ? "true" : undefined}
+                  onMouseEnter={() => openNow(pillar.id)}
+                  onMouseLeave={closeSoon}
+                  onFocus={() => openNow(pillar.id)}
+                  onBlur={closeSoon}
                 >
-                  {l.label}
-                </Link>
-              ))}
+                  <button
+                    type="button"
+                    className="nav-pillar-trigger"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenPillar(isOpen ? null : pillar.id)}
+                  >
+                    {pillar.label}
+                    <svg
+                      className="nav-pillar-caret"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                  {isOpen && (
+                    <div className="nav-pillar-menu" role="group" aria-label={pillar.label}>
+                      {pillar.links.map((l) => renderLink(l, true))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {signedIn && (
+              <Link to="/about" aria-current={isMatch(pathname, "/about") ? "page" : undefined}>
+                About
+              </Link>
+            )}
           </nav>
           <div className="header-actions">
             <AuthControl />
@@ -135,24 +229,52 @@ export function SiteHeader() {
         </div>
       </header>
       <nav className={`nav-mobile${menuOpen ? " open" : ""}`} aria-label="All sections">
-        {groups.map((group) => (
-          <div className="nav-group" key={group.section ?? "top"}>
-            {group.section && (
-              <span className="nav-section-label">{group.section}</span>
-            )}
-            {group.links.map((link) => (
-              <Link
-                key={link.id}
-                to={link.to}
-                aria-current={isMatch(pathname, link.to) ? "page" : undefined}
+        <div className="nav-group">
+          <Link to="/" aria-current={pathname === "/" ? "page" : undefined}>
+            Home
+          </Link>
+        </div>
+        {pillars.map((pillar) => {
+          const expanded = openSection === pillar.id;
+          return (
+            <div className="nav-group" key={pillar.id}>
+              <button
+                type="button"
+                className="nav-accordion-trigger"
+                aria-expanded={expanded}
+                onClick={() => setOpenSection(expanded ? null : pillar.id)}
               >
-                {link.label}
-              </Link>
-            ))}
+                {pillar.label}
+                <svg
+                  className={`chevron${expanded ? " chevron-open" : ""}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
+                >
+                  <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              {expanded && (
+                <div className="nav-accordion-body">
+                  {pillar.links.map((l) => renderLink(l, false))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {signedIn && (
+          <div className="nav-group">
+            <Link to="/about" aria-current={isMatch(pathname, "/about") ? "page" : undefined}>
+              About
+            </Link>
+            <Link to="/ask" aria-current={isMatch(pathname, "/ask") ? "page" : undefined}>
+              Ask ORBITEX
+            </Link>
           </div>
-        ))}
+        )}
       </nav>
-
     </>
   );
 }
