@@ -24,6 +24,7 @@ import { Route as AuthenticatedMarsRouteImport } from './routes/_authenticated/m
 import { Route as AuthenticatedNeoRouteImport } from './routes/_authenticated/neo'
 import { Route as AuthenticatedResearchRouteImport } from './routes/_authenticated/research'
 import { Route as AuthenticatedResourcesRouteImport } from './routes/_authenticated/resources'
+import { Route as AuthenticatedRomanRouteImport } from './routes/_authenticated/roman'
 import { Route as AuthenticatedSkyRouteImport } from './routes/_authenticated/sky'
 import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticated/tracker'
 import { Route as AuthenticatedWeatherRouteImport } from './routes/_authenticated/weather'
@@ -110,6 +111,11 @@ const AuthenticatedResourcesRoute = AuthenticatedResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRomanRoute = AuthenticatedRomanRouteImport.update({
+  id: '/roman',
+  path: '/roman',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSkyRoute = AuthenticatedSkyRouteImport.update({
   id: '/sky',
   path: '/sky',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/neo': typeof AuthenticatedNeoRoute
   '/research': typeof AuthenticatedResearchRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/roman': typeof AuthenticatedRomanRoute
   '/sky': typeof AuthenticatedSkyRoute
   '/tracker': typeof AuthenticatedTrackerRouteWithChildren
   '/weather': typeof AuthenticatedWeatherRoute
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/neo': typeof AuthenticatedNeoRoute
   '/research': typeof AuthenticatedResearchRoute
   '/resources': typeof AuthenticatedResourcesRoute
+  '/roman': typeof AuthenticatedRomanRoute
   '/sky': typeof AuthenticatedSkyRoute
   '/weather': typeof AuthenticatedWeatherRoute
   '/api/ask': typeof ApiAskRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/neo': typeof AuthenticatedNeoRoute
   '/_authenticated/research': typeof AuthenticatedResearchRoute
   '/_authenticated/resources': typeof AuthenticatedResourcesRoute
+  '/_authenticated/roman': typeof AuthenticatedRomanRoute
   '/_authenticated/sky': typeof AuthenticatedSkyRoute
   '/_authenticated/tracker': typeof AuthenticatedTrackerRouteWithChildren
   '/_authenticated/weather': typeof AuthenticatedWeatherRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/neo'
     | '/research'
     | '/resources'
+    | '/roman'
     | '/sky'
     | '/tracker'
     | '/weather'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/neo'
     | '/research'
     | '/resources'
+    | '/roman'
     | '/sky'
     | '/weather'
     | '/api/ask'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/neo'
     | '/_authenticated/research'
     | '/_authenticated/resources'
+    | '/_authenticated/roman'
     | '/_authenticated/sky'
     | '/_authenticated/tracker'
     | '/_authenticated/weather'
@@ -441,6 +453,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedResourcesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/roman': {
+      id: '/_authenticated/roman'
+      path: '/roman'
+      fullPath: '/roman'
+      preLoaderRoute: typeof AuthenticatedRomanRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sky': {
       id: '/_authenticated/sky'
       path: '/sky'
@@ -554,6 +573,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNeoRoute: typeof AuthenticatedNeoRoute
   AuthenticatedResearchRoute: typeof AuthenticatedResearchRoute
   AuthenticatedResourcesRoute: typeof AuthenticatedResourcesRoute
+  AuthenticatedRomanRoute: typeof AuthenticatedRomanRoute
   AuthenticatedSkyRoute: typeof AuthenticatedSkyRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRouteWithChildren
   AuthenticatedWeatherRoute: typeof AuthenticatedWeatherRoute
@@ -570,6 +590,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNeoRoute: AuthenticatedNeoRoute,
   AuthenticatedResearchRoute: AuthenticatedResearchRoute,
   AuthenticatedResourcesRoute: AuthenticatedResourcesRoute,
+  AuthenticatedRomanRoute: AuthenticatedRomanRoute,
   AuthenticatedSkyRoute: AuthenticatedSkyRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRouteWithChildren,
   AuthenticatedWeatherRoute: AuthenticatedWeatherRoute,

@@ -22,6 +22,7 @@ export function SiteFooter() {
             <Link to="/tracker">Orbit Tracker</Link>
             <Link to="/deepspace">Deep Space</Link>
             <Link to="/mars">Mars</Link>
+            <Link to="/roman">Roman Space Telescope</Link>
             <Link to="/weather">Space Weather</Link>
             <Link to="/sky">Sky Tonight</Link>
           </div>
