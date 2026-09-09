@@ -37,6 +37,7 @@ const PILLARS: Pillar[] = [
       { id: "weather", label: "Space Weather", to: "/weather", hint: "Solar activity and geomagnetic conditions" },
       { id: "neo", label: "Asteroid Watch", to: "/neo", hint: "Near-Earth object close approaches" },
       { id: "mars", label: "Mars", to: "/mars", hint: "Surface conditions and active missions" },
+      { id: "roman", label: "Roman Space Telescope", to: "/roman", hint: "Launch window, survey design, and hardware" },
     ],
   },
   {
