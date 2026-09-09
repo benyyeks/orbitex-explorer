@@ -266,3 +266,46 @@ export const getNewsLive = createServerFn({ method: "GET" }).handler(async () =>
     return { items, generatedAt: new Date().toISOString() };
   });
 });
+
+// --------------------- Roman Space Telescope coverage ----------------------
+// Mission coverage for the Roman page. Runs server side against the
+// Spaceflight News API search endpoints so no browser calls the upstream feed,
+// cached for an hour with the shared stale-on-error fallback.
+export const getRomanNews = createServerFn({ method: "GET" }).handler(async () => {
+  return cached("roman-news", {}, 3600, async () => {
+    const TYPES = ["articles", "blogs", "reports"] as const;
+    const results = await Promise.all(
+      TYPES.map(async (type) => {
+        try {
+          const res = await fetchJson<{ results: any[] }>(
+            `https://api.spaceflightnewsapi.net/v4/${type}/?search=roman%20space%20telescope&limit=12&ordering=-published_at`,
+            { timeoutMs: 10000 }
+          );
+          return res.results ?? [];
+        } catch {
+          return [];
+        }
+      })
+    );
+    const seen = new Set<string>();
+    const items = (results.flat() as any[])
+      .filter((item) => {
+        const text = `${item?.title ?? ""} ${item?.summary ?? ""}`.toLowerCase();
+        // Guard against unrelated "Roman" matches such as Roman-era history
+        // stories that share the word.
+        return text.includes("roman space telescope") || text.includes("nancy grace roman");
+      })
+      .filter((item) => {
+        const url = String(item?.url ?? "");
+        if (!url || seen.has(url)) return false;
+        seen.add(url);
+        return true;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b?.published_at ?? 0).getTime() - new Date(a?.published_at ?? 0).getTime()
+      )
+      .slice(0, 9);
+    return { items, generatedAt: new Date().toISOString() };
+  });
+});
