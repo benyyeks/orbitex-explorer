@@ -1,7 +1,18 @@
-// Roman page header: title, subtitle, and the metric banner with a live
-// countdown to the opening of the targeted launch window.
+// Roman page header: title, subtitle, and the metric banner. Roman is already
+// flying, so the clock counts time since liftoff rather than time to launch.
 import { useEffect, useState } from "react";
-import { ROMAN, countdownTo } from "@/lib/roman";
+import { ROMAN } from "@/lib/roman";
+
+function elapsed(fromISO: string, now: number) {
+  const ms = Math.max(0, now - new Date(fromISO).getTime());
+  const total = Math.floor(ms / 1000);
+  return {
+    days: Math.floor(total / 86400),
+    hours: Math.floor((total % 86400) / 3600),
+    minutes: Math.floor((total % 3600) / 60),
+    seconds: total % 60,
+  };
+}
 
 export function MissionHeader() {
   const [now, setNow] = useState<number | null>(null);
@@ -14,7 +25,7 @@ export function MissionHeader() {
     return () => clearInterval(id);
   }, []);
 
-  const c = now === null ? null : countdownTo(ROMAN.windowOpensISO, now);
+  const t = now === null ? null : elapsed(ROMAN.launchISO, now);
 
   return (
     <section className="container page-hero roman-hero">
@@ -24,22 +35,19 @@ export function MissionHeader() {
 
       <div className="roman-banner glass">
         <div className="roman-countdown">
-          <span className="metric-label">
-            {c?.past ? "Launch window opened" : "Launch window opens in"}
-          </span>
-          {c === null ? (
+          <span className="metric-label">Mission elapsed time</span>
+          {t === null ? (
             <span className="roman-countdown-value mono">Calculating</span>
           ) : (
             <span className="roman-countdown-value mono">
-              <b>{c.days}</b> d <b>{String(c.hours).padStart(2, "0")}</b> h{" "}
-              <b>{String(c.minutes).padStart(2, "0")}</b> m{" "}
-              <b>{String(c.seconds).padStart(2, "0")}</b> s
+              <b>{t.days}</b> d <b>{String(t.hours).padStart(2, "0")}</b> h{" "}
+              <b>{String(t.minutes).padStart(2, "0")}</b> m{" "}
+              <b>{String(t.seconds).padStart(2, "0")}</b> s
             </span>
           )}
           <span className="roman-countdown-note">
-            Targeted for {ROMAN.windowOpensLabel}. NASA commits to launch{" "}
-            {ROMAN.commitmentLabel.toLowerCase()}, so this is a window rather than a fixed
-            date.
+            Launched {ROMAN.launchLabel} on a {ROMAN.launchVehicle}. Current phase:{" "}
+            {ROMAN.phaseLabel.toLowerCase()}. {ROMAN.phaseDetail}
           </span>
         </div>
 
