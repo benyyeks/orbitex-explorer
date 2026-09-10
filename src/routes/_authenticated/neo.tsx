@@ -227,10 +227,32 @@ function NeoPage() {
           </div>
 
           <div className="glass glass-card scaffold-card">
-            <h2>Close approach table</h2>
-            <p>
-              Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
-            </p>
+            <div className="panel-head">
+              <div>
+                <h2>Close approach table</h2>
+                <p>
+                  Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
+                </p>
+              </div>
+              <ExportButtons
+                rows={sorted}
+                columns={[
+                  { key: "name", label: "Object", value: (r) => r.name },
+                  { key: "approach", label: "Close approach (UTC)", value: (r) => r.approachLabel },
+                  { key: "dia_min_m", label: "Diameter minimum (m)", value: (r) => r.diaMinM },
+                  { key: "dia_max_m", label: "Diameter maximum (m)", value: (r) => r.diaMaxM },
+                  { key: "velocity_km_s", label: "Relative velocity (km/s)", value: (r) => r.velKmS },
+                  { key: "miss_ld", label: "Miss distance (lunar distances)", value: (r) => r.missLD },
+                  { key: "miss_km", label: "Miss distance (km)", value: (r) => r.missKm },
+                  { key: "hazardous", label: "Potentially hazardous", value: (r) => (r.hazardous ? "yes" : "no") },
+                ]}
+                meta={{
+                  dataset: "Near-Earth object close approaches, next 7 days",
+                  source: "NASA Near Earth Object Web Service",
+                  retrievedAt: neo.fetchedAt,
+                }}
+              />
+            </div>
             {sorted.length === 0 ? (
               <EmptyState
                 title="No close approaches in this window"
