@@ -170,8 +170,8 @@ export function FovCompare() {
                 <h3>Planned survey fields</h3>
                 <p className="roman-note">
                   Field centres and cadences from the published Roman survey definitions.
-                  The observatory has not launched, so these are planned pointings rather
-                  than observations.
+                  Commissioning is still under way, so these are the planned survey
+                  pointings rather than delivered observations.
                 </p>
               </div>
               <ExportButtons

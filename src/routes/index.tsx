@@ -71,6 +71,7 @@ const EXPLORE: ExploreCard[] = [
   { to: "/deepspace", icon: "deepspace", title: "Deep Space", blurb: "Real planetary orbits and live distance tracking for active probes." },
   { to: "/sky", icon: "sky", title: "Sky Tonight", blurb: "Moon phase, visible planets, and rise/set times for your location." },
   { to: "/mars", icon: "mars", title: "Mars", blurb: "Latest raw imagery from Curiosity and Perseverance." },
+  { to: "/roman", icon: "roman", title: "Roman Space Telescope", blurb: "Launch window countdown, survey footprint, and flight hardware." },
   { to: "/weather", icon: "weather", title: "Space Weather", blurb: "Geomagnetic index, solar wind, and aurora outlook from NOAA SWPC." },
   { to: "/neo", icon: "neo", title: "Asteroid Watch", blurb: "Upcoming close approaches, ranked by miss distance." },
   { to: "/launches", icon: "launches", title: "Launches", blurb: "Upcoming orbital launches worldwide with live countdowns." },
@@ -89,6 +90,9 @@ const ICONS: Record<string, React.ReactNode> = {
   ),
   mars: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><circle cx="10.5" cy="13.5" r="6" /><path d="M15 9l5-5M20 4h-4.5M20 4v4.5" /></svg>
+  ),
+  roman: (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M6 15l4-9h4l4 9z" /><path d="M8.5 15v4h7v-4" /><path d="M12 6V3" /></svg>
   ),
   weather: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><circle cx="12" cy="12" r="3.6" /><path d="M12 3v2.4M12 18.6V21M3 12h2.4M18.6 12H21M5.6 5.6l1.7 1.7M16.7 16.7l1.7 1.7M5.6 18.4l1.7-1.7M16.7 7.3l1.7-1.7" /></svg>

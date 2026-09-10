@@ -5,6 +5,7 @@ import { getNEO } from "@/lib/orbitex-data.functions";
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { ExportButtons } from "@/components/site/export-buttons";
 import { PageHeroSkeleton, StatGridSkeleton, TableSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/_authenticated/neo")({
@@ -227,10 +228,32 @@ function NeoPage() {
           </div>
 
           <div className="glass glass-card scaffold-card">
-            <h2>Close approach table</h2>
-            <p>
-              Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
-            </p>
+            <div className="panel-head">
+              <div>
+                <h2>Close approach table</h2>
+                <p>
+                  Click a column header to sort. The bar shows miss distance relative to {maxLD.toFixed(0)} LD.
+                </p>
+              </div>
+              <ExportButtons
+                rows={sorted}
+                columns={[
+                  { key: "name", label: "Object", value: (r: NeoRow) => r.name },
+                  { key: "approach", label: "Close approach (UTC)", value: (r: NeoRow) => r.approachLabel },
+                  { key: "dia_min_m", label: "Diameter minimum (m)", value: (r: NeoRow) => r.diaMinM },
+                  { key: "dia_max_m", label: "Diameter maximum (m)", value: (r: NeoRow) => r.diaMaxM },
+                  { key: "velocity_km_s", label: "Relative velocity (km/s)", value: (r: NeoRow) => r.velKmS },
+                  { key: "miss_ld", label: "Miss distance (lunar distances)", value: (r: NeoRow) => r.missLD },
+                  { key: "miss_km", label: "Miss distance (km)", value: (r: NeoRow) => r.missKm },
+                  { key: "hazardous", label: "Potentially hazardous", value: (r: NeoRow) => (r.hazardous ? "yes" : "no") },
+                ]}
+                meta={{
+                  dataset: "Near-Earth object close approaches, next 7 days",
+                  source: "NASA Near Earth Object Web Service",
+                  retrievedAt: neo.fetchedAt,
+                }}
+              />
+            </div>
             {sorted.length === 0 ? (
               <EmptyState
                 title="No close approaches in this window"
