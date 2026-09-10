@@ -10,12 +10,17 @@ export const ROMAN = {
   name: "Nancy Grace Roman Space Telescope",
   subtitle:
     "NASA's flagship observatory for dark energy, exoplanet microlensing, and wide-field infrared astronomy.",
-  // NASA states Roman is being prepared for launch as early as the autumn of
-  // 2026, with a commitment to launch no later than May 2027. The countdown
-  // targets the opening of that window and the page labels it as a window.
-  windowOpensISO: "2026-10-01T00:00:00Z",
-  windowOpensLabel: "October 2026",
-  commitmentLabel: "No later than May 2027",
+  // Roman launched on a SpaceX Falcon Heavy from Kennedy Space Center Launch
+  // Complex 39A on 30 August 2026 at 07:26 Eastern, which is 11:26 UTC. NASA
+  // describes a roughly three month cruise to the second Sun-Earth Lagrange
+  // point running alongside a three month commissioning campaign, so the page
+  // counts time since launch rather than time to launch.
+  launchISO: "2026-08-30T11:26:00Z",
+  launchLabel: "30 August 2026",
+  launchVehicle: "SpaceX Falcon Heavy, Kennedy Space Center LC-39A",
+  phaseLabel: "Cruise and commissioning",
+  phaseDetail:
+    "NASA reports first deployments complete and a commissioning campaign of about three months under way while the observatory cruises to its operating orbit. Science surveys begin once commissioning closes out.",
   orbit: "Sun-Earth L2",
   orbitDetail:
     "A quasi-halo orbit about the second Sun-Earth Lagrange point, roughly 1.5 million km from Earth on the anti-Sun side, which keeps the Sun, Earth, and Moon behind a single sunshade.",
