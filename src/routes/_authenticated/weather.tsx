@@ -4,6 +4,7 @@ import { getKpIndex, getSolarWind, getXrayFlux, getDONKI } from "@/lib/orbitex-d
 import { fmtNum, safeText } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
+import { ExportButtons } from "@/components/site/export-buttons";
 import { PageHeroSkeleton, StatGridSkeleton, PanelSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/_authenticated/weather")({
@@ -256,8 +257,8 @@ function WeatherPage() {
             <ExportButtons
               rows={kpRows}
               columns={[
-                { key: "time", label: "Time (UTC)", value: (r: (typeof kpRows)[number]) => r.t },
-                { key: "kp", label: "Kp index", value: (r: (typeof kpRows)[number]) => r.kp },
+                { key: "time", label: "Time (UTC)", value: (r: KpRow) => r.time },
+                { key: "kp", label: "Kp index", value: (r: KpRow) => r.kp },
               ]}
               meta={{
                 dataset: "Planetary K index series",
