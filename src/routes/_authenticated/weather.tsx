@@ -253,6 +253,19 @@ function WeatherPage() {
           <div className="freshness-row">
             <FreshnessBadge res={kp} />
             <span className="freshness-note">All times UTC. Data lag of a few minutes is normal.</span>
+            <ExportButtons
+              rows={kpRows}
+              columns={[
+                { key: "time", label: "Time (UTC)", value: (r: (typeof kpRows)[number]) => r.t },
+                { key: "kp", label: "Kp index", value: (r: (typeof kpRows)[number]) => r.kp },
+              ]}
+              meta={{
+                dataset: "Planetary K index series",
+                source: "NOAA Space Weather Prediction Center",
+                retrievedAt: kp.fetchedAt,
+              }}
+              label="Download Kp series"
+            />
           </div>
 
           <div className="stat-grid" style={{ marginBottom: 24 }}>
