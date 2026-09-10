@@ -2356,3 +2356,6 @@ a.side-item { text-decoration: none; color: inherit; }
 .skeleton-media { width: 100%; aspect-ratio: 16 / 9; border-radius: 10px; }
 .skeleton-line { height: 0.85rem; border-radius: 6px; margin: 0.9rem 1.1rem 0; }
 .skeleton-line.short { width: 55%; }
+
+.roman-page { padding: 48px 0 64px; }
+.roman-page .roman-section:first-of-type { padding-top: 1.4rem; }
