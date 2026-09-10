@@ -2259,3 +2259,86 @@ a.side-item { text-decoration: none; color: inherit; }
   cursor: pointer;
 }
 .nav-mobile .nav-accordion-body { display: grid; gap: 4px; padding: 6px 0 2px 10px; }
+
+/* --------------------------- Feed status strip --------------------------- */
+.feed-status {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  margin: 0 0 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.feed-status-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  transform: translateY(-1px);
+}
+.feed-status-live .feed-status-dot { background: var(--accent); }
+.feed-status-delayed .feed-status-dot { background: #d99a2b; }
+.feed-status-unavailable .feed-status-dot { background: #c4574b; }
+.feed-status-loading .feed-status-dot { background: var(--border-strong, var(--muted)); }
+
+/* ------------------------------ Export buttons -------------------------- */
+.export-buttons { display: flex; align-items: center; gap: 0.4rem; }
+.export-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+
+/* --------------------------------- Roman -------------------------------- */
+.roman-hero { padding-bottom: 1rem; }
+.roman-banner { padding: 1.35rem; margin-top: 1.6rem; border-radius: 14px; }
+.roman-countdown { display: flex; flex-direction: column; gap: 0.35rem; }
+.roman-countdown-value { font-size: clamp(1.4rem, 4vw, 2.1rem); letter-spacing: 0.02em; }
+.roman-countdown-value b { font-weight: 600; }
+.roman-countdown-note { font-size: 0.82rem; color: var(--muted); max-width: 62ch; }
+.roman-metrics { margin-top: 1.35rem; }
+.roman-section { padding: 2.6rem 0; }
+.roman-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.4rem; }
+.roman-note { font-size: 0.82rem; color: var(--muted); margin: 0.35rem 0 0; }
+
+.roman-news-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.1rem;
+}
+.roman-news-card { border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+.roman-news-media { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.roman-news-body { padding: 1rem 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.roman-news-meta { font-size: 0.74rem; color: var(--muted); margin: 0; }
+.roman-news-body h3 { font-size: 1.02rem; margin: 0; line-height: 1.35; }
+.roman-news-summary {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.roman-fov { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 1.4rem; }
+.roman-fov-stage { padding: 0.9rem; border-radius: 14px; }
+.roman-fov-svg { width: 100%; height: auto; border-radius: 10px; display: block; }
+.roman-fov-caption { font-size: 0.76rem; color: var(--muted); margin: 0.6rem 0 0; }
+.roman-fov-side { display: flex; flex-direction: column; gap: 1rem; }
+.roman-fov-fact { transition: opacity 180ms ease; }
+.roman-fov-fact[data-dim="true"] { opacity: 0.42; }
+.roman-fov-fact h3 { display: flex; align-items: center; gap: 0.5rem; font-size: 0.98rem; margin: 0 0 0.25rem; }
+.roman-fov-instrument { font-size: 0.8rem; color: var(--muted); margin: 0 0 0.2rem; }
+.roman-fov-area { font-size: 0.8rem; margin: 0 0 0.4rem; }
+.roman-swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.roman-catalogue { display: flex; flex-direction: column; gap: 1.3rem; }
+.roman-hardware-notes { margin-top: 1.2rem; }
+
+@media (max-width: 860px) {
+  .roman-fov { grid-template-columns: minmax(0, 1fr); }
+}
