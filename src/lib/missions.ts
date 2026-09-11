@@ -1,0 +1,812 @@
+// Curated mission profiles for the Mission Intelligence directory.
+//
+// Every record here is drawn from NASA (and, where noted, partner agency)
+// mission pages: launch dates, destinations, instrument counts, and headline
+// results. Nothing in this file is estimated or inferred. Where a mission is
+// still flying, the "status" reflects the operating phase NASA publishes
+// rather than a guess about how long it will continue.
+//
+// Each entry carries an official link so a reader can verify any figure
+// against the source, and, where ORBITEX tracks the spacecraft live, an
+// internal cross-link.
+
+export type MissionStatus = "active" | "extended" | "cruise" | "planned" | "completed";
+
+export type MissionCategory =
+  | "human"
+  | "planetary"
+  | "astrophysics"
+  | "heliophysics"
+  | "earth"
+  | "lunar";
+
+export type MissionProfile = {
+  id: string;
+  name: string;
+  agency: string;
+  status: MissionStatus;
+  category: MissionCategory;
+  /** Launch date in ISO form, or the published target window for planned missions. */
+  launched: string;
+  launchLabel: string;
+  vehicle: string;
+  destination: string;
+  objective: string;
+  /** Headline results or current operating notes, each a verifiable statement. */
+  highlights: string[];
+  /** Official mission page. */
+  url: string;
+  /** Internal ORBITEX page that shows this spacecraft live, when one exists. */
+  internal?: { label: string; to: string };
+  /** Set when the mission has ended, so the card can show the operating span. */
+  ended?: string;
+};
+
+export const STATUS_LABEL: Record<MissionStatus, string> = {
+  active: "Operating",
+  extended: "Extended mission",
+  cruise: "In transit",
+  planned: "Planned",
+  completed: "Mission complete",
+};
+
+export const CATEGORY_LABEL: Record<MissionCategory, string> = {
+  human: "Human spaceflight",
+  planetary: "Planetary science",
+  astrophysics: "Astrophysics",
+  heliophysics: "Heliophysics",
+  earth: "Earth science",
+  lunar: "Lunar exploration",
+};
+
+export const MISSIONS: MissionProfile[] = [
+  // ----------------------------- Human spaceflight -----------------------
+  {
+    id: "iss",
+    name: "International Space Station",
+    agency: "NASA with Roscosmos, ESA, JAXA and CSA",
+    status: "active",
+    category: "human",
+    launched: "1998-11-20",
+    launchLabel: "20 November 1998",
+    vehicle: "Proton-K, first element Zarya",
+    destination: "Low Earth orbit, roughly 400 km altitude",
+    objective:
+      "A permanently crewed orbital laboratory for research in microgravity across biology, human physiology, physical science and Earth observation.",
+    highlights: [
+      "Continuously crewed since November 2000.",
+      "Orbits Earth roughly every 90 minutes at about 28,000 km/h.",
+      "Assembled from modules delivered by more than 40 assembly flights.",
+    ],
+    url: "https://www.nasa.gov/international-space-station/",
+    internal: { label: "Track the station live", to: "/tracker" },
+  },
+  {
+    id: "artemis-1",
+    name: "Artemis I",
+    agency: "NASA",
+    status: "completed",
+    category: "lunar",
+    launched: "2022-11-16",
+    launchLabel: "16 November 2022",
+    vehicle: "Space Launch System, Block 1",
+    destination: "Distant retrograde orbit around the Moon",
+    objective:
+      "An uncrewed flight test of the Space Launch System rocket and the Orion spacecraft, including a full re-entry at lunar return velocity.",
+    highlights: [
+      "Flew 25.5 days and travelled about 1.4 million miles.",
+      "Orion returned to Earth on 11 December 2022 and splashed down in the Pacific.",
+      "Reached a maximum distance of about 268,000 miles from Earth.",
+    ],
+    url: "https://www.nasa.gov/mission/artemis-i/",
+    ended: "2022-12-11",
+  },
+  {
+    id: "artemis-2",
+    name: "Artemis II",
+    agency: "NASA",
+    status: "planned",
+    category: "lunar",
+    launched: "2026-01-01",
+    launchLabel: "Target window published by NASA",
+    vehicle: "Space Launch System, Block 1",
+    destination: "Free-return trajectory around the Moon",
+    objective:
+      "The first crewed flight of Orion, carrying four astronauts around the Moon to verify life support, communications and manual handling before a landing attempt.",
+    highlights: [
+      "Crew of four: Reid Wiseman, Victor Glover, Christina Koch and Jeremy Hansen.",
+      "No lunar landing. The flight profile is a crewed lunar flyby and return.",
+      "Check the official mission page for the current target date.",
+    ],
+    url: "https://www.nasa.gov/mission/artemis-ii/",
+  },
+
+  // ----------------------------- Planetary -------------------------------
+  {
+    id: "perseverance",
+    name: "Perseverance and Ingenuity",
+    agency: "NASA JPL",
+    status: "active",
+    category: "planetary",
+    launched: "2020-07-30",
+    launchLabel: "30 July 2020",
+    vehicle: "Atlas V 541",
+    destination: "Jezero Crater, Mars",
+    objective:
+      "Search for signs of ancient microbial life, characterise the geology and climate of Jezero Crater, and cache samples for possible return to Earth.",
+    highlights: [
+      "Landed 18 February 2021 in a river delta deposit inside Jezero Crater.",
+      "MOXIE produced oxygen from Martian carbon dioxide, the first demonstration of the technique on another planet.",
+      "Carried Ingenuity, the first aircraft to achieve powered flight on another world, which flew 72 times.",
+    ],
+    url: "https://science.nasa.gov/mission/mars-2020-perseverance/",
+    internal: { label: "See Mars imagery", to: "/mars" },
+  },
+  {
+    id: "curiosity",
+    name: "Curiosity",
+    agency: "NASA JPL",
+    status: "extended",
+    category: "planetary",
+    launched: "2011-11-26",
+    launchLabel: "26 November 2011",
+    vehicle: "Atlas V 541",
+    destination: "Gale Crater and Mount Sharp, Mars",
+    objective:
+      "Determine whether Mars ever offered environmental conditions able to support microbial life, by reading the rock record of Gale Crater.",
+    highlights: [
+      "Landed 6 August 2012 using the sky crane descent system.",
+      "Found evidence of an ancient freshwater lake environment inside Gale Crater.",
+      "Measured surface radiation levels relevant to future crewed missions.",
+    ],
+    url: "https://science.nasa.gov/mission/msl-curiosity/",
+    internal: { label: "See Mars imagery", to: "/mars" },
+  },
+  {
+    id: "mro",
+    name: "Mars Reconnaissance Orbiter",
+    agency: "NASA JPL",
+    status: "extended",
+    category: "planetary",
+    launched: "2005-08-12",
+    launchLabel: "12 August 2005",
+    vehicle: "Atlas V 401",
+    destination: "Mars orbit",
+    objective:
+      "Study Martian climate and geology at high resolution and serve as a communications relay for surface missions.",
+    highlights: [
+      "Carries HiRISE, the highest resolution camera ever sent to another planet.",
+      "Relays a large share of the data returned by NASA's Mars surface missions.",
+      "Detected recurring slope lineae and mapped subsurface ice deposits.",
+    ],
+    url: "https://science.nasa.gov/mission/mars-reconnaissance-orbiter/",
+  },
+  {
+    id: "maven",
+    name: "MAVEN",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "planetary",
+    launched: "2013-11-18",
+    launchLabel: "18 November 2013",
+    vehicle: "Atlas V 401",
+    destination: "Mars orbit",
+    objective:
+      "Measure how the Martian upper atmosphere escapes to space, to explain the loss of the planet's early atmosphere and water.",
+    highlights: [
+      "Showed that solar wind stripping is a major driver of atmospheric loss at Mars.",
+      "Also serves as a relay for surface assets.",
+    ],
+    url: "https://science.nasa.gov/mission/maven/",
+  },
+  {
+    id: "juno",
+    name: "Juno",
+    agency: "NASA JPL",
+    status: "extended",
+    category: "planetary",
+    launched: "2011-08-05",
+    launchLabel: "5 August 2011",
+    vehicle: "Atlas V 551",
+    destination: "Polar orbit around Jupiter",
+    objective:
+      "Map Jupiter's gravity and magnetic fields, measure atmospheric water, and reveal the structure of its interior.",
+    highlights: [
+      "Entered Jupiter orbit on 4 July 2016.",
+      "Found that Jupiter's core is diffuse rather than sharply defined.",
+      "Extended mission added close flybys of Ganymede, Europa and Io.",
+    ],
+    url: "https://science.nasa.gov/mission/juno/",
+    internal: { label: "See live distance", to: "/deepspace" },
+  },
+  {
+    id: "europa-clipper",
+    name: "Europa Clipper",
+    agency: "NASA JPL",
+    status: "cruise",
+    category: "planetary",
+    launched: "2024-10-14",
+    launchLabel: "14 October 2024",
+    vehicle: "Falcon Heavy",
+    destination: "Jupiter orbit, with repeated Europa flybys",
+    objective:
+      "Determine whether Europa's subsurface ocean could support life, by measuring ice shell thickness, ocean depth and surface chemistry.",
+    highlights: [
+      "Nine science instruments, the largest payload NASA has sent to the outer planets.",
+      "Plans roughly 50 close flybys of Europa rather than orbiting the moon directly.",
+      "Arrival at Jupiter is planned for 2030.",
+    ],
+    url: "https://science.nasa.gov/mission/europa-clipper/",
+  },
+  {
+    id: "psyche",
+    name: "Psyche",
+    agency: "NASA JPL",
+    status: "cruise",
+    category: "planetary",
+    launched: "2023-10-13",
+    launchLabel: "13 October 2023",
+    vehicle: "Falcon Heavy",
+    destination: "Asteroid 16 Psyche, main belt",
+    objective:
+      "Study a metal-rich asteroid that may be the exposed core of an early planetesimal, to learn how rocky worlds form their interiors.",
+    highlights: [
+      "Uses solar electric propulsion with Hall-effect thrusters.",
+      "Carries the Deep Space Optical Communications technology demonstration.",
+      "Arrival at 16 Psyche is planned for 2029.",
+    ],
+    url: "https://science.nasa.gov/mission/psyche/",
+  },
+  {
+    id: "lucy",
+    name: "Lucy",
+    agency: "NASA Goddard",
+    status: "cruise",
+    category: "planetary",
+    launched: "2021-10-16",
+    launchLabel: "16 October 2021",
+    vehicle: "Atlas V 401",
+    destination: "Jupiter's Trojan asteroids",
+    objective:
+      "Survey the Trojan asteroids that share Jupiter's orbit, remnants of the material that formed the outer planets.",
+    highlights: [
+      "Will visit more asteroids than any previous mission.",
+      "Flew past main belt asteroid Dinkinesh in 2023 and found it has a contact binary satellite.",
+      "First Trojan encounter is planned for 2027.",
+    ],
+    url: "https://science.nasa.gov/mission/lucy/",
+  },
+  {
+    id: "osiris-apex",
+    name: "OSIRIS-REx and OSIRIS-APEX",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "planetary",
+    launched: "2016-09-08",
+    launchLabel: "8 September 2016",
+    vehicle: "Atlas V 411",
+    destination: "Asteroid Bennu, then asteroid Apophis",
+    objective:
+      "Return a pristine sample of a carbon-rich asteroid to Earth, then redirect the spacecraft to study Apophis after its close Earth approach.",
+    highlights: [
+      "Delivered a sample capsule to the Utah desert on 24 September 2023.",
+      "Returned about 121.6 grams of material from Bennu.",
+      "Now flying as OSIRIS-APEX toward a 2029 rendezvous with Apophis.",
+    ],
+    url: "https://science.nasa.gov/mission/osiris-rex/",
+    internal: { label: "Watch near-Earth objects", to: "/neo" },
+  },
+  {
+    id: "new-horizons",
+    name: "New Horizons",
+    agency: "NASA APL",
+    status: "extended",
+    category: "planetary",
+    launched: "2006-01-19",
+    launchLabel: "19 January 2006",
+    vehicle: "Atlas V 551",
+    destination: "Pluto, then the Kuiper Belt",
+    objective:
+      "Perform the first reconnaissance of Pluto and its moons, then study objects in the Kuiper Belt.",
+    highlights: [
+      "Flew past Pluto on 14 July 2015, revealing nitrogen ice plains and water ice mountains.",
+      "Flew past the Kuiper Belt object Arrokoth on 1 January 2019.",
+      "Continues heliophysics and Kuiper Belt observations on an extended mission.",
+    ],
+    url: "https://science.nasa.gov/mission/new-horizons/",
+    internal: { label: "See live distance", to: "/deepspace" },
+  },
+  {
+    id: "cassini",
+    name: "Cassini-Huygens",
+    agency: "NASA JPL with ESA and ASI",
+    status: "completed",
+    category: "planetary",
+    launched: "1997-10-15",
+    launchLabel: "15 October 1997",
+    vehicle: "Titan IVB Centaur",
+    destination: "Saturn system",
+    objective:
+      "Study Saturn, its rings and its moons over many years, and land the Huygens probe on Titan.",
+    highlights: [
+      "Huygens landed on Titan on 14 January 2005, the first landing in the outer solar system.",
+      "Discovered water-rich plumes erupting from Enceladus.",
+      "Ended with a controlled entry into Saturn's atmosphere on 15 September 2017 to protect the moons from contamination.",
+    ],
+    url: "https://science.nasa.gov/mission/cassini/",
+    ended: "2017-09-15",
+  },
+  {
+    id: "voyager-1",
+    name: "Voyager 1",
+    agency: "NASA JPL",
+    status: "extended",
+    category: "heliophysics",
+    launched: "1977-09-05",
+    launchLabel: "5 September 1977",
+    vehicle: "Titan IIIE Centaur",
+    destination: "Interstellar space",
+    objective:
+      "Reconnoitre Jupiter and Saturn, then measure the boundary of the Sun's influence and the interstellar medium beyond it.",
+    highlights: [
+      "Crossed the heliopause in August 2012, the first spacecraft to enter interstellar space.",
+      "The most distant human-made object from Earth.",
+      "Still returning field and particle measurements on a reduced instrument set.",
+    ],
+    url: "https://science.nasa.gov/mission/voyager/",
+    internal: { label: "See live distance", to: "/deepspace" },
+  },
+  {
+    id: "voyager-2",
+    name: "Voyager 2",
+    agency: "NASA JPL",
+    status: "extended",
+    category: "heliophysics",
+    launched: "1977-08-20",
+    launchLabel: "20 August 1977",
+    vehicle: "Titan IIIE Centaur",
+    destination: "Interstellar space",
+    objective:
+      "Survey the outer planets, then continue outward measuring the heliosphere and interstellar medium.",
+    highlights: [
+      "The only spacecraft to have flown past Uranus and Neptune.",
+      "Crossed the heliopause in November 2018.",
+      "Continues to return particle and magnetic field data.",
+    ],
+    url: "https://science.nasa.gov/mission/voyager/",
+    internal: { label: "See live distance", to: "/deepspace" },
+  },
+
+  // ----------------------------- Astrophysics ----------------------------
+  {
+    id: "hubble",
+    name: "Hubble Space Telescope",
+    agency: "NASA with ESA",
+    status: "extended",
+    category: "astrophysics",
+    launched: "1990-04-24",
+    launchLabel: "24 April 1990",
+    vehicle: "Space Shuttle Discovery, STS-31",
+    destination: "Low Earth orbit",
+    objective:
+      "Observe the universe from ultraviolet through near-infrared wavelengths above the blurring effect of the atmosphere.",
+    highlights: [
+      "Serviced five times by Shuttle crews, the last in May 2009.",
+      "Observations underpinned the measurement of the accelerating expansion of the universe.",
+      "Has returned well over a million observations across more than three decades.",
+    ],
+    url: "https://science.nasa.gov/mission/hubble/",
+  },
+  {
+    id: "jwst",
+    name: "James Webb Space Telescope",
+    agency: "NASA with ESA and CSA",
+    status: "active",
+    category: "astrophysics",
+    launched: "2021-12-25",
+    launchLabel: "25 December 2021",
+    vehicle: "Ariane 5 ECA",
+    destination: "Sun-Earth L2, about 1.5 million km from Earth",
+    objective:
+      "Observe the first galaxies, the formation of stars and planetary systems, and the atmospheres of exoplanets in the infrared.",
+    highlights: [
+      "6.5 metre segmented primary mirror made of 18 beryllium segments.",
+      "Operates behind a five-layer sunshield that keeps the optics near 40 kelvin.",
+      "First science images released 12 July 2022.",
+    ],
+    url: "https://science.nasa.gov/mission/webb/",
+    internal: { label: "See live distance", to: "/deepspace" },
+  },
+  {
+    id: "roman",
+    name: "Nancy Grace Roman Space Telescope",
+    agency: "NASA Goddard",
+    status: "cruise",
+    category: "astrophysics",
+    launched: "2026-08-30",
+    launchLabel: "30 August 2026",
+    vehicle: "Falcon Heavy, Kennedy Space Center LC-39A",
+    destination: "Sun-Earth L2",
+    objective:
+      "Survey wide fields in the near infrared to study dark energy, find exoplanets by microlensing, and build large statistical samples of galaxies.",
+    highlights: [
+      "Wide Field Instrument delivers a field of view about 100 times that of Hubble at similar resolution.",
+      "Carries a coronagraph technology demonstration for direct imaging of exoplanets.",
+      "Cruise and commissioning are under way. Survey observations begin once commissioning closes out.",
+    ],
+    url: "https://science.nasa.gov/mission/roman-space-telescope/",
+    internal: { label: "Open the Roman page", to: "/roman" },
+  },
+  {
+    id: "chandra",
+    name: "Chandra X-ray Observatory",
+    agency: "NASA Marshall",
+    status: "extended",
+    category: "astrophysics",
+    launched: "1999-07-23",
+    launchLabel: "23 July 1999",
+    vehicle: "Space Shuttle Columbia, STS-93",
+    destination: "High elliptical Earth orbit",
+    objective:
+      "Image the hot, high-energy universe in X-rays: supernova remnants, galaxy clusters, black holes and neutron stars.",
+    highlights: [
+      "The highest angular resolution X-ray telescope flown.",
+      "Provided direct observational evidence for dark matter in colliding galaxy clusters.",
+    ],
+    url: "https://science.nasa.gov/mission/chandra-x-ray-observatory/",
+  },
+  {
+    id: "fermi",
+    name: "Fermi Gamma-ray Space Telescope",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "astrophysics",
+    launched: "2008-06-11",
+    launchLabel: "11 June 2008",
+    vehicle: "Delta II 7920-H",
+    destination: "Low Earth orbit",
+    objective:
+      "Survey the gamma-ray sky to study pulsars, active galaxies, gamma-ray bursts and the nature of dark matter.",
+    highlights: [
+      "Surveys the whole sky roughly every three hours.",
+      "Discovered the large gamma-ray structures above and below the galactic centre known as the Fermi bubbles.",
+    ],
+    url: "https://science.nasa.gov/mission/fermi/",
+  },
+  {
+    id: "tess",
+    name: "TESS",
+    agency: "NASA with MIT",
+    status: "extended",
+    category: "astrophysics",
+    launched: "2018-04-18",
+    launchLabel: "18 April 2018",
+    vehicle: "Falcon 9",
+    destination: "Highly elliptical Earth orbit in lunar resonance",
+    objective:
+      "Survey bright nearby stars for transiting exoplanets suited to follow-up atmospheric study.",
+    highlights: [
+      "Four wide-field cameras monitoring large sectors of sky for weeks at a time.",
+      "Has identified thousands of planet candidates, with many confirmed.",
+    ],
+    url: "https://science.nasa.gov/mission/tess/",
+  },
+  {
+    id: "swift",
+    name: "Neil Gehrels Swift Observatory",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "astrophysics",
+    launched: "2004-11-20",
+    launchLabel: "20 November 2004",
+    vehicle: "Delta II 7320",
+    destination: "Low Earth orbit",
+    objective:
+      "Detect gamma-ray bursts and slew rapidly to observe their afterglows in X-ray, ultraviolet and visible light.",
+    highlights: [
+      "Can point its narrow-field instruments at a new burst within about a minute.",
+      "A central node in multi-messenger follow-up of transient events.",
+    ],
+    url: "https://science.nasa.gov/mission/swift/",
+  },
+  {
+    id: "ixpe",
+    name: "IXPE",
+    agency: "NASA Marshall with ASI",
+    status: "active",
+    category: "astrophysics",
+    launched: "2021-12-09",
+    launchLabel: "9 December 2021",
+    vehicle: "Falcon 9",
+    destination: "Equatorial low Earth orbit",
+    objective:
+      "Measure the polarisation of X-rays from black holes, neutron stars and supernova remnants to reveal their geometry and magnetic fields.",
+    highlights: [
+      "First observatory dedicated to imaging X-ray polarimetry.",
+      "Polarisation measurements constrain the shape of accretion flows that imaging alone cannot resolve.",
+    ],
+    url: "https://science.nasa.gov/mission/ixpe/",
+  },
+  {
+    id: "kepler",
+    name: "Kepler and K2",
+    agency: "NASA Ames",
+    status: "completed",
+    category: "astrophysics",
+    launched: "2009-03-07",
+    launchLabel: "7 March 2009",
+    vehicle: "Delta II 7925-10L",
+    destination: "Earth-trailing heliocentric orbit",
+    objective:
+      "Determine how common Earth-size planets are around other stars by continuously monitoring a single star field for transits.",
+    highlights: [
+      "Confirmed more than 2,600 exoplanets.",
+      "Showed that planets outnumber stars in our galaxy.",
+      "Retired on 30 October 2018 when propellant ran out.",
+    ],
+    url: "https://science.nasa.gov/mission/kepler/",
+    ended: "2018-10-30",
+  },
+  {
+    id: "spitzer",
+    name: "Spitzer Space Telescope",
+    agency: "NASA JPL",
+    status: "completed",
+    category: "astrophysics",
+    launched: "2003-08-25",
+    launchLabel: "25 August 2003",
+    vehicle: "Delta II 7920H",
+    destination: "Earth-trailing heliocentric orbit",
+    objective:
+      "Observe the infrared universe: dusty star-forming regions, brown dwarfs, distant galaxies and exoplanet atmospheres.",
+    highlights: [
+      "Detected the seven-planet TRAPPIST-1 system alongside ground observatories.",
+      "Operated for more than 16 years and was retired on 30 January 2020.",
+    ],
+    url: "https://science.nasa.gov/mission/spitzer/",
+    ended: "2020-01-30",
+  },
+
+  // ----------------------------- Heliophysics ----------------------------
+  {
+    id: "parker",
+    name: "Parker Solar Probe",
+    agency: "NASA APL",
+    status: "active",
+    category: "heliophysics",
+    launched: "2018-08-12",
+    launchLabel: "12 August 2018",
+    vehicle: "Delta IV Heavy with Star 48BV",
+    destination: "The Sun's outer corona",
+    objective:
+      "Fly through the solar corona to determine how the solar wind is accelerated and why the corona is far hotter than the surface below it.",
+    highlights: [
+      "The first spacecraft to fly through the Sun's corona.",
+      "The fastest human-made object, using repeated Venus gravity assists to lower perihelion.",
+      "Protected by a carbon composite heat shield that shades the instruments.",
+    ],
+    url: "https://science.nasa.gov/mission/parker-solar-probe/",
+    internal: { label: "See orbital data", to: "/deepspace" },
+  },
+  {
+    id: "sdo",
+    name: "Solar Dynamics Observatory",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "heliophysics",
+    launched: "2010-02-11",
+    launchLabel: "11 February 2010",
+    vehicle: "Atlas V 401",
+    destination: "Inclined geosynchronous orbit",
+    objective:
+      "Observe the Sun's atmosphere and magnetic field at high time and spatial resolution to understand solar variability.",
+    highlights: [
+      "Returns full-disk images of the Sun every 12 seconds in multiple wavelengths.",
+      "A primary input to space weather forecasting.",
+    ],
+    url: "https://science.nasa.gov/mission/sdo/",
+    internal: { label: "Open space weather", to: "/weather" },
+  },
+  {
+    id: "soho",
+    name: "SOHO",
+    agency: "ESA and NASA",
+    status: "extended",
+    category: "heliophysics",
+    launched: "1995-12-02",
+    launchLabel: "2 December 1995",
+    vehicle: "Atlas IIAS",
+    destination: "Sun-Earth L1",
+    objective:
+      "Study the Sun's interior, corona and the solar wind from a vantage point upstream of Earth.",
+    highlights: [
+      "Its coronagraphs have led to the discovery of thousands of comets.",
+      "Still supplying coronal mass ejection imagery used in space weather alerts.",
+    ],
+    url: "https://science.nasa.gov/mission/soho/",
+    internal: { label: "Open space weather", to: "/weather" },
+  },
+  {
+    id: "imap",
+    name: "IMAP",
+    agency: "NASA with APL",
+    status: "active",
+    category: "heliophysics",
+    launched: "2025-09-24",
+    launchLabel: "September 2025",
+    vehicle: "Falcon 9",
+    destination: "Sun-Earth L1",
+    objective:
+      "Map the boundary of the heliosphere and study how the solar wind interacts with the interstellar medium, while returning near-real-time space weather data.",
+    highlights: [
+      "Ten instruments measuring energetic neutral atoms, ions and dust.",
+      "Carries space weather instruments that provide upstream solar wind measurements.",
+    ],
+    url: "https://science.nasa.gov/mission/imap/",
+    internal: { label: "Open space weather", to: "/weather" },
+  },
+  {
+    id: "tracers",
+    name: "TRACERS",
+    agency: "NASA with the University of Iowa",
+    status: "active",
+    category: "heliophysics",
+    launched: "2025-07-23",
+    launchLabel: "July 2025",
+    vehicle: "Falcon 9",
+    destination: "Polar low Earth orbit",
+    objective:
+      "Use two spacecraft flying in close formation to study magnetic reconnection where the solar wind couples to Earth's magnetic field.",
+    highlights: [
+      "Two identical satellites cross the polar cusp seconds apart.",
+      "Separates changes in time from changes in space, which single spacecraft cannot do.",
+    ],
+    url: "https://science.nasa.gov/mission/tracers/",
+  },
+
+  // ----------------------------- Earth science ---------------------------
+  {
+    id: "landsat-9",
+    name: "Landsat 9",
+    agency: "NASA with USGS",
+    status: "active",
+    category: "earth",
+    launched: "2021-09-27",
+    launchLabel: "27 September 2021",
+    vehicle: "Atlas V 401",
+    destination: "Sun-synchronous low Earth orbit",
+    objective:
+      "Continue the Landsat record of global land cover and land use change, the longest continuous space-based record of Earth's land surface.",
+    highlights: [
+      "Works with Landsat 8 to revisit most of the globe every eight days.",
+      "All imagery is released free and open.",
+    ],
+    url: "https://science.nasa.gov/mission/landsat-9/",
+  },
+  {
+    id: "terra",
+    name: "Terra",
+    agency: "NASA",
+    status: "extended",
+    category: "earth",
+    launched: "1999-12-18",
+    launchLabel: "18 December 1999",
+    vehicle: "Atlas IIAS",
+    destination: "Sun-synchronous low Earth orbit",
+    objective:
+      "Observe how Earth's land, oceans, atmosphere and energy budget interact and change, using five instruments including MODIS and ASTER.",
+    highlights: [
+      "Supplies the long-running MODIS record of vegetation, fire and cloud cover.",
+      "One of the flagship missions of NASA's Earth Observing System.",
+    ],
+    url: "https://terra.nasa.gov/",
+  },
+  {
+    id: "icesat-2",
+    name: "ICESat-2",
+    agency: "NASA Goddard",
+    status: "active",
+    category: "earth",
+    launched: "2018-09-15",
+    launchLabel: "15 September 2018",
+    vehicle: "Delta II 7420-10C",
+    destination: "Polar low Earth orbit",
+    objective:
+      "Measure the height of ice sheets, sea ice, land and vegetation with a photon-counting laser altimeter.",
+    highlights: [
+      "ATLAS fires 10,000 laser pulses per second and times individual returning photons.",
+      "Quantifies ice sheet loss in Greenland and Antarctica.",
+    ],
+    url: "https://science.nasa.gov/mission/icesat-2/",
+  },
+  {
+    id: "swot",
+    name: "SWOT",
+    agency: "NASA and CNES with CSA and UKSA",
+    status: "active",
+    category: "earth",
+    launched: "2022-12-16",
+    launchLabel: "16 December 2022",
+    vehicle: "Falcon 9",
+    destination: "Low Earth orbit",
+    objective:
+      "Survey the height of nearly all water on Earth's surface, in the oceans and in lakes and rivers, using radar interferometry.",
+    highlights: [
+      "Resolves ocean features far smaller than earlier altimeters could see.",
+      "First global survey of freshwater bodies at this level of detail.",
+    ],
+    url: "https://science.nasa.gov/mission/swot/",
+  },
+  {
+    id: "pace",
+    name: "PACE",
+    agency: "NASA Goddard",
+    status: "active",
+    category: "earth",
+    launched: "2024-02-08",
+    launchLabel: "8 February 2024",
+    vehicle: "Falcon 9",
+    destination: "Sun-synchronous low Earth orbit",
+    objective:
+      "Study ocean colour, aerosols and clouds to understand phytoplankton communities and their role in the carbon cycle.",
+    highlights: [
+      "Its hyperspectral Ocean Colour Instrument distinguishes phytoplankton types, not just abundance.",
+      "Carries two polarimeters for aerosol and cloud measurement.",
+    ],
+    url: "https://science.nasa.gov/mission/pace/",
+  },
+  {
+    id: "lro",
+    name: "Lunar Reconnaissance Orbiter",
+    agency: "NASA Goddard",
+    status: "extended",
+    category: "lunar",
+    launched: "2009-06-18",
+    launchLabel: "18 June 2009",
+    vehicle: "Atlas V 401",
+    destination: "Polar lunar orbit",
+    objective:
+      "Map the Moon in detail to identify landing sites, resources and radiation conditions, and to study lunar geology.",
+    highlights: [
+      "Produced the highest resolution global topographic map of the Moon.",
+      "Confirmed water ice in permanently shadowed polar craters.",
+      "Imagery underpins Artemis landing site selection.",
+    ],
+    url: "https://science.nasa.gov/mission/lro/",
+  },
+];
+
+// ------------------------------- Directories --------------------------------
+// Official catalogues a reader can use to go beyond this curated set.
+export const MISSION_DIRECTORIES = [
+  {
+    name: "NASA Missions Directory",
+    url: "https://www.nasa.gov/missions/",
+    note: "The full catalogue, filterable by status and by mission type.",
+  },
+  {
+    name: "NASA Science Missions",
+    url: "https://science.nasa.gov/science-missions/",
+    note: "Science missions with objectives, instruments and milestone dates.",
+  },
+  {
+    name: "NASA A to Z Mission List",
+    url: "https://www.nasa.gov/a-to-z-of-nasa-missions/",
+    note: "Every NASA mission, past and present, with an individual page each.",
+  },
+  {
+    name: "HEASARC Active Missions",
+    url: "https://heasarc.gsfc.nasa.gov/docs/heasarc/missions/active.html",
+    note: "High-energy astrophysics observatories currently operating.",
+  },
+  {
+    name: "NASA Space Science Data Coordinated Archive",
+    url: "https://nssdc.gsfc.nasa.gov/nmc/",
+    note: "Master catalogue of spacecraft and experiments, including historic flights.",
+  },
+];
+
+export function missionYear(m: MissionProfile): number {
+  const y = Number(m.launched.slice(0, 4));
+  return Number.isFinite(y) ? y : 0;
+}
