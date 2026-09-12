@@ -99,6 +99,11 @@ export type FilterBand = {
   range: string;
   centre: string;
   use: string;
+  /** Display colour used when the simulator renders this band. */
+  colour: string;
+  /** Relative bandwidth, used by the simulator to scale apparent brightness.
+   *  Derived from the published bandpass width divided by the widest band. */
+  relativeWidth: number;
 };
 
 export const FILTER_BANDS: FilterBand[] = [
@@ -107,37 +112,152 @@ export const FILTER_BANDS: FilterBand[] = [
     range: "0.927 to 1.192 micrometres",
     centre: "1.06 micrometres",
     use: "The Y band anchor for the High Latitude Wide Area Survey and supernova photometry.",
+    colour: "#9fd0ff",
+    relativeWidth: 0.247,
   },
   {
     name: "F129",
     range: "1.131 to 1.454 micrometres",
     centre: "1.29 micrometres",
     use: "J band imaging for galaxy shapes and photometric redshifts.",
+    colour: "#d8e2ff",
+    relativeWidth: 0.301,
   },
   {
     name: "F158",
     range: "1.380 to 1.774 micrometres",
     centre: "1.58 micrometres",
     use: "H band imaging, the workhorse band for weak lensing shape measurement.",
+    colour: "#ffd9a8",
+    relativeWidth: 0.367,
   },
   {
     name: "W146",
     range: "0.927 to 2.000 micrometres",
     centre: "1.46 micrometres",
     use: "The wide band used for the Galactic Bulge Time Domain Survey, where throughput matters more than colour.",
+    colour: "#ffbb7a",
+    relativeWidth: 1,
   },
 ];
 
+// ------------------------------------------------------------ WFI geometry
+// Detector layout used by the simulator. The Wide Field Instrument tiles 18
+// H4RG arrays of 4088 by 4088 usable pixels at 0.11 arcseconds per pixel,
+// giving a single detector about 7.5 arcminutes across.
+export const WFI = {
+  pixelScaleArcsec: 0.11,
+  detectorPixels: 4088,
+  detectorCount: 18,
+  fullFieldArcmin: 43.6,
+  get detectorArcmin() {
+    return (this.detectorPixels * this.pixelScaleArcsec) / 60;
+  },
+} as const;
+
+// --------------------------------------------------------- mission timeline
+export type Milestone = {
+  date: string;
+  dateLabel: string;
+  title: string;
+  detail: string;
+  /** Set when the date is a published target rather than a completed event. */
+  target?: boolean;
+};
+
+export const MILESTONES: Milestone[] = [
+  {
+    date: "2010-08-13",
+    dateLabel: "August 2010",
+    title: "Concept ranked top priority",
+    detail:
+      "The National Academies decadal survey New Worlds, New Horizons ranked a wide-field infrared survey telescope as the highest priority large space mission for the decade, defining the science case for dark energy, exoplanet microlensing, and near infrared surveys.",
+  },
+  {
+    date: "2016-02-18",
+    dateLabel: "February 2016",
+    title: "Formal mission start",
+    detail:
+      "NASA approved the observatory as a formal mission, moving it out of study into design and development with the Goddard Space Flight Center leading, alongside the Space Telescope Science Institute and IPAC at Caltech.",
+  },
+  {
+    date: "2020-05-20",
+    dateLabel: "May 2020",
+    title: "Named for Nancy Grace Roman",
+    detail:
+      "NASA named the observatory after Nancy Grace Roman, the agency's first chief astronomer, whose advocacy shaped the case for space-based astronomy and for Hubble in particular.",
+  },
+  {
+    date: "2021-09-01",
+    dateLabel: "2021 to 2023",
+    title: "Instrument hardware delivered",
+    detail:
+      "The Wide Field Instrument detectors, the element wheel carrying the imaging filters, the grism and the prism, and the Coronagraph Instrument optical bench were built, tested, and delivered for integration, with the 2.4 m primary mirror completed and coated for infrared performance.",
+  },
+  {
+    date: "2024-11-01",
+    dateLabel: "Late 2024 into 2025",
+    title: "Observatory integration and environmental testing",
+    detail:
+      "The instrument carrier, telescope, and spacecraft bus were joined and taken through thermal vacuum, vibration, and acoustic testing to confirm the observatory survives launch loads and holds focus at its operating temperature.",
+  },
+  {
+    date: "2026-08-30",
+    dateLabel: "30 August 2026",
+    title: "Launch",
+    detail:
+      "Roman lifted off on a SpaceX Falcon Heavy from Kennedy Space Center Launch Complex 39A and separated onto its transfer trajectory toward the second Sun-Earth Lagrange point.",
+  },
+  {
+    date: "2026-09-15",
+    dateLabel: "Weeks after launch",
+    title: "First deployments and instrument power on",
+    detail:
+      "The solar array and the sunshade deployed, the observatory established communications through the Deep Space Network, and the instruments were powered on for initial checkout while cooling toward operating temperature.",
+  },
+  {
+    date: "2026-11-30",
+    dateLabel: "About three months after launch",
+    title: "Arrival at the operating orbit",
+    detail:
+      "The cruise ends with insertion into a quasi-halo orbit about the second Sun-Earth Lagrange point, roughly 1.5 million km from Earth, where the Sun, Earth, and Moon stay behind a single sunshade.",
+    target: true,
+  },
+  {
+    date: "2027-01-15",
+    dateLabel: "Following commissioning",
+    title: "First science observations",
+    detail:
+      "Once commissioning closes out, focus and calibration are verified and the core community surveys begin, with calibrated data published through the archive with no proprietary period.",
+    target: true,
+  },
+];
+
+export type MilestoneState = "complete" | "current" | "upcoming";
+
+// A milestone is complete when its date has passed, current when it is the most
+// recent passed entry, and upcoming otherwise.
+export function milestoneStates(now: number): MilestoneState[] {
+  const passed = MILESTONES.map((m) => new Date(m.date).getTime() <= now);
+  const lastPassed = passed.lastIndexOf(true);
+  return passed.map((p, i) =>
+    !p ? "upcoming" : i === lastPassed ? "current" : "complete"
+  );
+}
+
 // ------------------------------------------------------- catalogue metadata
-// Illustrative survey records. These describe planned survey fields and their
-// published coordinates, not observations: Roman has not launched, so no
-// science data exists yet. Coordinates are the nominal survey field centres
-// discussed in the Roman core community survey definitions.
+// Planned survey fields with their published coordinates. Roman is still in
+// commissioning, so these are the survey pointings rather than delivered
+// observations. Coordinates are the nominal field centres discussed in the
+// Roman core community survey definitions.
 
 export type CatalogueRow = {
   field: string;
   ra: string;
   dec: string;
+  /** Decimal degrees, used to query the archive for the same sky region. */
+  raDeg: number;
+  decDeg: number;
   bands: string;
   cadence: string;
   survey: string;
