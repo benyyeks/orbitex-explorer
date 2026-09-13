@@ -71,7 +71,7 @@ const EXPLORE: ExploreCard[] = [
   { to: "/deepspace", icon: "deepspace", title: "Deep Space", blurb: "Real planetary orbits and live distance tracking for active probes." },
   { to: "/sky", icon: "sky", title: "Sky Tonight", blurb: "Moon phase, visible planets, and rise/set times for your location." },
   { to: "/mars", icon: "mars", title: "Mars", blurb: "Latest raw imagery from Curiosity and Perseverance." },
-  { to: "/roman", icon: "roman", title: "Roman Space Telescope", blurb: "Launch window countdown, survey footprint, and flight hardware." },
+  { to: "/roman", icon: "roman", title: "Roman Space Telescope", blurb: "Mission timeline, survey footprint, instrument simulator, and flight hardware." },
   { to: "/weather", icon: "weather", title: "Space Weather", blurb: "Geomagnetic index, solar wind, and aurora outlook from NOAA SWPC." },
   { to: "/neo", icon: "neo", title: "Asteroid Watch", blurb: "Upcoming close approaches, ranked by miss distance." },
   { to: "/launches", icon: "launches", title: "Launches", blurb: "Upcoming orbital launches worldwide with live countdowns." },
