@@ -89,11 +89,18 @@ export function ArchiveCoverage() {
       </p>
 
       <FeedStatus
-        loading={q.isLoading}
-        error={q.isError}
-        stale={q.data?.isStale}
-        fetchedAt={q.data?.fetchedAt}
         label="Archive coverage"
+        source="Mikulski Archive for Space Telescopes"
+        state={
+          q.isLoading
+            ? "loading"
+            : q.isError
+              ? "unavailable"
+              : q.data?.isStale
+                ? "delayed"
+                : "live"
+        }
+        fetchedAt={q.data?.fetchedAt ?? null}
       />
 
       {rows.length > 0 ? (
