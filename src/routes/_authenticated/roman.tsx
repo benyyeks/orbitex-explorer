@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MissionHeader } from "@/components/roman/mission-header";
+import { MissionTimeline } from "@/components/roman/mission-timeline";
 import { RomanNews } from "@/components/roman/roman-news";
 import { FovCompare } from "@/components/roman/fov-compare";
+import { WfiSimulator } from "@/components/roman/wfi-simulator";
+import { ArchiveCoverage } from "@/components/roman/archive-coverage";
 import { HardwareTabs } from "@/components/roman/hardware-tabs";
 
 export const Route = createFileRoute("/_authenticated/roman")({
@@ -30,8 +33,20 @@ function RomanPage() {
   return (
     <main className="roman-page">
       <MissionHeader />
+      <MissionTimeline />
       <RomanNews />
       <FovCompare />
+      <WfiSimulator />
+      <section className="container roman-section" id="archive">
+        <header className="section-head">
+          <h2>Survey fields in the archive</h2>
+          <p>
+            What has already been recorded where Roman will survey, taken straight from
+            the public archive.
+          </p>
+        </header>
+        <ArchiveCoverage />
+      </section>
       <HardwareTabs />
     </main>
   );

@@ -243,6 +243,7 @@ export type ProbeKey =
   | "newhorizons"
   | "parkersolarprobe"
   | "jwst"
+  | "roman"
   | "juno";
 
 type ProbeAnchorBase = {
