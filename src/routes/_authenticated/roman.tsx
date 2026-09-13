@@ -33,8 +33,20 @@ function RomanPage() {
   return (
     <main className="roman-page">
       <MissionHeader />
+      <MissionTimeline />
       <RomanNews />
       <FovCompare />
+      <WfiSimulator />
+      <section className="container roman-section" id="archive">
+        <header className="section-head">
+          <h2>Survey fields in the archive</h2>
+          <p>
+            What has already been recorded where Roman will survey, taken straight from
+            the public archive.
+          </p>
+        </header>
+        <ArchiveCoverage />
+      </section>
       <HardwareTabs />
     </main>
   );
