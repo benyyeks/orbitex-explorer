@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MissionHeader } from "@/components/roman/mission-header";
+import { MissionTimeline } from "@/components/roman/mission-timeline";
 import { RomanNews } from "@/components/roman/roman-news";
 import { FovCompare } from "@/components/roman/fov-compare";
+import { WfiSimulator } from "@/components/roman/wfi-simulator";
+import { ArchiveCoverage } from "@/components/roman/archive-coverage";
 import { HardwareTabs } from "@/components/roman/hardware-tabs";
 
 export const Route = createFileRoute("/_authenticated/roman")({
