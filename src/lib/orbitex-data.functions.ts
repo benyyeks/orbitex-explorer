@@ -309,3 +309,96 @@ export const getRomanNews = createServerFn({ method: "GET" }).handler(async () =
     return { items, generatedAt: new Date().toISOString() };
   });
 });
+
+// --------------------- MAST: archive observations by field ------------------
+// Real archive records for a sky position, used by the Roman survey panel.
+// Roman itself has published no science data during commissioning, so the query
+// returns Hubble and Webb coverage of the same fields Roman will survey, which
+// gives a genuine comparison instead of invented rows. Runs server side against
+// the MAST portal cone search and is cached for six hours.
+const ArchiveInput = z.object({
+  raDeg: z.number().min(0).max(360),
+  decDeg: z.number().min(-90).max(90),
+});
+
+export type ArchiveObservation = {
+  collection: string;
+  instrument: string;
+  target: string;
+  filters: string;
+  raDeg: number | null;
+  decDeg: number | null;
+  startISO: string | null;
+  exposureSeconds: number | null;
+  productType: string;
+};
+
+// MJD to ISO. The archive publishes observation start times as Modified
+// Julian Dates.
+function mjdToISO(mjd: unknown): string | null {
+  const n = Number(mjd);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const ms = (n + 2400000.5 - 2440587.5) * 86400000;
+  const d = new Date(ms);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+export const getArchiveObservations = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => ArchiveInput.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    return cached(
+      "mast-cone",
+      { ra: data.raDeg, dec: data.decDeg },
+      21600,
+      async (): Promise<{ items: ArchiveObservation[] }> => {
+        const request = {
+          service: "Mast.Caom.Cone",
+          params: { ra: data.raDeg, dec: data.decDeg, radius: 0.2 },
+          format: "json",
+          pagesize: 400,
+          page: 1,
+          removenullcolumns: true,
+        };
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        let payload: { data?: any[] };
+        try {
+          const res = await fetch("https://mast.stsci.edu/api/v0/invoke", {
+            method: "POST",
+            signal: controller.signal,
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "User-Agent": "ORBITEX-SpaceIntelligence/1.0",
+            },
+            body: `request=${encodeURIComponent(JSON.stringify(request))}`,
+          });
+          if (!res.ok) throw new Error(`Upstream returned HTTP ${res.status}.`);
+          payload = (await res.json()) as { data?: any[] };
+        } finally {
+          clearTimeout(timer);
+        }
+
+        const rows = Array.isArray(payload.data) ? payload.data : [];
+        const items = rows
+          .filter((r) => {
+            const c = String(r?.obs_collection ?? "").toUpperCase();
+            return c === "HST" || c === "JWST";
+          })
+          .map<ArchiveObservation>((r) => ({
+            collection: String(r?.obs_collection ?? "").toUpperCase() === "HST" ? "Hubble" : "Webb",
+            instrument: String(r?.instrument_name ?? "Unspecified"),
+            target: String(r?.target_name ?? "Unspecified"),
+            filters: String(r?.filters ?? "Unspecified"),
+            raDeg: Number.isFinite(Number(r?.s_ra)) ? Number(r.s_ra) : null,
+            decDeg: Number.isFinite(Number(r?.s_dec)) ? Number(r.s_dec) : null,
+            startISO: mjdToISO(r?.t_min),
+            exposureSeconds: Number.isFinite(Number(r?.t_exptime)) ? Number(r.t_exptime) : null,
+            productType: String(r?.dataproduct_type ?? "unspecified"),
+          }))
+          .sort((a, b) => (b.startISO ?? "").localeCompare(a.startISO ?? ""))
+          .slice(0, 25);
+
+        return { items };
+      }
+    );
+  });
