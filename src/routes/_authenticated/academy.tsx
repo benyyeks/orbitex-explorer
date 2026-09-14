@@ -5,11 +5,13 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { LearningResourcesTab } from "@/components/academy/learning-resources";
 import { ResearchLibraryTab } from "@/components/academy/research-library";
 import { TerminologiesTab } from "@/components/academy/terminologies";
+import { RomanHub } from "@/components/academy/roman-hub";
 
 const TABS = [
   { id: "terminologies", label: "Aerospace terminologies" },
   { id: "library", label: "Research library" },
   { id: "resources", label: "Learning resources" },
+  { id: "roman", label: "Roman study hub" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
