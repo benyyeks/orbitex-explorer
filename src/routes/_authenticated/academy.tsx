@@ -87,6 +87,7 @@ function AcademyPage() {
         {tab === "terminologies" && <TerminologiesTab />}
         {tab === "library" && <ResearchLibraryTab />}
         {tab === "resources" && <LearningResourcesTab sharedParam={list} />}
+        {tab === "roman" && <RomanHub />}
       </div>
     </main>
   );
