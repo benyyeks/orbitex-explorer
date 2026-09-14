@@ -1,19 +1,35 @@
+// Mission Intelligence: the mission record shown here rather than sent
+// elsewhere. Profiles are listed inline, alphabetically, with filters by
+// operating status and by discipline. Official pages are still linked, but only
+// as the place to verify a figure or read further.
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  CATEGORY_LABEL,
+  MISSIONS,
+  MISSION_DIRECTORIES,
+  STATUS_LABEL,
+  missionYear,
+  type MissionCategory,
+  type MissionProfile,
+  type MissionStatus,
+} from "@/lib/missions";
+import { ExportButtons } from "@/components/site/export-buttons";
 
 export const Route = createFileRoute("/_authenticated/intelligence")({
   head: () => ({
     meta: [
-      { title: "Mission Intelligence — ORBITEX" },
+      { title: "Mission Intelligence - Space Mission Directory - ORBITEX" },
       {
         name: "description",
         content:
-          "A structured overview of active and historic space missions, with links to NASA mission directories and cross-links to ORBITEX's live probe tracking.",
+          "An inline directory of active, in transit, planned, and completed space missions, each with launch date, vehicle, destination, objectives, and verified results.",
       },
-      { property: "og:title", content: "Mission Intelligence — ORBITEX" },
+      { property: "og:title", content: "Mission Intelligence - Space Mission Directory - ORBITEX" },
       {
         property: "og:description",
         content:
-          "Active and historic space missions, with links to NASA directories and ORBITEX live tracking.",
+          "Active, in transit, planned, and completed space missions listed with launch dates, vehicles, destinations, and verified results.",
       },
       { property: "og:type", content: "website" },
     ],
@@ -21,159 +37,318 @@ export const Route = createFileRoute("/_authenticated/intelligence")({
   component: IntelligencePage,
 });
 
+const STATUS_ORDER: MissionStatus[] = ["active", "extended", "cruise", "planned", "completed"];
+const CATEGORY_ORDER: MissionCategory[] = [
+  "human",
+  "planetary",
+  "astrophysics",
+  "heliophysics",
+  "earth",
+  "lunar",
+];
+
+const EXPORT_COLUMNS = [
+  { key: "name", label: "Mission", value: (m: MissionProfile) => m.name },
+  { key: "agency", label: "Agency", value: (m: MissionProfile) => m.agency },
+  { key: "status", label: "Status", value: (m: MissionProfile) => STATUS_LABEL[m.status] },
+  { key: "category", label: "Discipline", value: (m: MissionProfile) => CATEGORY_LABEL[m.category] },
+  { key: "launched", label: "Launched", value: (m: MissionProfile) => m.launchLabel },
+  { key: "vehicle", label: "Launch vehicle", value: (m: MissionProfile) => m.vehicle },
+  { key: "destination", label: "Destination", value: (m: MissionProfile) => m.destination },
+  { key: "objective", label: "Objective", value: (m: MissionProfile) => m.objective },
+  { key: "url", label: "Official page", value: (m: MissionProfile) => m.url },
+];
+
 function IntelligencePage() {
+  const [status, setStatus] = useState<MissionStatus | "all">("all");
+  const [category, setCategory] = useState<MissionCategory | "all">("all");
+  const [query, setQuery] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return MISSIONS.filter(
+      (m) =>
+        (status === "all" || m.status === status) &&
+        (category === "all" || m.category === category) &&
+        (q === "" ||
+          m.name.toLowerCase().includes(q) ||
+          m.destination.toLowerCase().includes(q) ||
+          m.agency.toLowerCase().includes(q))
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [status, category, query]);
+
+  // Alphabetical grouping so the directory reads as an A to Z list.
+  const groups = useMemo(() => {
+    const map = new Map<string, MissionProfile[]>();
+    for (const m of filtered) {
+      const letter = m.name.charAt(0).toUpperCase();
+      const key = /[A-Z]/.test(letter) ? letter : "0-9";
+      const bucket = map.get(key);
+      if (bucket) bucket.push(m);
+      else map.set(key, [m]);
+    }
+    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  }, [filtered]);
+
+  const counts = useMemo(() => {
+    const byStatus = new Map<MissionStatus, number>();
+    for (const m of MISSIONS) byStatus.set(m.status, (byStatus.get(m.status) ?? 0) + 1);
+    return byStatus;
+  }, []);
+
   return (
-    <main className="page-main">
-      <section>
-        <div className="container narrow">
-          <div className="page-hero">
-            <span className="eyebrow">Reference</span>
-            <h1>Mission intelligence</h1>
-            <p className="tagline">
-              A structured overview of active and historic space missions,
-              linking to official directories and to the live tracking data
-              already on ORBITEX.
-            </p>
-          </div>
+    <main className="page-main intelligence-page">
+      <section className="container page-hero">
+        <span className="badge">Mission record</span>
+        <h1>Mission intelligence</h1>
+        <p className="tagline">
+          {MISSIONS.length} missions listed in full: what each one flies, where it went,
+          what it has established. Filter by operating status or by discipline, or search
+          by name, agency, or destination.
+        </p>
+      </section>
 
-          <div className="glass glass-card scaffold-card">
-            <h2>Active and upcoming missions</h2>
-            <p>
-              NASA maintains a filterable mission directory covering every
-              active, future, and past mission. Browse by status (active, future,
-              inactive, past) or by mission type, from human spaceflight to
-              planetary science.
-            </p>
-            <ul className="feature-list">
-              <li>
-                <strong>
-                  <a
-                    href="https://www.nasa.gov/missions/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent"
-                  >
-                    NASA Missions Directory
-                  </a>
-                  :{" "}
-                </strong>
-                The full catalog, filterable by status and type.
-              </li>
-              <li>
-                <strong>
-                  <a
-                    href="https://science.nasa.gov/science-missions/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent"
-                  >
-                    NASA Science Missions
-                  </a>
-                  :{" "}
-                </strong>
-                Featured missions with milestones. Includes IMAP, launched
-                September 2025 to study the heliosphere boundary, and TRACERS,
-                launched July 2025 to study magnetic reconnection.
-              </li>
-              <li>
-                <strong>
-                  <a
-                    href="https://heasarc.gsfc.nasa.gov/docs/heasarc/missions/active.html"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent"
-                  >
-                    HEASARC Active Missions
-                  </a>
-                  :{" "}
-                </strong>
-                A list of currently operating high-energy astrophysics missions,
-                maintained by NASA's High Energy Astrophysics Science Archive
-                Research Center.
-              </li>
-            </ul>
-          </div>
-
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>Deep-space probes tracked on ORBITEX</h2>
-            <p>
-              The Deep Space page shows live positions and distances for active
-              probes, computed from JPL Horizons data. Each entry below links to
-              the live tracker.
-            </p>
-            <ul className="feature-list">
-              <li>
-                <strong>Voyager 1 and Voyager 2:</strong> the farthest human-made
-                objects, now in interstellar space.{" "}
-                <Link to="/deepspace" className="text-accent">
-                  See live distances
-                </Link>
-                .
-              </li>
-              <li>
-                <strong>New Horizons:</strong> past Pluto and Arrokoth, now in the
-                Kuiper Belt.{" "}
-                <Link to="/deepspace" className="text-accent">
-                  See live distance
-                </Link>
-                .
-              </li>
-              <li>
-                <strong>Parker Solar Probe:</strong> the closest any spacecraft
-                has come to the Sun, with a perihelion of 0.046 AU.{" "}
-                <Link to="/deepspace" className="text-accent">
-                  See orbital data
-                </Link>
-                .
-              </li>
-              <li>
-                <strong>James Webb Space Telescope:</strong> observing from the
-                Sun-Earth L2 point, approximately 1.5 million kilometers from
-                Earth.{" "}
-                <Link to="/deepspace" className="text-accent">
-                  See live distance
-                </Link>
-                .
-              </li>
-              <li>
-                <strong>Juno:</strong> orbiting Jupiter, studying its atmosphere
-                and magnetic field.{" "}
-                <Link to="/deepspace" className="text-accent">
-                  See live distance
-                </Link>
-                .
-              </li>
-            </ul>
-          </div>
-
-          <div className="glass glass-card scaffold-card" style={{ marginTop: 24 }}>
-            <h2>Full mission catalog</h2>
-            <p>
-              For a comprehensive list of every NASA mission past and present,
-              the A to Z directory provides individual mission pages with
-              objectives, timelines, and results.
-            </p>
-            <ul className="feature-list">
-              <li>
-                <a
-                  href="https://www.nasa.gov/a-to-z-of-nasa-missions/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent"
-                >
-                  NASA A to Z Mission List
-                </a>
-              </li>
-            </ul>
-            <p className="scaffold-note">
-              Want to see where satellites are right now?{" "}
-              <Link to="/tracker" className="text-accent">
-                Open the Orbit Tracker
-              </Link>{" "}
-              for live 3D positions.
-            </p>
-          </div>
+      <section className="container">
+        <div className="stat-strip">
+          {STATUS_ORDER.map((s) => (
+            <div className="stat-cell" key={s}>
+              <span className="stat-label">{STATUS_LABEL[s]}</span>
+              <b className="mono stat-value">{counts.get(s) ?? 0}</b>
+            </div>
+          ))}
         </div>
+      </section>
+
+      <section className="container roman-section">
+        <div className="panel-head">
+          <div>
+            <h2>Directory</h2>
+            <p className="roman-note">
+              Every figure below traces to the mission's own page, linked on each entry.
+            </p>
+          </div>
+          <ExportButtons
+            rows={filtered}
+            columns={EXPORT_COLUMNS}
+            meta={{
+              dataset: "ORBITEX mission directory",
+              source: "NASA and partner agency mission pages",
+            }}
+          />
+        </div>
+
+        <div className="filter-bar">
+          <label className="visually-hidden" htmlFor="mission-search">
+            Search missions
+          </label>
+          <input
+            id="mission-search"
+            type="search"
+            className="input"
+            placeholder="Search by mission, agency, or destination"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="chip-row" role="group" aria-label="Filter by status">
+          <button
+            type="button"
+            className={`chip${status === "all" ? " chip-active" : ""}`}
+            aria-pressed={status === "all"}
+            onClick={() => setStatus("all")}
+          >
+            All statuses
+          </button>
+          {STATUS_ORDER.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={`chip${status === s ? " chip-active" : ""}`}
+              aria-pressed={status === s}
+              onClick={() => setStatus(s)}
+            >
+              {STATUS_LABEL[s]}
+            </button>
+          ))}
+        </div>
+
+        <div className="chip-row" role="group" aria-label="Filter by discipline">
+          <button
+            type="button"
+            className={`chip${category === "all" ? " chip-active" : ""}`}
+            aria-pressed={category === "all"}
+            onClick={() => setCategory("all")}
+          >
+            All disciplines
+          </button>
+          {CATEGORY_ORDER.map((c) => (
+            <button
+              key={c}
+              type="button"
+              className={`chip${category === c ? " chip-active" : ""}`}
+              aria-pressed={category === c}
+              onClick={() => setCategory(c)}
+            >
+              {CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
+
+        <p className="roman-note" role="status">
+          Showing {filtered.length} of {MISSIONS.length} missions.
+        </p>
+
+        {groups.length === 0 ? (
+          <p className="roman-note">
+            No mission matches that search. Clearing the filters brings the full list
+            back.
+          </p>
+        ) : null}
+
+        {groups.map(([letter, missions]) => (
+          <div className="mission-group" key={letter}>
+            <h3 className="mission-letter mono">{letter}</h3>
+            <div className="mission-list">
+              {missions.map((m) => {
+                const open = openId === m.id;
+                return (
+                  <article
+                    key={m.id}
+                    className="glass glass-card mission-card"
+                    data-open={open ? "true" : undefined}
+                  >
+                    <button
+                      type="button"
+                      className="mission-head"
+                      aria-expanded={open}
+                      onClick={() => setOpenId(open ? null : m.id)}
+                    >
+                      <span className="mission-title">
+                        <b>{m.name}</b>
+                        <span className="mission-sub">
+                          {m.agency} · {CATEGORY_LABEL[m.category]} · {m.launchLabel}
+                          {m.ended ? ` to ${m.ended}` : ""}
+                        </span>
+                      </span>
+                      <span className="mission-side">
+                        <span
+                          className={`badge${
+                            m.status === "active" || m.status === "extended"
+                              ? " badge-success"
+                              : m.status === "planned"
+                                ? ""
+                                : m.status === "cruise"
+                                  ? " badge-warning"
+                                  : ""
+                          }`}
+                        >
+                          {STATUS_LABEL[m.status]}
+                        </span>
+                        <span className="mission-chevron" aria-hidden="true">
+                          {open ? "-" : "+"}
+                        </span>
+                      </span>
+                    </button>
+
+                    <p className="mission-objective">{m.objective}</p>
+
+                    {open ? (
+                      <div className="mission-body">
+                        <div className="detail-rows">
+                          <div className="detail-row">
+                            <span>Launched</span>
+                            <b className="mono">{m.launchLabel}</b>
+                          </div>
+                          <div className="detail-row">
+                            <span>Launch vehicle</span>
+                            <b className="mono">{m.vehicle}</b>
+                          </div>
+                          <div className="detail-row">
+                            <span>Destination</span>
+                            <b className="mono">{m.destination}</b>
+                          </div>
+                          <div className="detail-row">
+                            <span>Operating year</span>
+                            <b className="mono">{missionYear(m)}</b>
+                          </div>
+                        </div>
+                        <ul className="feature-list">
+                          {m.highlights.map((h) => (
+                            <li key={h}>{h}</li>
+                          ))}
+                        </ul>
+                        <div className="mission-links">
+                          {m.internal ? (
+                            <Link to={m.internal.to} className="detail-link">
+                              {m.internal.label}
+                            </Link>
+                          ) : null}
+                          <a
+                            href={m.url}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="detail-link"
+                          >
+                            Official mission page
+                          </a>
+                        </div>
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </section>
+
+      <section className="container roman-section">
+        <header className="section-head">
+          <h2>Going further</h2>
+          <p>
+            The directory above is curated. These official catalogues hold every mission
+            an agency has flown, for anything outside it.
+          </p>
+        </header>
+        <div className="table-scroll">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th scope="col">Catalogue</th>
+                <th scope="col">What it holds</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MISSION_DIRECTORIES.map((d) => (
+                <tr key={d.url}>
+                  <td>
+                    <a href={d.url} target="_blank" rel="noreferrer noopener">
+                      {d.name}
+                    </a>
+                  </td>
+                  <td>{d.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="roman-note">
+          Live spacecraft positions are on the{" "}
+          <Link to="/deepspace" className="text-accent">
+            Deep Space
+          </Link>{" "}
+          page, and satellites in Earth orbit on the{" "}
+          <Link to="/tracker" className="text-accent">
+            Orbit Tracker
+          </Link>
+          . Confirmed flights ahead are on the{" "}
+          <Link to="/launches" className="text-accent">
+            Launch Schedule
+          </Link>
+          .
+        </p>
       </section>
     </main>
   );
