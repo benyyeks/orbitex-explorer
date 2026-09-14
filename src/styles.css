@@ -2400,3 +2400,6 @@ a.side-item { text-decoration: none; color: inherit; }
 .shelf-cover { width: 72px; height: auto; border-radius: 4px; background: var(--color-border); }
 .shelf-card h4 { margin: 0 0 0.15rem; font-size: 0.98rem; }
 .shelf-card p { margin: 0.25rem 0 0; font-size: 0.85rem; }
+.academy-panel { padding-bottom: 2.4rem; }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 0.9rem; }
+.card-grid h4 { margin: 0 0 0.2rem; font-size: 1rem; }
