@@ -474,13 +474,21 @@ function DeepSpacePage() {
                   <PlanetDetail pk={sel.key} jd={jd} onFocus={requestFocus} />
                 )}
                 {sel.kind === "probe" && <ProbeDetail k={sel.key} />}
-                <Link
-                  to="/deepspace/$objectId"
-                  params={{ objectId: selectionId(sel) }}
-                  className="detail-link"
-                >
-                  View full object details
-                </Link>
+                {sel.kind === "probe" && sel.key === "roman" ? (
+                  // Roman has a dedicated mission page, so the full record for it
+                  // lives there rather than in the generic object template.
+                  <Link to="/roman" className="detail-link">
+                    View the full Roman mission page
+                  </Link>
+                ) : (
+                  <Link
+                    to="/deepspace/$objectId"
+                    params={{ objectId: selectionId(sel) }}
+                    className="detail-link"
+                  >
+                    View full object details
+                  </Link>
+                )}
               </div>
 
               <div className="glass glass-card side-card">
