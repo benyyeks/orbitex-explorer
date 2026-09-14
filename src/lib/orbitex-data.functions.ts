@@ -402,3 +402,27 @@ export const getArchiveObservations = createServerFn({ method: "GET" })
       }
     );
   });
+
+// --------------------- The Space Devs: past launches archive -----------------
+// Recently completed orbital launches, used by the Past launches archive. Same
+// upstream and same fallback behaviour as the upcoming feed, cached for an hour
+// since the record no longer changes once a flight has flown.
+const LL2_PREVIOUS_URL =
+  "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=24&mode=detailed";
+
+export const getPastLaunches = createServerFn({ method: "GET" }).handler(async () => {
+  return cached("launches-previous", {}, 3600, async () => {
+    const token = process.env["LAUNCH_LIBRARY_KEY"];
+    if (token) {
+      try {
+        return await fetchJson(LL2_PREVIOUS_URL, {
+          timeoutMs: 12000,
+          headers: { Authorization: `Token ${token}` },
+        });
+      } catch {
+        /* fall through to the public tier */
+      }
+    }
+    return fetchJson(LL2_PREVIOUS_URL, { timeoutMs: 12000 });
+  });
+});

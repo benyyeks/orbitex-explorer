@@ -300,6 +300,11 @@ export const PROBE_ANCHORS: Record<ProbeKey, ProbeAnchor> = {
     kind: "l2", distanceKm: 1500000,
     note: "Halo orbit around the Sun-Earth L2 point, roughly 4x farther than the Moon.",
   },
+  roman: {
+    name: "Nancy Grace Roman Space Telescope", horizonsId: "-211", launched: "2026-08-30",
+    kind: "l2", distanceKm: 1500000,
+    note: "Cruising to a quasi-halo orbit about the Sun-Earth L2 point while commissioning continues.",
+  },
   juno: {
     name: "Juno", horizonsId: "-61", launched: "2011-08-05",
     kind: "jupiter-orbit",

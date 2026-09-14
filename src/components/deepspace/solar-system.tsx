@@ -57,6 +57,7 @@ function planetVisualRadius(radiusKm: number): number {
 const PROBE_CLEARANCE: Partial<Record<ProbeKey, { center: "sun" | PlanetKey; minDist: number }>> = {
   parkersolarprobe: { center: "sun", minDist: SUN_RADIUS * SUN_GLOW_SCALE + 1.4 },
   jwst: { center: "earth", minDist: planetVisualRadius(PLANET_ELEMENTS.earth.radiusKm) + 1.7 },
+  roman: { center: "earth", minDist: planetVisualRadius(PLANET_ELEMENTS.earth.radiusKm) + 2.4 },
   juno: { center: "jupiter", minDist: planetVisualRadius(PLANET_ELEMENTS.jupiter.radiusKm) + 1.7 },
 };
 
@@ -91,7 +92,7 @@ function parkerPositionAU(jd: number): Vec3 {
 function probePositionAU(key: ProbeKey, jd: number, now: Date): Vec3 | null {
   if (key === "parkersolarprobe") return parkerPositionAU(jd);
   const earth = heliocentricEcliptic("earth", jd);
-  if (key === "jwst") {
+  if (key === "jwst" || key === "roman") {
     const r = Math.sqrt(earth.x ** 2 + earth.y ** 2 + earth.z ** 2) || 1;
     const k = 1 + 0.01 / r; // roughly 1.5 million km beyond Earth, at the Sun-Earth L2 point
     return { x: earth.x * k, y: earth.y * k, z: earth.z * k };

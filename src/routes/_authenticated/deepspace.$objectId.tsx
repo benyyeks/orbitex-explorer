@@ -225,6 +225,7 @@ const PROBE_STATUS: Record<ProbeKey, string> = {
   newhorizons: "Kuiper Belt cruise, outbound toward interstellar space",
   parkersolarprobe: "Elliptical solar orbit with repeated close approaches",
   jwst: "Halo orbit around the Sun-Earth L2 point",
+  roman: "Cruise and commissioning, bound for the Sun-Earth L2 point",
   juno: "Polar orbit around Jupiter",
 };
 
