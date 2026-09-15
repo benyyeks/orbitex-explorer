@@ -2403,3 +2403,56 @@ a.side-item { text-decoration: none; color: inherit; }
 .academy-panel { padding-bottom: 2.4rem; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; margin-top: 0.9rem; }
 .card-grid h4 { margin: 0 0 0.2rem; font-size: 1rem; }
+
+/* ------------------------- Mission Intelligence directory ----------------- */
+.stat-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 1.6rem;
+}
+.stat-cell {
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0.7rem 0.9rem;
+  background: var(--color-surface);
+}
+.stat-cell .stat-value { display: block; font-size: 1.25rem; margin-top: 0.2rem; }
+.filter-bar { margin: 0.9rem 0 0.6rem; }
+.filter-bar .input { width: 100%; max-width: 420px; }
+.mission-group { margin-top: 1.6rem; }
+.mission-letter {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  opacity: 0.7;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.3rem;
+}
+.mission-list { display: grid; gap: 12px; }
+.mission-card { padding: 1rem 1.1rem; }
+.mission-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+.mission-title { display: grid; gap: 0.2rem; }
+.mission-title b { font-size: 1.02rem; }
+.mission-sub { font-size: 0.82rem; opacity: 0.75; }
+.mission-side { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.mission-chevron { font-family: var(--font-mono, monospace); opacity: 0.7; }
+.mission-objective { margin: 0.6rem 0 0; font-size: 0.9rem; }
+.mission-body { margin-top: 0.9rem; border-top: 1px solid var(--color-border); padding-top: 0.9rem; }
+.mission-links { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 0.6rem; }
+@media (max-width: 640px) {
+  .mission-head { flex-direction: column; }
+}

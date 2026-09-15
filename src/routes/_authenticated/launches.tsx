@@ -6,6 +6,7 @@ import { fmtNum, safeText, pad2 } from "@/lib/format";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError, EmptyState } from "@/components/site/data-state";
 import { SkeletonImage } from "@/components/site/skeleton-image";
+import { PastLaunches } from "@/components/launches/past-launches";
 import { PageHeroSkeleton, StatGridSkeleton, LaunchListSkeleton } from "@/components/site/page-skeleton";
 
 export const Route = createFileRoute("/_authenticated/launches")({
@@ -310,6 +311,8 @@ function LaunchesPage() {
               </div>
             </section>
           )}
+
+          <PastLaunches />
 
           <div className="glass glass-card method-note">
             <h2>How this data works</h2>

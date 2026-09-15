@@ -37,6 +37,19 @@ export const Route = createFileRoute("/_authenticated/intelligence")({
   component: IntelligencePage,
 });
 
+// Mission end dates are stored as plain ISO dates; show them the way the launch
+// labels read.
+function fmtEnded(iso: string): string {
+  const d = new Date(`${iso}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 const STATUS_ORDER: MissionStatus[] = ["active", "extended", "cruise", "planned", "completed"];
 const CATEGORY_ORDER: MissionCategory[] = [
   "human",
@@ -229,7 +242,7 @@ function IntelligencePage() {
                         <b>{m.name}</b>
                         <span className="mission-sub">
                           {m.agency} · {CATEGORY_LABEL[m.category]} · {m.launchLabel}
-                          {m.ended ? ` to ${m.ended}` : ""}
+                          {m.ended ? ` to ${fmtEnded(m.ended)}` : ""}
                         </span>
                       </span>
                       <span className="mission-side">
