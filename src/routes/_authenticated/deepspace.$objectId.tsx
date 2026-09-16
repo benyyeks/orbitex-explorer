@@ -18,6 +18,7 @@ import { fmtNum, lightTimeFromAU, lightTimeFromKm } from "@/lib/format";
 import { horizonsProbeQuery } from "@/lib/horizons-queries";
 import { useNow } from "@/hooks/use-now";
 import { FreshnessBadge } from "@/components/site/freshness-badge";
+import { OBJECT_ESSAYS } from "@/lib/object-essays";
 
 // ---------------------------------------------------------------------------
 // Object resolution: the route param is "sun", a planet key, or a probe key.
@@ -96,6 +97,45 @@ function Cell({ label, value }: { label: string; value: string }) {
       <div className="stat-label">{label}</div>
       <div className="stat-value mono">{value}</div>
     </div>
+  );
+}
+
+// Long-form explanation for the object, rendered below the live figures so the
+// page reads as a reference article rather than a data readout.
+function ObjectExplainer({ id }: { id: string }) {
+  const essay = OBJECT_ESSAYS[id];
+  if (!essay) return null;
+  return (
+    <section className="section" style={{ paddingTop: 0 }}>
+      <div className="container">
+        <div className="glass glass-card object-essay">
+          <h2 className="section-title" style={{ marginTop: 0 }}>
+            In detail
+          </h2>
+          <p className="essay-abstract">{essay.abstract}</p>
+          {essay.sections.map((sec) => (
+            <div className="essay-section" key={sec.heading}>
+              <h3>{sec.heading}</h3>
+              {sec.paragraphs.map((para, i) => (
+                <p key={i}>{para}</p>
+              ))}
+            </div>
+          ))}
+          <div className="essay-sources">
+            <h3>Sources</h3>
+            <ul>
+              {essay.sources.map((s) => (
+                <li key={s.url}>
+                  <a href={s.url} target="_blank" rel="noreferrer noopener">
+                    {s.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -396,6 +436,8 @@ function DeepSpaceObjectPage() {
       {resolved.kind === "planet" && <PlanetProfile pk={resolved.key} />}
       {resolved.kind === "probe" && <ProbeProfile k={resolved.key} />}
       {resolved.kind === "sun" && <SunProfile />}
+
+      <ObjectExplainer id={objectId} />
     </main>
   );
 }

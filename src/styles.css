@@ -2456,3 +2456,19 @@ a.side-item { text-decoration: none; color: inherit; }
 @media (max-width: 640px) {
   .mission-head { flex-direction: column; }
 }
+
+/* ------------------------- Object detail long-form ------------------------ */
+.object-essay { max-width: 78ch; }
+.essay-abstract {
+  font-size: 1.02rem;
+  line-height: 1.6;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.essay-section { margin-top: 1.5rem; }
+.essay-section h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+.essay-section p { margin: 0 0 0.8rem; line-height: 1.68; }
+.essay-sources { margin-top: 1.8rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
+.essay-sources h3 { margin: 0 0 0.4rem; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
+.essay-sources ul { margin: 0; padding-left: 1.1rem; }
+.essay-sources li { margin-bottom: 0.3rem; font-size: 0.9rem; }
