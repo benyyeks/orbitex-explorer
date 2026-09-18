@@ -104,5 +104,18 @@ export const submitFeedback = createServerFn({ method: "POST" })
     if (error) {
       return { ok: false, error: "Your message could not be sent. Please try again." };
     }
-    return { ok: true, error: null };
+
+    // Relay the message to the team inbox. A delivery problem does not lose
+    // the submission, which is already stored.
+    const { sendFeedbackEmail } = await import("@/lib/feedback-mail.server");
+    const mail = await sendFeedbackEmail({
+      name: data.name,
+      email: data.email,
+      type: data.type,
+      message: data.message,
+    });
+    if (!mail.sent) {
+      return { ok: true, error: null, delivered: false };
+    }
+    return { ok: true, error: null, delivered: true };
   });
