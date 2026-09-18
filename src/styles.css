@@ -78,6 +78,8 @@
     --accent-panel-text-muted: rgba(233, 236, 243, 0.72);
     --accent-panel-border: rgba(160, 185, 225, 0.18);
     --accent-wash: rgba(140, 165, 214, 0.08);
+    --color-surface: rgba(28, 26, 21, 0.9);
+    --color-text-soft: #b3ac9d;
     color-scheme: dark;
   }
 }
