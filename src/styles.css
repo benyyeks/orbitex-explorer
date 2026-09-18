@@ -1,10 +1,8 @@
 /* ==========================================================================
    ORBITEX Design System
    Academic, minimal, glass. Color is used sparingly and functionally.
-   Light mode is the default; dark mode follows the OS via
-   prefers-color-scheme, with a manual override stored in localStorage
-   (see src/components/site/theme-toggle.tsx) applied through the
-   [data-theme] attribute.
+   Light is the base palette; dark mode follows the visitor's system setting
+   through prefers-color-scheme. There is no manual override.
    ========================================================================== */
 
 /* ------------------------------- Palette -------------------------------- */
@@ -35,11 +33,24 @@
   --shadow-glass: 0 10px 40px rgba(35, 30, 20, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.55);
   --shadow-glass-hover: 0 16px 48px rgba(35, 30, 20, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.6);
   --blur-glass: 20px;
+
+  /* Deep blue accent surfaces. In light mode these break up the paper
+     background behind hero areas, stat strips and feature cards; in dark mode
+     they step down to a subtle tint so panels stay legible. */
+  --accent-panel: linear-gradient(160deg, #1f3555 0%, #24406a 55%, #16273f 100%);
+  --accent-panel-solid: #1f3555;
+  --accent-panel-text: #eef2f9;
+  --accent-panel-text-muted: rgba(238, 242, 249, 0.74);
+  --accent-panel-border: rgba(255, 255, 255, 0.16);
+  --accent-wash: rgba(31, 53, 85, 0.06);
+  /* Legacy aliases still referenced across the sheet. */
+  --color-surface: rgba(253, 252, 250, 0.9);
+  --color-text-soft: #625c50;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     --color-bg: #16140f;
     --color-bg-solid: #1c1a15;
     --surface-rgb: 28, 26, 21;
@@ -61,34 +72,35 @@
     --color-danger: #e0806e;
     --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     --shadow-glass-hover: 0 18px 54px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --accent-panel: linear-gradient(160deg, rgba(31, 53, 85, 0.46) 0%, rgba(36, 64, 106, 0.34) 60%, rgba(22, 39, 63, 0.5) 100%);
+    --accent-panel-solid: #1a2a44;
+    --accent-panel-text: #e9ecf3;
+    --accent-panel-text-muted: rgba(233, 236, 243, 0.72);
+    --accent-panel-border: rgba(160, 185, 225, 0.18);
+    --accent-wash: rgba(140, 165, 214, 0.08);
+    --color-surface: rgba(28, 26, 21, 0.9);
+    --color-text-soft: #b3ac9d;
     color-scheme: dark;
   }
 }
 
-:root[data-theme="dark"] {
-  --color-bg: #16140f;
-  --color-bg-solid: #1c1a15;
-  --surface-rgb: 28, 26, 21;
-  --surface-alpha: 0.55;
-  --surface-alpha-strong: 0.80;
-  --color-border: rgba(255, 250, 240, 0.09);
-  --color-border-strong: rgba(255, 250, 240, 0.17);
-  --color-text: #efece4;
-  --color-text-muted: #b3ac9d;
-  --color-text-faint: #7d766a;
-  --color-accent: #8ca5d6;
-  --color-accent-strong: #a9bee3;
-  --color-accent-soft: rgba(140, 165, 214, 0.14);
-  --color-highlight: #dda05f;
-  --color-highlight-strong: #e8b47c;
-  --color-highlight-soft: rgba(221, 160, 95, 0.15);
-  --color-success: #6bbf82;
-  --color-warning: #dda05f;
-  --color-danger: #e0806e;
-  --shadow-glass: 0 10px 40px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --shadow-glass-hover: 0 18px 54px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  color-scheme: dark;
+/* Deep blue accent surface, used behind hero areas and feature panels. */
+.accent-panel {
+  background: var(--accent-panel);
+  border: 1px solid var(--accent-panel-border);
+  color: var(--accent-panel-text);
+  border-radius: 18px;
 }
+.accent-panel h1,
+.accent-panel h2,
+.accent-panel h3,
+.accent-panel h4 { color: var(--accent-panel-text); }
+.accent-panel p,
+.accent-panel li,
+.accent-panel small,
+.accent-panel .muted { color: var(--accent-panel-text-muted); }
+.accent-wash { background: var(--accent-wash); }
+
 
 /* ------------------------------- Reset --------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
@@ -335,7 +347,7 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
 .nav-desktop a[aria-current="page"] { color: var(--color-accent); background: var(--color-accent-soft); font-weight: 600; }
 
 .header-actions { display: flex; align-items: center; gap: 8px; }
-.theme-toggle, .menu-toggle {
+.menu-toggle {
   width: 38px; height: 38px;
   display: flex; align-items: center; justify-content: center;
   border-radius: 10px;
@@ -343,15 +355,9 @@ a.glass-card:hover, button.glass-card:hover, .glass-card.interactive:hover {
   background: rgba(var(--surface-rgb), var(--surface-alpha-strong));
   color: var(--color-text-muted);
 }
-.theme-toggle:hover, .menu-toggle:hover { color: var(--color-text); border-color: var(--color-border-strong); }
-.theme-toggle svg, .menu-toggle svg { width: 17px; height: 17px; }
-.theme-toggle .icon-moon { display: none; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-toggle .icon-sun { display: none; }
-  :root:not([data-theme="light"]) .theme-toggle .icon-moon { display: flex; }
-}
-:root[data-theme="dark"] .theme-toggle .icon-sun { display: none; }
-:root[data-theme="dark"] .theme-toggle .icon-moon { display: flex; }
+.menu-toggle:hover { color: var(--color-text); border-color: var(--color-border-strong); }
+.menu-toggle svg { width: 17px; height: 17px; }
+
 
 .menu-toggle { display: flex; }
 
@@ -2225,12 +2231,16 @@ a.side-item { text-decoration: none; color: inherit; }
   display: grid;
   gap: 2px;
   padding: 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: 12px;
-  background: var(--color-surface);
-  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.55);
+  /* Frosted panel so menu text never blends into the page behind it. */
+  background: rgba(var(--surface-rgb), 0.92);
+  backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(150%);
+  box-shadow: 0 22px 48px -20px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   z-index: 60;
 }
+
 .nav-pillar-menu a {
   display: grid;
   gap: 2px;

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LogoMark, BrandWord } from "./logo";
-import { ThemeToggle } from "./theme-toggle";
 import { AuthControl } from "./auth-control";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -207,7 +206,6 @@ export function SiteHeader() {
           </nav>
           <div className="header-actions">
             <AuthControl />
-            <ThemeToggle />
             <button
               type="button"
               className="menu-toggle"
