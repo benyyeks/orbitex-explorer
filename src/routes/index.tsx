@@ -11,7 +11,7 @@ import {
   type CompetitionItem,
 } from "@/lib/news.functions";
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
-import { timeAgo, safeText, pad2, utcDateStr } from "@/lib/format";
+import { timeAgo, safeText, plainText, pad2, utcDateStr } from "@/lib/format";
 import {
   heliocentricEcliptic,
   julianDateUTC,
@@ -490,7 +490,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       <div className="news-body">
         <span className="badge badge-accent">{newsTypeLabel(item.content_type)}</span>
         <h3>{safeText(item.title, 110)}</h3>
-        {item.summary ? <p>{safeText(item.summary, 140)}</p> : null}
+        {item.summary ? <p>{plainText(item.summary, 140)}</p> : null}
         <div className="news-foot">
           <span>{safeText(item.news_site, 30)}</span>
           {published ? <span> · {timeAgo(published)}</span> : null}
