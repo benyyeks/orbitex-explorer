@@ -73,7 +73,7 @@ export const getCompetitions = createServerFn({ method: "GET" }).handler(async (
 });
 
 // ------------------------------ Feedback ------------------------------------
-export type FeedbackResult = { ok: boolean; error: string | null };
+export type FeedbackResult = { ok: boolean; error: string | null; delivered?: boolean };
 
 export const submitFeedback = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>
