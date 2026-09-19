@@ -18,7 +18,11 @@ const CONTENT_TYPES: ContentType[] = [
 type NewsRow = Database["public"]["Tables"]["space_news"]["Insert"];
 
 async function fetchContentType({ endpoint, contentType }: ContentType): Promise<NewsRow[]> {
-  const url = `${SNAPI_BASE}/${endpoint}/?limit=20&ordering=-published_at`;
+  // Only stories published in the last 30 days, across every publisher the
+  // feed carries (NASA, ESA, SpaceNews, NASASpaceflight, Spaceflight Now and
+  // others), so the desk stays current and is not dominated by one source.
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const url = `${SNAPI_BASE}/${endpoint}/?limit=40&ordering=-published_at&published_at_gte=${encodeURIComponent(since)}`;
   const res = await fetch(url, { headers: { "User-Agent": "ORBITEX-SpaceIntelligence/1.0" } });
   if (!res.ok) throw new Error(`SNAPI ${endpoint} responded HTTP ${res.status}`);
   const json = (await res.json()) as { results: Array<Record<string, unknown>> };
