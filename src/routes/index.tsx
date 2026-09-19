@@ -121,6 +121,32 @@ function orbitRadius(au: number): number {
   return (Math.sqrt(Math.max(au, 0.05)) / NEPTUNE_SQRT_A) * ORBIT_R_MAX;
 }
 
+// Orbit outline for one planet. Each orbit is a true ellipse: the radius at a
+// given true anomaly comes from the conic equation using the planet's real
+// semi-major axis and eccentricity, and the ellipse is rotated so its
+// perihelion points the right way. The same square-root radial scale as the
+// planet markers is applied, so a marker always sits on its own path.
+function orbitPath(key: PlanetKey): string {
+  const el = PLANET_ELEMENTS[key];
+  const a = el.a[0];
+  const e = el.e[0];
+  const longPeri = el.peri[0] * DEG_TO_RAD;
+  const steps = 120;
+  let d = "";
+  for (let i = 0; i <= steps; i++) {
+    const nu = (i / steps) * Math.PI * 2;
+    const r = (a * (1 - e * e)) / (1 + e * Math.cos(nu));
+    const lon = nu + longPeri;
+    const rho = orbitRadius(r);
+    const x = 100 + rho * Math.cos(lon);
+    const y = 100 - rho * Math.sin(lon);
+    d += `${i === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)} `;
+  }
+  return `${d}Z`;
+}
+
+const DEG_TO_RAD = Math.PI / 180;
+
 const PLANET_DOT_R: Record<PlanetKey, number> = {
   mercury: 1.9,
   venus: 2.4,
