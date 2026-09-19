@@ -794,6 +794,37 @@ function LandingPage() {
         </div>
       </section>
 
+      {/* THE STORY */}
+      <section className="tight">
+        <div className="container">
+          <div className="accent-panel story-panel">
+            <span className="eyebrow">Our story</span>
+            <h2>Built because the real numbers were always somewhere else</h2>
+            <p>
+              Space is the most documented frontier in human history, and almost none of
+              that record reaches the people who are curious about it. The orbit of a
+              satellite lives in one agency feed, the solar wind speed in another, the
+              next launch window in a third, and the asteroid passing Earth tomorrow in a
+              database most people will never open. ORBITEX was built to close that gap.
+            </p>
+            <p>
+              Every figure here comes from a named source or a documented formula: NASA,
+              NOAA, CelesTrak, JPL Horizons, The Space Devs. Nothing is invented, nothing
+              is smoothed over, and when a source cannot be reached the page says so and
+              shows the last verified reading with its timestamp. That honesty is the
+              whole product.
+            </p>
+            <p>
+              The purpose is simple. A student should be able to watch the station pass
+              overhead, a researcher should be able to pull a clean orbital element set,
+              and anyone at all should be able to look up and know exactly what is above
+              them tonight. One platform, real data, no guesswork.
+            </p>
+          </div>
+        </div>
+      </section>
+
+
       {/* EXPLORE GRID */}
       <section>
         <div className="container">
