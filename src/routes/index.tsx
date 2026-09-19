@@ -227,12 +227,11 @@ function HeroOrbit() {
     <div className="hero-orbit" aria-hidden="true">
       <svg viewBox="0 0 200 200">
         {PLANET_ORDER.map((key) => (
-          <circle
+          <path
             key={key}
             className={`ring${key === "earth" ? " ring-accent" : ""}`}
-            cx={100}
-            cy={100}
-            r={orbitRadius(PLANET_ELEMENTS[key].a[0])}
+            d={orbitPath(key)}
+            fill="none"
           />
         ))}
         <circle className="sun-halo" cx={100} cy={100} r="11" />
