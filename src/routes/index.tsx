@@ -11,7 +11,7 @@ import {
   type CompetitionItem,
 } from "@/lib/news.functions";
 import { getLaunches, getNEO, getEarthWeather } from "@/lib/orbitex-data.functions";
-import { timeAgo, safeText, pad2, utcDateStr } from "@/lib/format";
+import { timeAgo, safeText, plainText, pad2, utcDateStr } from "@/lib/format";
 import {
   heliocentricEcliptic,
   julianDateUTC,
@@ -121,6 +121,32 @@ function orbitRadius(au: number): number {
   return (Math.sqrt(Math.max(au, 0.05)) / NEPTUNE_SQRT_A) * ORBIT_R_MAX;
 }
 
+// Orbit outline for one planet. Each orbit is a true ellipse: the radius at a
+// given true anomaly comes from the conic equation using the planet's real
+// semi-major axis and eccentricity, and the ellipse is rotated so its
+// perihelion points the right way. The same square-root radial scale as the
+// planet markers is applied, so a marker always sits on its own path.
+function orbitPath(key: PlanetKey): string {
+  const el = PLANET_ELEMENTS[key];
+  const a = el.a[0];
+  const e = el.e[0];
+  const longPeri = el.peri[0] * DEG_TO_RAD;
+  const steps = 120;
+  let d = "";
+  for (let i = 0; i <= steps; i++) {
+    const nu = (i / steps) * Math.PI * 2;
+    const r = (a * (1 - e * e)) / (1 + e * Math.cos(nu));
+    const lon = nu + longPeri;
+    const rho = orbitRadius(r);
+    const x = 100 + rho * Math.cos(lon);
+    const y = 100 - rho * Math.sin(lon);
+    d += `${i === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)} `;
+  }
+  return `${d}Z`;
+}
+
+const DEG_TO_RAD = Math.PI / 180;
+
 const PLANET_DOT_R: Record<PlanetKey, number> = {
   mercury: 1.9,
   venus: 2.4,
@@ -201,12 +227,11 @@ function HeroOrbit() {
     <div className="hero-orbit" aria-hidden="true">
       <svg viewBox="0 0 200 200">
         {PLANET_ORDER.map((key) => (
-          <circle
+          <path
             key={key}
             className={`ring${key === "earth" ? " ring-accent" : ""}`}
-            cx={100}
-            cy={100}
-            r={orbitRadius(PLANET_ELEMENTS[key].a[0])}
+            d={orbitPath(key)}
+            fill="none"
           />
         ))}
         <circle className="sun-halo" cx={100} cy={100} r="11" />
@@ -465,7 +490,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       <div className="news-body">
         <span className="badge badge-accent">{newsTypeLabel(item.content_type)}</span>
         <h3>{safeText(item.title, 110)}</h3>
-        {item.summary ? <p>{safeText(item.summary, 140)}</p> : null}
+        {item.summary ? <p>{plainText(item.summary, 140)}</p> : null}
         <div className="news-foot">
           <span>{safeText(item.news_site, 30)}</span>
           {published ? <span> · {timeAgo(published)}</span> : null}
@@ -768,6 +793,37 @@ function LandingPage() {
           <OverviewStrip />
         </div>
       </section>
+
+      {/* THE STORY */}
+      <section className="tight">
+        <div className="container">
+          <div className="accent-panel story-panel">
+            <span className="eyebrow">Our story</span>
+            <h2>Built because the real numbers were always somewhere else</h2>
+            <p>
+              Space is the most documented frontier in human history, and almost none of
+              that record reaches the people who are curious about it. The orbit of a
+              satellite lives in one agency feed, the solar wind speed in another, the
+              next launch window in a third, and the asteroid passing Earth tomorrow in a
+              database most people will never open. ORBITEX was built to close that gap.
+            </p>
+            <p>
+              Every figure here comes from a named source or a documented formula: NASA,
+              NOAA, CelesTrak, JPL Horizons, The Space Devs. Nothing is invented, nothing
+              is smoothed over, and when a source cannot be reached the page says so and
+              shows the last verified reading with its timestamp. That honesty is the
+              whole product.
+            </p>
+            <p>
+              The purpose is simple. A student should be able to watch the station pass
+              overhead, a researcher should be able to pull a clean orbital element set,
+              and anyone at all should be able to look up and know exactly what is above
+              them tonight. One platform, real data, no guesswork.
+            </p>
+          </div>
+        </div>
+      </section>
+
 
       {/* EXPLORE GRID */}
       <section>

@@ -2482,3 +2482,34 @@ a.side-item { text-decoration: none; color: inherit; }
 .essay-sources h3 { margin: 0 0 0.4rem; font-size: 0.95rem; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.75; }
 .essay-sources ul { margin: 0; padding-left: 1.1rem; }
 .essay-sources li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+/* Home page story panel: deep blue accent surface behind the mission story. */
+.story-panel {
+  padding: 34px 36px;
+  display: grid;
+  gap: 14px;
+}
+.story-panel .eyebrow { color: var(--accent-panel-text-muted); }
+.story-panel h2 { margin: 0; max-width: 34ch; }
+.story-panel p { margin: 0; max-width: 78ch; line-height: 1.7; }
+@media (max-width: 640px) {
+  .story-panel { padding: 24px 20px; }
+}
+
+/* Post-liftoff countdown state: LIFTOFF badge, elapsed clock, outcome note. */
+.countdown-live { display: grid; gap: 6px; }
+.countdown-liftoff {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.6rem;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+}
+.countdown-elapsed {
+  font-family: var(--font-mono, monospace);
+  font-size: 1.05rem;
+  opacity: 0.85;
+}
+.countdown-outcome { font-size: 0.86rem; opacity: 0.8; }
+.countdown-success .countdown-liftoff { color: var(--color-success, #6fbf8a); }
+.countdown-danger .countdown-liftoff { color: var(--color-danger, #d98a7a); }
+.countdown-accent .countdown-liftoff { color: var(--color-accent); }

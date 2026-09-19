@@ -129,8 +129,40 @@ function LaunchImage({ src, className, eager = false }: { src: string | null; cl
   return <SkeletonImage src={src} className={className} eager={eager} />;
 }
 
+// After the scheduled moment passes, the countdown switches to a post-liftoff
+// state read from the launch feed's own status: in flight, then the confirmed
+// outcome once the provider reports it.
+type PostState = { label: string; tone: "accent" | "success" | "danger"; note: string };
+
+function postLiftoffState(status: string): PostState {
+  const s = status.toLowerCase();
+  if (s.includes("success")) {
+    return s.includes("partial")
+      ? { label: "LIFTOFF", tone: "accent", note: "Partial success reported for this flight." }
+      : { label: "LIFTOFF", tone: "success", note: "Launch successful." };
+  }
+  if (s.includes("fail")) {
+    return { label: "LIFTOFF", tone: "danger", note: "Launch failure reported for this flight." };
+  }
+  if (s.includes("hold")) {
+    return { label: "HOLD", tone: "danger", note: "Countdown is paused by the launch team." };
+  }
+  if (s.includes("flight")) {
+    return { label: "LIFTOFF", tone: "accent", note: "Vehicle is in flight." };
+  }
+  return { label: "LIFTOFF", tone: "accent", note: "Liftoff time has passed. Outcome pending confirmation." };
+}
+
+function elapsedLabel(ms: number): string {
+  const total = Math.floor(ms / 1000);
+  const hrs = Math.floor(total / 3600);
+  const mins = Math.floor((total % 3600) / 60);
+  const secs = total % 60;
+  return hrs > 0 ? `T+ ${hrs}:${pad2(mins)}:${pad2(secs)}` : `T+ ${pad2(mins)}:${pad2(secs)}`;
+}
+
 // Ticking countdown; clock-dependent, so it renders only after hydration.
-function Countdown({ net }: { net: string }) {
+function Countdown({ net, status = "" }: { net: string; status?: string }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
@@ -154,7 +186,14 @@ function Countdown({ net }: { net: string }) {
     );
   }
   if (diff <= 0) {
-    return <div className="countdown-live">Liftoff window is open or the launch has occurred. Awaiting updated data.</div>;
+    const state = postLiftoffState(status);
+    return (
+      <div className={`countdown-live countdown-${state.tone}`} role="status">
+        <div className="countdown-liftoff">{state.label}</div>
+        <div className="countdown-elapsed">{elapsedLabel(-diff)}</div>
+        <div className="countdown-outcome">{state.note}</div>
+      </div>
+    );
   }
   const days = Math.floor(diff / 86400000);
   const hrs = Math.floor((diff % 86400000) / 3600000);
@@ -177,6 +216,7 @@ function Countdown({ net }: { net: string }) {
     </div>
   );
 }
+
 
 function LaunchesError({ reset }: { reset: () => void }) {
   const router = useRouter();
@@ -279,7 +319,7 @@ function LaunchesPage() {
                 </div>
                 <div className="next-launch-count">
                   <div className="stat-label">Time until launch (NET)</div>
-                  <Countdown net={next.net} />
+                  <Countdown net={next.net} status={next.status} />
                   <div className="freshness-note">{fmtNet(next.net)}</div>
                 </div>
               </div>

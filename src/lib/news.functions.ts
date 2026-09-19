@@ -41,11 +41,14 @@ export const getLatestNews = createServerFn({ method: "GET" }).handler(async () 
   }
 
   const supabase = publishableClient();
+  // Only stories from the last 30 days reach the feed.
+  const cutoff = new Date(Date.now() - 30 * 86400000).toISOString();
   const { data, error } = await supabase
     .from("space_news")
     .select("id,content_type,title,summary,url,image_url,news_site,published_at,fetched_at")
+    .gte("published_at", cutoff)
     .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(14);
+    .limit(30);
 
   if (error) {
     return { items: [], error: "Could not reach the news service." } satisfies NewsResult;
@@ -73,7 +76,7 @@ export const getCompetitions = createServerFn({ method: "GET" }).handler(async (
 });
 
 // ------------------------------ Feedback ------------------------------------
-export type FeedbackResult = { ok: boolean; error: string | null };
+export type FeedbackResult = { ok: boolean; error: string | null; delivered?: boolean };
 
 export const submitFeedback = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) =>

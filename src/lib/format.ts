@@ -66,3 +66,25 @@ export function safeText(str: unknown, maxLen = 240): string {
   if (typeof str !== "string") return "";
   return str.replace(/[<>]/g, "").slice(0, maxLen).trim();
 }
+
+// Some syndicated summaries, especially the weekly reports, arrive with
+// Markdown markup in them. Cards show plain prose, so the markup is removed
+// before the text is trimmed to length.
+export function plainText(str: unknown, maxLen = 240): string {
+  if (typeof str !== "string") return "";
+  const cleaned = str
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
+    .replace(/^\s{0,3}>\s?/gm, "")
+    .replace(/^\s{0,3}(?:[-*+]|\d+\.)\s+/gm, "")
+    .replace(/(\*\*|__)(.*?)\1/g, "$2")
+    .replace(/(\*|_)(.*?)\1/g, "$2")
+    .replace(/~~(.*?)~~/g, "$1")
+    .replace(/^\s{0,3}(?:[-*_]\s*){3,}$/gm, " ")
+    .replace(/\|/g, " ")
+    .replace(/\s+/g, " ");
+  return safeText(cleaned, maxLen);
+}
