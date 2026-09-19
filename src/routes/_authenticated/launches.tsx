@@ -319,7 +319,7 @@ function LaunchesPage() {
                 </div>
                 <div className="next-launch-count">
                   <div className="stat-label">Time until launch (NET)</div>
-                  <Countdown net={next.net} />
+                  <Countdown net={next.net} status={next.status} />
                   <div className="freshness-note">{fmtNet(next.net)}</div>
                 </div>
               </div>
