@@ -340,6 +340,8 @@ export type SolarSystemProps = {
   daysPerSecond: number;
   selected: SceneSelection | null;
   focusRequest: { key: string | null; nonce: number };
+  /** Incremented by the page to snap the simulated clock back to the real date. */
+  resetClockNonce?: number;
   onSelect: (s: SceneSelection | null) => void;
   onTick: (jd: number) => void;
 };
@@ -349,6 +351,7 @@ export default function SolarSystemScene({
   daysPerSecond,
   selected,
   focusRequest,
+  resetClockNonce = 0,
   onSelect,
   onTick,
 }: SolarSystemProps) {
@@ -360,6 +363,20 @@ export default function SolarSystemScene({
   const lastReportRef = useRef(0);
   playingRef.current = playing;
   speedRef.current = daysPerSecond;
+
+  // Snap the simulated clock back to the real current moment on request. The
+  // clock runs faster than real time, so a session left open drifts years
+  // ahead; this returns the model to today without a page reload.
+  const firstResetRef = useRef(true);
+  useEffect(() => {
+    if (firstResetRef.current) {
+      firstResetRef.current = false;
+      return;
+    }
+    jdRef.current = julianDateUTC(new Date());
+    lastReportRef.current = 0;
+    onTick(jdRef.current);
+  }, [resetClockNonce, onTick]);
 
   return (
     <Canvas
