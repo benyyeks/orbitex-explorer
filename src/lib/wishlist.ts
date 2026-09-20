@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { runWrite } from "@/lib/supabase-write";
 
 
 export type WishlistEntry = { id: string; addedAt: number; note?: string };
