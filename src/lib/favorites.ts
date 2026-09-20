@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { runWrite } from "@/lib/supabase-write";
 
 
 export type FavoriteSat = { noradId: string; name: string; addedAt: number };
@@ -184,9 +185,12 @@ export function useFavorites() {
         added = next.length - prev.length;
         if (userId) {
           if (fresh.length > 0) {
-            void supabase.from("tracker_favorites").upsert(
-              fresh.map((f) => ({ user_id: userId, norad_id: f.noradId, name: f.name })),
-              { onConflict: "user_id,norad_id" }
+            runWrite(
+              supabase.from("tracker_favorites").upsert(
+                fresh.map((f) => ({ user_id: userId, norad_id: f.noradId, name: f.name })),
+                { onConflict: "user_id,norad_id" }
+              ),
+              "Tracked objects"
             );
           }
         } else {
