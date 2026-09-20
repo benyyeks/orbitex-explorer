@@ -215,9 +215,12 @@ export function useWishlist() {
         added = next.length - prev.length;
         if (userId) {
           if (fresh.length > 0) {
-            void supabase.from("reading_list").upsert(
-              fresh.map((f) => ({ user_id: userId, book_id: f.id })),
-              { onConflict: "user_id,book_id" }
+            runWrite(
+              supabase.from("reading_list").upsert(
+                fresh.map((f) => ({ user_id: userId, book_id: f.id })),
+                { onConflict: "user_id,book_id" }
+              ),
+              "Reading list"
             );
           }
         } else {
