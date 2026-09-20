@@ -246,12 +246,15 @@ export function useWishlist() {
           return trimmed ? { ...rest, note: trimmed } : rest;
         });
         if (userId) {
-          void supabase
-            .from("reading_list")
-            .upsert(
-              { user_id: userId, book_id: id, note: trimmed || null },
-              { onConflict: "user_id,book_id" }
-            );
+          runWrite(
+            supabase
+              .from("reading_list")
+              .upsert(
+                { user_id: userId, book_id: id, note: trimmed || null },
+                { onConflict: "user_id,book_id" }
+              ),
+            "Study note"
+          );
         } else {
           write(next);
         }
