@@ -180,15 +180,18 @@ export function useWishlist() {
           ? prev.filter((e) => e.id !== id)
           : [{ id, addedAt: Date.now() }, ...prev].slice(0, MAX_BOOKS);
         if (userId) {
-          void (exists
-            ? supabase
-                .from("reading_list")
-                .delete()
-                .eq("user_id", userId)
-                .eq("book_id", id)
-            : supabase
-                .from("reading_list")
-                .upsert({ user_id: userId, book_id: id }, { onConflict: "user_id,book_id" }));
+          runWrite(
+            exists
+              ? supabase
+                  .from("reading_list")
+                  .delete()
+                  .eq("user_id", userId)
+                  .eq("book_id", id)
+              : supabase
+                  .from("reading_list")
+                  .upsert({ user_id: userId, book_id: id }, { onConflict: "user_id,book_id" }),
+            "Reading list"
+          );
         } else {
           write(next);
         }
