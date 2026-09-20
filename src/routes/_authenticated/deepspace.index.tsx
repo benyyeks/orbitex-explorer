@@ -425,6 +425,14 @@ function DeepSpacePage() {
                       {s} d/s
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    className="chip"
+                    aria-label="Reset the simulated date and time to now"
+                    onClick={() => setClockReset((n) => n + 1)}
+                  >
+                    Now
+                  </button>
                 </div>
                 <button
                   type="button"
