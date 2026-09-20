@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { runWrite } from "@/lib/supabase-write";
 
 
 export type ObserverLocation = {
@@ -119,14 +120,17 @@ export function useObserverLocation() {
         /* storage unavailable */
       }
       if (userId) {
-        void supabase.from("user_settings").upsert(
-          {
-            user_id: userId,
-            observer_lat: loc.lat,
-            observer_lon: loc.lon,
-            observer_source: loc.source,
-          },
-          { onConflict: "user_id" }
+        runWrite(
+          supabase.from("user_settings").upsert(
+            {
+              user_id: userId,
+              observer_lat: loc.lat,
+              observer_lon: loc.lon,
+              observer_source: loc.source,
+            },
+            { onConflict: "user_id" }
+          ),
+          "Saved location"
         );
       }
     },
@@ -214,14 +218,17 @@ export function useObserverLocation() {
       /* ignore */
     }
     if (userId) {
-      void supabase.from("user_settings").upsert(
-        {
-          user_id: userId,
-          observer_lat: null,
-          observer_lon: null,
-          observer_source: null,
-        },
-        { onConflict: "user_id" }
+      runWrite(
+        supabase.from("user_settings").upsert(
+          {
+            user_id: userId,
+            observer_lat: null,
+            observer_lon: null,
+            observer_source: null,
+          },
+          { onConflict: "user_id" }
+        ),
+        "Saved location"
       );
     }
   }, [userId]);

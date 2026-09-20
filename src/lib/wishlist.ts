@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { runWrite } from "@/lib/supabase-write";
 
 
 export type WishlistEntry = { id: string; addedAt: number; note?: string };
@@ -179,15 +180,18 @@ export function useWishlist() {
           ? prev.filter((e) => e.id !== id)
           : [{ id, addedAt: Date.now() }, ...prev].slice(0, MAX_BOOKS);
         if (userId) {
-          void (exists
-            ? supabase
-                .from("reading_list")
-                .delete()
-                .eq("user_id", userId)
-                .eq("book_id", id)
-            : supabase
-                .from("reading_list")
-                .upsert({ user_id: userId, book_id: id }, { onConflict: "user_id,book_id" }));
+          runWrite(
+            exists
+              ? supabase
+                  .from("reading_list")
+                  .delete()
+                  .eq("user_id", userId)
+                  .eq("book_id", id)
+              : supabase
+                  .from("reading_list")
+                  .upsert({ user_id: userId, book_id: id }, { onConflict: "user_id,book_id" }),
+            "Reading list"
+          );
         } else {
           write(next);
         }
@@ -211,9 +215,12 @@ export function useWishlist() {
         added = next.length - prev.length;
         if (userId) {
           if (fresh.length > 0) {
-            void supabase.from("reading_list").upsert(
-              fresh.map((f) => ({ user_id: userId, book_id: f.id })),
-              { onConflict: "user_id,book_id" }
+            runWrite(
+              supabase.from("reading_list").upsert(
+                fresh.map((f) => ({ user_id: userId, book_id: f.id })),
+                { onConflict: "user_id,book_id" }
+              ),
+              "Reading list"
             );
           }
         } else {
@@ -239,12 +246,15 @@ export function useWishlist() {
           return trimmed ? { ...rest, note: trimmed } : rest;
         });
         if (userId) {
-          void supabase
-            .from("reading_list")
-            .upsert(
-              { user_id: userId, book_id: id, note: trimmed || null },
-              { onConflict: "user_id,book_id" }
-            );
+          runWrite(
+            supabase
+              .from("reading_list")
+              .upsert(
+                { user_id: userId, book_id: id, note: trimmed || null },
+                { onConflict: "user_id,book_id" }
+              ),
+            "Study note"
+          );
         } else {
           write(next);
         }
