@@ -263,6 +263,7 @@ function DeepSpacePage() {
     nonce: 0,
   });
   const [simJd, setSimJd] = useState<number | null>(null);
+  const [clockReset, setClockReset] = useState<number>(0);
   const [isFs, setIsFs] = useState(false);
   const [pseudoFs, setPseudoFs] = useState(false);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -391,6 +392,7 @@ function DeepSpacePage() {
                     daysPerSecond={speed}
                     selected={sel}
                     focusRequest={focus}
+                    resetClockNonce={clockReset}
                     onSelect={(s) => {
                       if (s) setSel(s);
                     }}
