@@ -95,7 +95,21 @@ function probePositionAU(key: ProbeKey, jd: number, now: Date): Vec3 | null {
   if (key === "jwst" || key === "roman") {
     const r = Math.sqrt(earth.x ** 2 + earth.y ** 2 + earth.z ** 2) || 1;
     const k = 1 + 0.01 / r; // roughly 1.5 million km beyond Earth, at the Sun-Earth L2 point
-    return { x: earth.x * k, y: earth.y * k, z: earth.z * k };
+    const base = { x: earth.x * k, y: earth.y * k, z: earth.z * k };
+    // Webb and Roman both work from the Sun-Earth L2 region, but they travel
+    // their own wide loops around that point rather than sitting on it. Each
+    // loop gets its own width and phase so the two observatories are shown at
+    // separate places instead of on top of one another.
+    const halo = key === "jwst" ? { radiusAU: 0.0055, phaseDeg: 0, tiltAU: 0.0018, periodDays: 180 } : { radiusAU: 0.0034, phaseDeg: 140, tiltAU: 0.0011, periodDays: 170 };
+    const ang = (((jd * 360) / halo.periodDays) % 360) * DEG + halo.phaseDeg * DEG;
+    // Unit vector perpendicular to the Sun-Earth line, inside the ecliptic.
+    const px = -earth.y / r;
+    const py = earth.x / r;
+    return {
+      x: base.x + px * halo.radiusAU * Math.cos(ang),
+      y: base.y + py * halo.radiusAU * Math.cos(ang),
+      z: base.z + halo.tiltAU * Math.sin(ang),
+    };
   }
   if (key === "juno") {
     const jup = heliocentricEcliptic("jupiter", jd);
