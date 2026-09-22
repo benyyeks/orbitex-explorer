@@ -147,20 +147,26 @@ export const getISSPosition = createServerFn({ method: "GET" })
 // ---------------------- The Space Devs: launches --------------------------
 const LL2_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=12&mode=detailed";
 
+// Shared launch fetch. The public tier of this upstream allows only a handful
+// of calls per hour, so a failed keyed call is NOT retried anonymously when the
+// upstream is rate limiting us: that doubles the request volume and keeps the
+// quota exhausted. Cache windows are long enough that normal traffic stays well
+// inside the quota, and cached() serves the previous copy on failure.
+async function fetchLaunchFeed(url: string, timeoutMs: number) {
+  const token = process.env["LAUNCH_LIBRARY_KEY"];
+  if (!token) return fetchJson(url, { timeoutMs });
+  try {
+    return await fetchJson(url, { timeoutMs, headers: { Authorization: `Token ${token}` } });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Quota or auth problems are not fixed by asking again without the token.
+    if (/HTTP (401|403|429)/.test(msg)) throw err;
+    return fetchJson(url, { timeoutMs });
+  }
+}
+
 export const getLaunches = createServerFn({ method: "GET" }).handler(async () => {
-  return cached("launches", {}, 300, async () => {
-    const token = process.env["LAUNCH_LIBRARY_KEY"];
-    // If a token is configured, try it first; fall back to the public tier
-    // on any failure so the endpoint never breaks.
-    if (token) {
-      try {
-        return await fetchJson(LL2_URL, { timeoutMs: 10000, headers: { Authorization: `Token ${token}` } });
-      } catch {
-        /* fall through to public tier */
-      }
-    }
-    return fetchJson(LL2_URL, { timeoutMs: 10000 });
-  });
+  return cached("launches", {}, 1800, () => fetchLaunchFeed(LL2_URL, 10000));
 });
 
 // ------------------------- Open-Meteo: earth weather ----------------------
@@ -404,25 +410,152 @@ export const getArchiveObservations = createServerFn({ method: "GET" })
   });
 
 // --------------------- The Space Devs: past launches archive -----------------
-// Recently completed orbital launches, used by the Past launches archive. Same
-// upstream and same fallback behaviour as the upcoming feed, cached for an hour
-// since the record no longer changes once a flight has flown.
+// Recently completed orbital launches, used by the Past launches archive.
+// Cached for six hours since the record no longer changes once a flight flew,
+// which also keeps this feed well inside the upstream request quota.
 const LL2_PREVIOUS_URL =
   "https://ll.thespacedevs.com/2.2.0/launch/previous/?limit=24&mode=detailed";
 
 export const getPastLaunches = createServerFn({ method: "GET" }).handler(async () => {
-  return cached("launches-previous", {}, 3600, async () => {
-    const token = process.env["LAUNCH_LIBRARY_KEY"];
-    if (token) {
-      try {
-        return await fetchJson(LL2_PREVIOUS_URL, {
-          timeoutMs: 12000,
-          headers: { Authorization: `Token ${token}` },
-        });
-      } catch {
-        /* fall through to the public tier */
-      }
-    }
-    return fetchJson(LL2_PREVIOUS_URL, { timeoutMs: 12000 });
-  });
+  return cached("launches-previous", {}, 21600, () => fetchLaunchFeed(LL2_PREVIOUS_URL, 12000));
 });
+
+// ---------------------- NASA: Mars surface image gallery ---------------------
+// One normalized feed for every surface craft in the Mars Image Gallery.
+// Perseverance and Curiosity come from the live raw image services at
+// mars.nasa.gov; Ingenuity, Opportunity, and Spirit are no longer publishing
+// raw frames, so their archived imagery comes from the NASA image library.
+export type MarsFrame = {
+  id: string;
+  thumb: string;
+  full: string;
+  title: string;
+  sol: number | null;
+  earthDate: string | null;
+  instrument: string | null;
+  craft: string;
+  link: string | null;
+};
+
+export type MarsGalleryPayload = {
+  frames: MarsFrame[];
+  totalImages: number | null;
+  latestSol: number | null;
+  service: "mars2020-raw" | "msl-raw" | "nasa-image-library";
+  solRequested: number | null;
+};
+
+const GALLERY_CRAFT = ["perseverance", "curiosity", "ingenuity", "opportunity", "spirit"] as const;
+const MarsGalleryInput = z.object({
+  craft: z.enum(GALLERY_CRAFT).default("perseverance"),
+  sol: z.number().int().min(0).max(20000).nullable().default(null),
+  page: z.number().int().min(0).max(40).default(0),
+});
+
+const ARCHIVE_QUERY: Record<string, string> = {
+  ingenuity: "Ingenuity Mars Helicopter flight",
+  opportunity: "Opportunity rover Mars surface",
+  spirit: "Spirit rover Mars Gusev",
+};
+
+function solCondition(sol: number | null, first: number): string {
+  if (sol === null) return "";
+  return `&condition_${first}=${sol}:sol:gte&condition_${first + 1}=${sol}:sol:lte`;
+}
+
+export const getMarsGallery = createServerFn({ method: "GET" })
+  .inputValidator((input: unknown) => MarsGalleryInput.parse(input ?? {}))
+  .handler(async ({ data }) => {
+    const { craft, sol, page } = data;
+    // Historical sols never change, so they are cached for a day; the live
+    // "latest frames" view refreshes every half hour.
+    const ttl = sol === null ? 1800 : 86400;
+    return cached<MarsGalleryPayload>("mars-gallery", { craft, sol, page }, ttl, async () => {
+      if (craft === "perseverance") {
+        const url =
+          `https://mars.nasa.gov/rss/api/?feed=raw_images&category=mars2020&feedtype=json` +
+          `&num=48&page=${page}&order=sol+desc&format=json${solCondition(sol, 2)}`;
+        const raw = await fetchJson(url, { timeoutMs: 20000 });
+        const images: any[] = Array.isArray(raw?.images) ? raw.images : [];
+        return {
+          frames: images.map((i) => ({
+            id: String(i.imageid ?? i.date_taken_utc ?? Math.random()),
+            thumb: i.image_files?.medium ?? i.image_files?.small ?? i.image_files?.large ?? i.image_files?.full_res ?? "",
+            full: i.image_files?.full_res ?? i.image_files?.large ?? i.image_files?.medium ?? "",
+            title: i.title || i.caption || "Perseverance raw frame",
+            sol: typeof i.sol === "number" ? i.sol : null,
+            earthDate: typeof i.date_taken_utc === "string" ? i.date_taken_utc.slice(0, 10) : null,
+            instrument: i.camera?.instrument ?? null,
+            craft: "perseverance",
+            link: i.link ?? null,
+          })).filter((f) => f.thumb),
+          totalImages: typeof raw?.total_images === "number" ? raw.total_images : null,
+          latestSol: images.length ? Number(images[0]?.sol ?? 0) : null,
+          service: "mars2020-raw" as const,
+          solRequested: sol,
+        };
+      }
+
+      if (craft === "curiosity") {
+        const url =
+          `https://mars.nasa.gov/api/v1/raw_image_items/?page=${page}&per_page=48` +
+          `&order=sol+desc&condition_1=msl:mission${solCondition(sol, 2)}`;
+        const raw = await fetchJson(url, { timeoutMs: 20000 });
+        const items: any[] = Array.isArray(raw?.items) ? raw.items : [];
+        return {
+          frames: items.map((i) => ({
+            id: String(i.imageid ?? i.id),
+            thumb: i.https_url ?? i.url ?? i.extended?.url_list?.split(",")[0] ?? "",
+            full: i.url ?? "",
+            title: String(i.title ?? i.imageid ?? "Curiosity raw frame"),
+            sol: typeof i.sol === "number" ? i.sol : null,
+            earthDate:
+              typeof i.date_taken === "string"
+                ? i.date_taken.slice(0, 10)
+                : typeof i.date_received === "string"
+                  ? i.date_received.slice(0, 10)
+                  : null,
+            instrument: i.instrument ?? null,
+            craft: "curiosity",
+            link: typeof i.link === "string" ? `https://mars.nasa.gov${i.link}` : (i.url ?? null),
+          })).filter((f) => f.thumb),
+          totalImages: typeof raw?.total === "number" ? raw.total : null,
+          latestSol: items.length ? Number(items[0]?.sol ?? 0) : null,
+          service: "msl-raw" as const,
+          solRequested: sol,
+        };
+      }
+
+      const q = ARCHIVE_QUERY[craft] ?? craft;
+      const url =
+        `https://images-api.nasa.gov/search?q=${encodeURIComponent(q)}` +
+        `&media_type=image&page_size=24&page=${page + 1}`;
+      const raw = await fetchJson(url, { timeoutMs: 20000 });
+      const items: any[] = Array.isArray(raw?.collection?.items) ? raw.collection.items : [];
+      return {
+        frames: items
+          .map((i) => {
+            const meta = i.data?.[0] ?? {};
+            const thumb: string = i.links?.[0]?.href ?? "";
+            return {
+              id: String(meta.nasa_id ?? thumb),
+              thumb,
+              full: thumb.includes("~thumb") ? thumb.replace("~thumb", "~orig") : thumb,
+              title: String(meta.title ?? "Archived frame"),
+              sol: null,
+              earthDate: typeof meta.date_created === "string" ? meta.date_created.slice(0, 10) : null,
+              instrument: meta.center ? `${meta.center} archive` : null,
+              craft,
+              link: meta.nasa_id ? `https://images.nasa.gov/details-${meta.nasa_id}` : null,
+            };
+          })
+          .filter((f) => f.thumb),
+        totalImages: typeof raw?.collection?.metadata?.total_hits === "number"
+          ? raw.collection.metadata.total_hits
+          : null,
+        latestSol: null,
+        service: "nasa-image-library" as const,
+        solRequested: sol,
+      };
+    });
+  });
