@@ -505,19 +505,19 @@ export const getMarsGallery = createServerFn({ method: "GET" })
         return {
           frames: items.map((i) => ({
             id: String(i.imageid ?? i.id),
-            thumb: i.extended?.url_list?.split(",")[0] ?? i.url ?? "",
+            thumb: i.https_url ?? i.url ?? i.extended?.url_list?.split(",")[0] ?? "",
             full: i.url ?? "",
-            title: String(i.imageid ?? "Curiosity raw frame"),
+            title: String(i.title ?? i.imageid ?? "Curiosity raw frame"),
             sol: typeof i.sol === "number" ? i.sol : null,
             earthDate:
-              typeof i.extended?.date_received === "string"
-                ? i.extended.date_received.slice(0, 10)
-                : typeof i.created_at === "string"
-                  ? i.created_at.slice(0, 10)
+              typeof i.date_taken === "string"
+                ? i.date_taken.slice(0, 10)
+                : typeof i.date_received === "string"
+                  ? i.date_received.slice(0, 10)
                   : null,
             instrument: i.instrument ?? null,
             craft: "curiosity",
-            link: i.url ?? null,
+            link: typeof i.link === "string" ? `https://mars.nasa.gov${i.link}` : (i.url ?? null),
           })).filter((f) => f.thumb),
           totalImages: typeof raw?.total === "number" ? raw.total : null,
           latestSol: items.length ? Number(items[0]?.sol ?? 0) : null,
