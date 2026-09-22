@@ -147,20 +147,26 @@ export const getISSPosition = createServerFn({ method: "GET" })
 // ---------------------- The Space Devs: launches --------------------------
 const LL2_URL = "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=12&mode=detailed";
 
+// Shared launch fetch. The public tier of this upstream allows only a handful
+// of calls per hour, so a failed keyed call is NOT retried anonymously when the
+// upstream is rate limiting us: that doubles the request volume and keeps the
+// quota exhausted. Cache windows are long enough that normal traffic stays well
+// inside the quota, and cached() serves the previous copy on failure.
+async function fetchLaunchFeed(url: string, timeoutMs: number) {
+  const token = process.env["LAUNCH_LIBRARY_KEY"];
+  if (!token) return fetchJson(url, { timeoutMs });
+  try {
+    return await fetchJson(url, { timeoutMs, headers: { Authorization: `Token ${token}` } });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Quota or auth problems are not fixed by asking again without the token.
+    if (/HTTP (401|403|429)/.test(msg)) throw err;
+    return fetchJson(url, { timeoutMs });
+  }
+}
+
 export const getLaunches = createServerFn({ method: "GET" }).handler(async () => {
-  return cached("launches", {}, 300, async () => {
-    const token = process.env["LAUNCH_LIBRARY_KEY"];
-    // If a token is configured, try it first; fall back to the public tier
-    // on any failure so the endpoint never breaks.
-    if (token) {
-      try {
-        return await fetchJson(LL2_URL, { timeoutMs: 10000, headers: { Authorization: `Token ${token}` } });
-      } catch {
-        /* fall through to public tier */
-      }
-    }
-    return fetchJson(LL2_URL, { timeoutMs: 10000 });
-  });
+  return cached("launches", {}, 1800, () => fetchLaunchFeed(LL2_URL, 10000));
 });
 
 // ------------------------- Open-Meteo: earth weather ----------------------
