@@ -63,10 +63,10 @@ function TelemetryCard({
   retry,
 }: {
   craftKey: CraftKey;
-  res?: DataResult;
-  loading?: boolean;
-  failed?: boolean;
-  retry?: () => void;
+  res?: DataResult | undefined;
+  loading?: boolean | undefined;
+  failed?: boolean | undefined;
+  retry?: (() => void) | undefined;
 }) {
   const craft = CRAFT[craftKey];
   const feed = payload(res);
@@ -90,7 +90,7 @@ function TelemetryCard({
         <FeedError
           title="Telemetry is temporarily unavailable"
           source="NASA's Mars raw image service"
-          onRetry={retry}
+          onRetry={retry ?? (() => undefined)}
         />
       ) : (
         <div className="detail-rows">
@@ -240,14 +240,14 @@ export function MarsImageGallery() {
             res={persQ.data}
             loading={persQ.isPending}
             failed={persQ.isError}
-            retry={() => persQ.refetch()}
+            retry={() => { void persQ.refetch(); }}
           />
           <TelemetryCard
             craftKey="curiosity"
             res={curQ.data}
             loading={curQ.isPending}
             failed={curQ.isError}
-            retry={() => curQ.refetch()}
+            retry={() => { void curQ.refetch(); }}
           />
         </div>
 
@@ -375,7 +375,7 @@ export function MarsImageGallery() {
           <FeedError
             title="Surface imagery is temporarily unavailable"
             source="NASA's Mars image services"
-            onRetry={() => mainQ.refetch()}
+            onRetry={() => { void mainQ.refetch(); }}
           />
         ) : visible.length === 0 ? (
           <div className="glass glass-card side-card">
