@@ -14,3 +14,16 @@
 ## Open
 - [ ] Roman news images occasionally return a missing file from the news source
 - [ ] Tracker performance tuning on lower-powered phones
+
+## Requested 2026-09-23
+- [ ] Launch feed rate limiting: longer cache windows, no anonymous retry on quota errors
+- [ ] Restore engineering notes (orbital mechanics, regimes, spacecraft engineering) in the Academy
+- [ ] Mars Image Gallery: craft telemetry cards, filters by craft/camera/date, lightbox, craft write-ups
+- [ ] Persistent AI widget bottom right, context across pages, grounded in live web search
+- [ ] Deep Space tracker: real NORAD TLEs instead of placeholders, reset-zoom toggle
+- [ ] Asteroid 3D view with trajectory of the selected asteroid
+- [ ] Mobile: 3D controls below the canvas, controls inside only in full screen; no mobile menu bar changes on desktop
+- [ ] Space themed blue backgrounds across many sections sitewide, varied shades, not one flat tone
+- [ ] Rewrite flat or obviously generated copy across the site
+- [ ] Single combined data refresh cycle every 30 seconds updating every feed, stored accurately
+- [ ] Admin diagnostics panel with per-second website health reporting
