@@ -1,11 +1,13 @@
 # Fix 3 monitoring findings, then finish every open ORBITEX task
 
 ## A. Monitoring findings
+
 1. **Deep Space clock keeps resetting.** The reset only runs when you press "Now", not on every screen refresh. Play and speed work again, and the page stops freezing.
 2. **Satellite lists time out.** Big groups like Starlink and "active" get more time to load (up to 30 seconds), one automatic retry, and a 6-hour save window. If nothing is saved yet, the page shows a clear message instead of breaking.
 3. **Mars gallery missing.** It is now on the Mars page with its styles. I will confirm it in the browser and mark this finding fixed.
 
 ## B. Unfinished work from earlier chats
+
 1. **Ask ORBITEX floating assistant** (bottom right): keeps one conversation as you move between pages, knows which page you are on, and checks facts with live web search. Opening the Ask page saves the widget conversation to history and starts a fresh study space.
 2. **Deep Space tracker:** real satellite orbit data (NORAD) instead of placeholders, plus a "Reset zoom" button.
 3. **Asteroid 3D view:** near-Earth asteroids around the Sun and Earth, with the chosen asteroid's path drawn. Aurora and night-sky events added to Sky Tonight.
@@ -20,11 +22,16 @@
 12. **One refresh cycle:** a single scheduled job that refreshes and saves every data feed. It runs every 30 seconds for fast-changing data (telemetry, satellite positions). Slower feeds only update when their own schedule is due, so the data providers do not block us.
 13. **Admin diagnostics panel:** admin-only page that updates every second with feed status, last refresh times, errors, response times and activity. Only accounts with the admin role can open it.
 14. **Leftovers:** Roman news images that fail to load fall back to a placeholder; lighter 3D scenes on low-powered phones.
+15. Create a well structured learning workspace where user can read the text books from the shelf in and take notes as well as communicate with the Orbitex AI. Ensure it has the best learning ui ux design.
+16. The Orbitex AI should us the Lovable AI instead of the open router API I previously integrated and ensure the knowledg the Orbitex AI is very accurate.
+17. For the live lunch video we can check from YouTube as well to see if it is available there?
 
 ## Order
+
 A (all three) → 12 and 13 (the data backbone) → 2, 3, 4, 5, 6 → 1 → 7, 8, 9, 10 → 11 and 14 → full signed-in browser test on desktop and mobile. I will update the roadmap after each step.
 
 ## Technical notes
+
 - solar-system.tsx: effect deps become `[resetClockNonce]` only, skip the first run, keep onTick in a ref. The parent wraps its onTick in useCallback.
 - getSatellites: timeout set per group (heavy groups 30s), one retry after AbortError, TTL 21600 for heavy groups, typed empty fallback when there is no saved copy.
 - Refresher: `/api/public/refresh` route guarded by a secret header and called by pg_cron every 30s. Each feed has a due-time table, and the route writes api_cache plus a `diagnostics_events` table.
