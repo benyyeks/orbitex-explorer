@@ -14,6 +14,7 @@ import { FreshnessBadge } from "@/components/site/freshness-badge";
 import { FeedError } from "@/components/site/data-state";
 import { MapSkeleton, DetailRowsSkeleton, PhotoGridSkeleton } from "@/components/site/page-skeleton";
 import { useNow } from "@/hooks/use-now";
+import { MarsImageGallery } from "@/components/mars/mars-image-gallery";
 
 export const Route = createFileRoute("/_authenticated/mars")({
   head: () => ({
@@ -418,6 +419,8 @@ function MarsPage() {
           </p>
         </div>
       </section>
+
+      <MarsImageGallery />
     </main>
   );
 }

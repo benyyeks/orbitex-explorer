@@ -6,6 +6,7 @@ export const Route = createFileRoute("/engineering")({
     throw redirect({
       to: "/academy",
       search: { tab: "resources", list: undefined },
+      hash: "orbital-mechanics",
       replace: true,
     });
   },
