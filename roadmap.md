@@ -16,9 +16,9 @@
 - [ ] Tracker performance tuning on lower-powered phones
 
 ## Requested 2026-09-23
-- [ ] Launch feed rate limiting: longer cache windows, no anonymous retry on quota errors
-- [ ] Restore engineering notes (orbital mechanics, regimes, spacecraft engineering) in the Academy
-- [ ] Mars Image Gallery: craft telemetry cards, filters by craft/camera/date, lightbox, craft write-ups
+- [x] Launch feed rate limiting: longer cache windows, no anonymous retry on quota errors
+- [x] Restore engineering notes (orbital mechanics, regimes, spacecraft engineering) in the Academy
+- [x] Mars Image Gallery: craft telemetry cards, filters by craft/camera/date, lightbox, craft write-ups
 - [ ] Persistent AI widget bottom right, context across pages, grounded in live web search
 - [ ] Deep Space tracker: real NORAD TLEs instead of placeholders, reset-zoom toggle
 - [ ] Asteroid 3D view with trajectory of the selected asteroid
