@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SkeletonImage } from "@/components/site/skeleton-image";
+import { EngineeringNotes } from "@/components/academy/engineering-notes";
 import {
   BOOKS,
   BOOK_TOPICS,
@@ -19,6 +20,9 @@ import {
 } from "@/lib/wishlist";
 
 const SECTIONS: { id: string; label: string }[] = [
+  { id: "orbital-mechanics", label: "Orbital mechanics" },
+  { id: "orbital-regimes", label: "Orbital regimes" },
+  { id: "spacecraft-engineering", label: "Spacecraft engineering" },
   { id: "shelf", label: "Textbook shelf" },
   { id: "reading-list", label: "My reading list" },
   { id: "stem", label: "STEM programs" },
@@ -191,6 +195,8 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
               </a>
             ))}
           </nav>
+
+          <EngineeringNotes />
 
           <div
             className="glass glass-card scaffold-card"
