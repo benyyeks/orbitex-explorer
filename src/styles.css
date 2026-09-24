@@ -2513,3 +2513,36 @@ a.side-item { text-decoration: none; color: inherit; }
 .countdown-success .countdown-liftoff { color: var(--color-success, #6fbf8a); }
 .countdown-danger .countdown-liftoff { color: var(--color-danger, #d98a7a); }
 .countdown-accent .countdown-liftoff { color: var(--color-accent); }
+
+/* ---------------------------- Mars Image Gallery --------------------------- */
+.mars-gallery { padding: 44px 0 52px; margin-top: 32px; border-radius: 18px; }
+.mars-gallery-head { max-width: 62ch; margin-bottom: 24px; }
+.mars-gallery-head h2 { margin: 6px 0 8px; }
+.mars-telemetry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.mars-telemetry-card { padding: 18px; }
+.mars-craft-type { font-size: 0.82rem; color: var(--color-text-faint); margin: 2px 0 12px; }
+.mars-status-pill { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--color-border); }
+.mars-status-pill.is-active { color: #7fd6a6; border-color: rgba(127, 214, 166, 0.45); background: rgba(127, 214, 166, 0.12); }
+.mars-status-pill.is-retired { color: var(--color-text-faint); background: var(--accent-wash); }
+.mars-filter-bar { margin: 22px 0 18px; padding: 16px 18px; display: grid; gap: 14px; }
+.mars-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.mars-filter-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; font-size: 0.78rem; color: var(--color-text-faint); }
+.mars-select { background: var(--color-bg-solid); color: var(--color-text); border: 1px solid var(--color-border); border-radius: 999px; padding: 6px 12px; font: inherit; font-size: 0.82rem; }
+.mars-gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.mars-gallery-card { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.mars-gallery-thumb { padding: 0; border: 0; background: none; cursor: zoom-in; display: block; }
+.mars-gallery-thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; border-radius: 12px; border: 1px solid var(--color-border); background: var(--color-bg-solid); }
+.mars-gallery-card figcaption { display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; color: var(--color-text-faint); line-height: 1.4; }
+.mars-card-title { color: var(--color-text); font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mars-craft-tag { align-self: flex-start; margin-top: 3px; font-size: 0.68rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; background: var(--accent-wash); border: 1px solid var(--color-border); }
+.mars-craft-profile { margin-top: 24px; padding: 22px; }
+.mars-lightbox { position: fixed; inset: 0; z-index: 90; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.mars-lightbox-backdrop { position: absolute; inset: 0; background: rgba(6, 10, 18, 0.78); backdrop-filter: blur(6px); }
+.mars-lightbox-panel { position: relative; max-width: 940px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 20px; border-radius: 16px; border: 1px solid var(--color-border); }
+.mars-lightbox-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 12px; }
+.mars-lightbox-head h3 { margin: 0; font-size: 1rem; }
+.mars-lightbox-image { width: 100%; border-radius: 12px; border: 1px solid var(--color-border); margin-bottom: 14px; background: var(--color-bg-solid); }
+@media (max-width: 640px) {
+  .mars-gallery-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .mars-lightbox { padding: 10px; }
+}
