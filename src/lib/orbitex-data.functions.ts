@@ -99,7 +99,22 @@ export const getSatellites = createServerFn({ method: "GET" })
   .inputValidator((input: unknown) => SatInput.parse(input ?? {}))
   .handler(async ({ data }) => {
     const url = `https://celestrak.org/NORAD/elements/gp.php?GROUP=${data.group}&FORMAT=json`;
-    return cached("satellites", { group: data.group }, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
+    const heavy = ["starlink", "active", "geo", "cosmos-2251-debris", "iridium-33-debris"].includes(data.group);
+    const timeoutMs = heavy ? 30000 : 15000;
+    const load = async () => {
+      try {
+        return await fetchJson(url, { timeoutMs });
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") return await fetchJson(url, { timeoutMs });
+        throw e;
+      }
+    };
+    try {
+      return await cached<any[]>("satellites", { group: data.group }, heavy ? 21600 : 3600, load as () => Promise<any[]>);
+    } catch (e) {
+      console.error("satellites unavailable", e);
+      return { data: [] as any[], source: "stale" as const, fetchedAt: new Date(0).toISOString(), isStale: true };
+    }
   });
 
 // Sun-synchronous orbit (SSO) view: CelesTrak has no single SSO group, so
