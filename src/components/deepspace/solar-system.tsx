@@ -381,16 +381,16 @@ export default function SolarSystemScene({
   // Snap the simulated clock back to the real current moment on request. The
   // clock runs faster than real time, so a session left open drifts years
   // ahead; this returns the model to today without a page reload.
-  const firstResetRef = useRef(true);
+  const onTickRef = useRef(onTick);
+  onTickRef.current = onTick;
+  const lastNonceRef = useRef(resetClockNonce);
   useEffect(() => {
-    if (firstResetRef.current) {
-      firstResetRef.current = false;
-      return;
-    }
+    if (lastNonceRef.current === resetClockNonce) return;
+    lastNonceRef.current = resetClockNonce;
     jdRef.current = julianDateUTC(new Date());
     lastReportRef.current = 0;
-    onTick(jdRef.current);
-  }, [resetClockNonce, onTick]);
+    onTickRef.current(jdRef.current);
+  }, [resetClockNonce]);
 
   return (
     <Canvas
