@@ -110,10 +110,10 @@ export const getSatellites = createServerFn({ method: "GET" })
       }
     };
     try {
-      return await cached("satellites", { group: data.group }, heavy ? 21600 : 3600, load);
+      return await cached<any[]>("satellites", { group: data.group }, heavy ? 21600 : 3600, load as () => Promise<any[]>);
     } catch (e) {
       console.error("satellites unavailable", e);
-      return [];
+      return { data: [] as any[], source: "stale" as const, fetchedAt: new Date(0).toISOString(), isStale: true };
     }
   });
 
