@@ -45,7 +45,7 @@ export const getDONKI = createServerFn({ method: "GET" }).handler(async () => {
   start.setUTCDate(start.getUTCDate() - 7);
   const key = nasaKey();
   const url = `https://api.nasa.gov/DONKI/notifications?startDate=${isoDate(start)}&endDate=${isoDate(end)}&type=all&api_key=${encodeURIComponent(key)}`;
-  return cached("donki", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("donki", { start: isoDate(start) }, 7200, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // --------------------------- NOAA: GOES X-ray flux ------------------------
@@ -59,7 +59,7 @@ export const getXrayFlux = createServerFn({ method: "GET" }).handler(async () =>
 export const getAPOD = createServerFn({ method: "GET" }).handler(async () => {
   const key = nasaKey();
   const url = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(key)}`;
-  return cached("apod", {}, 3600, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("apod", {}, 43200, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // -------------------------------- NASA: NEO ------------------------------
@@ -69,7 +69,7 @@ export const getNEO = createServerFn({ method: "GET" }).handler(async () => {
   end.setUTCDate(end.getUTCDate() + 7);
   const key = nasaKey();
   const url = `https://api.nasa.gov/neo/rest/v1/feed?start_date=${isoDate(start)}&end_date=${isoDate(end)}&api_key=${encodeURIComponent(key)}`;
-  return cached("neo", { start: isoDate(start) }, 1800, () => fetchJson(url, { timeoutMs: 12000 }));
+  return cached("neo", { start: isoDate(start) }, 21600, () => fetchJson(url, { timeoutMs: 12000 }));
 });
 
 // ------------------------------- NASA: Mars ------------------------------

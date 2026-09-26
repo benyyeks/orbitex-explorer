@@ -369,7 +369,7 @@ export function MarsImageGallery() {
           </div>
         </div>
 
-        {mainQ.isPending || mainQ.isFetching ? (
+        {mainQ.isPending ? (
           <PhotoGridSkeleton count={9} label="Loading surface imagery" />
         ) : mainQ.isError ? (
           <FeedError
