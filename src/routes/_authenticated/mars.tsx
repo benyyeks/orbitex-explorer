@@ -119,40 +119,7 @@ function OrbitMap({ earth, mars, au }: { earth: Heliocentric; mars: Heliocentric
 
 function MarsPage() {
   const now = useNow(60_000);
-  const [rover, setRover] = useState<RoverKey>("perseverance");
-  const persQ = useQuery(imageryQuery("perseverance"));
-  const curQ = useQuery(imageryQuery("curiosity"));
-
   const geo = useMemo(() => (now ? marsGeometry(now) : null), [now]);
-
-  type FeedState = {
-    feed: MarsFeed | null;
-    res: DataResult | undefined;
-    loading: boolean;
-    failed: boolean;
-    retry: () => void;
-  };
-  const feeds: Record<RoverKey, FeedState> = {
-    perseverance: {
-      feed: readFeed(persQ.data),
-      res: persQ.data,
-      loading: persQ.isPending,
-      failed: persQ.isError,
-      retry: () => persQ.refetch(),
-    },
-    curiosity: {
-      feed: readFeed(curQ.data),
-      res: curQ.data,
-      loading: curQ.isPending,
-      failed: curQ.isError,
-      retry: () => curQ.refetch(),
-    },
-  };
-  const active = feeds[rover];
-  const photos = useMemo(
-    () => (active.feed ? active.feed.images.slice(0, 6) : []),
-    [active.feed]
-  );
 
   return (
     <main className="page-main">
