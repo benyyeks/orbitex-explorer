@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, queryOptions } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { getMarsImagery, type DataResult } from "@/lib/orbitex-data.functions";
+import { useMemo } from "react";
 import {
   AU_KM,
   heliocentricEcliptic,
@@ -10,9 +8,7 @@ import {
   type Heliocentric,
 } from "@/lib/astronomy";
 import { fmtAU, fmtKm, fmtNum, lightTimeFromAU } from "@/lib/format";
-import { FreshnessBadge } from "@/components/site/freshness-badge";
-import { FeedError } from "@/components/site/data-state";
-import { MapSkeleton, DetailRowsSkeleton, PhotoGridSkeleton } from "@/components/site/page-skeleton";
+import { MapSkeleton } from "@/components/site/page-skeleton";
 import { useNow } from "@/hooks/use-now";
 import { MarsImageGallery } from "@/components/mars/mars-image-gallery";
 
@@ -37,64 +33,6 @@ export const Route = createFileRoute("/_authenticated/mars")({
   }),
   component: MarsPage,
 });
-
-type RoverKey = "perseverance" | "curiosity";
-
-// Historical mission facts; stable values published by NASA.
-const ROVER_META: Record<
-  RoverKey,
-  { label: string; mission: "mars2020" | "msl"; site: string; landed: string }
-> = {
-  perseverance: {
-    label: "Perseverance",
-    mission: "mars2020",
-    site: "Jezero Crater",
-    landed: "2021-02-18",
-  },
-  curiosity: {
-    label: "Curiosity",
-    mission: "msl",
-    site: "Gale Crater",
-    landed: "2012-08-06",
-  },
-};
-
-type MarsImage = {
-  imageid: string;
-  sol: number;
-  title: string;
-  date_taken_utc: string;
-  link: string;
-  image_files: { medium?: string; large?: string; full_res?: string };
-  camera: { instrument?: string };
-};
-
-type MarsFeed = { images: MarsImage[]; total_images: number };
-
-const imageryQuery = (rover: RoverKey) =>
-  queryOptions({
-    queryKey: ["orbitex", "mars-imagery", rover],
-    queryFn: () => getMarsImagery({ data: { mission: ROVER_META[rover].mission } }),
-    retry: 1,
-    staleTime: 30 * 60_000,
-  });
-
-function readFeed(res: DataResult | undefined): MarsFeed | null {
-  const d = res?.data as MarsFeed | undefined;
-  if (!d || !Array.isArray(d.images)) return null;
-  // Curiosity's frames are no longer published through this service, so an
-  // empty response means "nothing to show", not a working feed of zero.
-  if (d.images.length === 0 && (d.total_images ?? 0) === 0) return null;
-  return d;
-}
-
-function prettyInstrument(raw: string | undefined): string {
-  if (!raw) return "Surface camera";
-  return raw
-    .split("_")
-    .map((w) => (w.length <= 3 ? w : w.charAt(0) + w.slice(1).toLowerCase()))
-    .join(" ");
-}
 
 // Orbital geometry between Earth and Mars right now, computed locally from
 // JPL Keplerian elements. RA is reported in hours, declination in degrees.
