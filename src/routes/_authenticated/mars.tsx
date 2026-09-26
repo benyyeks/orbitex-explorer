@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, queryOptions } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { getMarsImagery, type DataResult } from "@/lib/orbitex-data.functions";
+import { useMemo } from "react";
 import {
   AU_KM,
   heliocentricEcliptic,
@@ -10,9 +8,7 @@ import {
   type Heliocentric,
 } from "@/lib/astronomy";
 import { fmtAU, fmtKm, fmtNum, lightTimeFromAU } from "@/lib/format";
-import { FreshnessBadge } from "@/components/site/freshness-badge";
-import { FeedError } from "@/components/site/data-state";
-import { MapSkeleton, DetailRowsSkeleton, PhotoGridSkeleton } from "@/components/site/page-skeleton";
+import { MapSkeleton } from "@/components/site/page-skeleton";
 import { useNow } from "@/hooks/use-now";
 import { MarsImageGallery } from "@/components/mars/mars-image-gallery";
 
@@ -37,64 +33,6 @@ export const Route = createFileRoute("/_authenticated/mars")({
   }),
   component: MarsPage,
 });
-
-type RoverKey = "perseverance" | "curiosity";
-
-// Historical mission facts; stable values published by NASA.
-const ROVER_META: Record<
-  RoverKey,
-  { label: string; mission: "mars2020" | "msl"; site: string; landed: string }
-> = {
-  perseverance: {
-    label: "Perseverance",
-    mission: "mars2020",
-    site: "Jezero Crater",
-    landed: "2021-02-18",
-  },
-  curiosity: {
-    label: "Curiosity",
-    mission: "msl",
-    site: "Gale Crater",
-    landed: "2012-08-06",
-  },
-};
-
-type MarsImage = {
-  imageid: string;
-  sol: number;
-  title: string;
-  date_taken_utc: string;
-  link: string;
-  image_files: { medium?: string; large?: string; full_res?: string };
-  camera: { instrument?: string };
-};
-
-type MarsFeed = { images: MarsImage[]; total_images: number };
-
-const imageryQuery = (rover: RoverKey) =>
-  queryOptions({
-    queryKey: ["orbitex", "mars-imagery", rover],
-    queryFn: () => getMarsImagery({ data: { mission: ROVER_META[rover].mission } }),
-    retry: 1,
-    staleTime: 30 * 60_000,
-  });
-
-function readFeed(res: DataResult | undefined): MarsFeed | null {
-  const d = res?.data as MarsFeed | undefined;
-  if (!d || !Array.isArray(d.images)) return null;
-  // Curiosity's frames are no longer published through this service, so an
-  // empty response means "nothing to show", not a working feed of zero.
-  if (d.images.length === 0 && (d.total_images ?? 0) === 0) return null;
-  return d;
-}
-
-function prettyInstrument(raw: string | undefined): string {
-  if (!raw) return "Surface camera";
-  return raw
-    .split("_")
-    .map((w) => (w.length <= 3 ? w : w.charAt(0) + w.slice(1).toLowerCase()))
-    .join(" ");
-}
 
 // Orbital geometry between Earth and Mars right now, computed locally from
 // JPL Keplerian elements. RA is reported in hours, declination in degrees.
@@ -181,40 +119,7 @@ function OrbitMap({ earth, mars, au }: { earth: Heliocentric; mars: Heliocentric
 
 function MarsPage() {
   const now = useNow(60_000);
-  const [rover, setRover] = useState<RoverKey>("perseverance");
-  const persQ = useQuery(imageryQuery("perseverance"));
-  const curQ = useQuery(imageryQuery("curiosity"));
-
   const geo = useMemo(() => (now ? marsGeometry(now) : null), [now]);
-
-  type FeedState = {
-    feed: MarsFeed | null;
-    res: DataResult | undefined;
-    loading: boolean;
-    failed: boolean;
-    retry: () => void;
-  };
-  const feeds: Record<RoverKey, FeedState> = {
-    perseverance: {
-      feed: readFeed(persQ.data),
-      res: persQ.data,
-      loading: persQ.isPending,
-      failed: persQ.isError,
-      retry: () => persQ.refetch(),
-    },
-    curiosity: {
-      feed: readFeed(curQ.data),
-      res: curQ.data,
-      loading: curQ.isPending,
-      failed: curQ.isError,
-      retry: () => curQ.refetch(),
-    },
-  };
-  const active = feeds[rover];
-  const photos = useMemo(
-    () => (active.feed ? active.feed.images.slice(0, 6) : []),
-    [active.feed]
-  );
 
   return (
     <main className="page-main">
@@ -296,105 +201,6 @@ function MarsPage() {
                 your location, see Sky Tonight.
               </p>
             </div>
-          </div>
-
-          <div className="grid-2" style={{ marginBottom: 24 }}>
-            {(Object.keys(ROVER_META) as RoverKey[]).map((key) => {
-              const { feed, res, loading, failed, retry } = feeds[key];
-              const latest = feed?.images[0] ?? null;
-              return (
-                <div className="glass glass-card side-card" key={key}>
-                  <div className="side-item-top">
-                    <h3>{ROVER_META[key].label}</h3>
-                    {res ? <FreshnessBadge res={res} /> : null}
-                  </div>
-                  {loading ? (
-                    <DetailRowsSkeleton cells={5} label="Loading mission status" />
-                  ) : failed || !feed ? (
-                    <FeedError
-                      title="Mission status is temporarily unavailable"
-                      source="NASA's Mars mission feed"
-                      onRetry={retry}
-                    />
-                  ) : (
-                    <div className="detail-rows">
-                      <DetailCell label="Landing site" value={ROVER_META[key].site} />
-                      <DetailCell label="Landed" value={ROVER_META[key].landed} />
-                      <DetailCell
-                        label="Latest activity"
-                        value={latest ? `Sol ${fmtNum(latest.sol)}` : "--"}
-                      />
-                      <DetailCell
-                        label="Latest images received"
-                        value={latest ? latest.date_taken_utc.slice(0, 10) : "--"}
-                      />
-                      <DetailCell
-                        label="Frames in the public archive"
-                        value={fmtNum(feed.total_images)}
-                      />
-                    </div>
-                  )}
-                  <p className="detail-note">
-                    Status is read from the rover's own image feed: as long as new frames
-                    keep arriving, the mission is talking to Earth.
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="glass glass-card side-card" style={{ marginBottom: 24 }}>
-            <div className="side-item-top">
-              <h3>Latest surface imagery</h3>
-              {active.res ? <FreshnessBadge res={active.res} /> : null}
-            </div>
-            <div
-              className="compare-actions"
-              role="group"
-              aria-label="Choose which rover's images to show"
-              style={{ marginTop: 0, marginBottom: 12 }}
-            >
-              {(Object.keys(ROVER_META) as RoverKey[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`chip ${rover === r ? "chip-active" : ""}`}
-                  aria-pressed={rover === r}
-                  onClick={() => setRover(r)}
-                >
-                  {ROVER_META[r].label}
-                </button>
-              ))}
-            </div>
-            {active.loading ? (
-              <PhotoGridSkeleton count={6} label="Loading surface imagery" />
-            ) : active.failed ? (
-              <FeedError
-                title="Surface imagery is temporarily unavailable"
-                source="NASA's Mars raw image service"
-                onRetry={active.retry}
-              />
-            ) : photos.length === 0 ? (
-              <p className="detail-note">No recent images are listed for this rover.</p>
-            ) : (
-              <div className="mars-photo-grid">
-                {photos.map((p) => (
-                  <figure className="mars-photo" key={p.imageid}>
-                    <a href={p.link} target="_blank" rel="noopener noreferrer">
-                      <img
-                        src={p.image_files.medium ?? p.image_files.large ?? p.image_files.full_res}
-                        alt={p.title}
-                        loading="lazy"
-                      />
-                    </a>
-                    <figcaption>
-                      {prettyInstrument(p.camera.instrument)} · Sol {fmtNum(p.sol)} ·{" "}
-                      {p.date_taken_utc.slice(0, 10)}
-                    </figcaption>
-                  </figure>
-                ))}
-              </div>
-            )}
           </div>
 
           <div className="glass glass-card side-card">
