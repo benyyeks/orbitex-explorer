@@ -109,12 +109,10 @@ export const getSatellites = createServerFn({ method: "GET" })
         throw e;
       }
     };
-    try {
-      return await cached<any[]>("satellites", { group: data.group }, heavy ? 21600 : 3600, load as () => Promise<any[]>);
-    } catch (e) {
-      console.error("satellites unavailable", e);
-      return { data: [] as any[], source: "stale" as const, fetchedAt: new Date(0).toISOString(), isStale: true };
-    }
+    // cached() already serves the stale copy on upstream failure; it only
+    // throws when nothing is saved yet. Rethrow that case so the tracker
+    // shows its error-and-retry state instead of a silently empty globe.
+    return cached<any[]>("satellites", { group: data.group }, heavy ? 21600 : 3600, load as () => Promise<any[]>);
   });
 
 // Sun-synchronous orbit (SSO) view: CelesTrak has no single SSO group, so
