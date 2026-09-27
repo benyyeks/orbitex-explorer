@@ -12,7 +12,7 @@
 - [x] Past launches archive on the Launch Schedule page, with download
 
 ## Open
-- [ ] Roman news images occasionally return a missing file from the news source
+- [x] Roman news images: broken pictures fall back to a neutral placeholder tile
 - [ ] Tracker performance tuning on lower-powered phones
 
 ## Requested 2026-09-23
