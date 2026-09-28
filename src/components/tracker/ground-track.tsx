@@ -47,7 +47,7 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
     }
     flush();
     return lines;
-  }, [tle, now]);
+  }, [tle, bucket]);
 
   const s = propagateSat(tle, now);
   const cx = ((s.lon + 180) / 360) * W;
