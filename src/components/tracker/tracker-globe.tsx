@@ -130,22 +130,29 @@ function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSiz
     geomRef.current?.computeBoundingSphere();
   }, [tles, positions, altitudeScale]);
 
-  useFrame((_, delta) => {
-    acc.current += delta;
-    if (acc.current < 0.25) return; // propagate at 4 Hz; LEO drift is smooth at this rate
-    acc.current = 0;
+  // Live motion: small groups are propagated every frame; large groups
+  // (Starlink, active) in a rolling batch so each satellite still updates
+  // several times a second without stalling phones.
+  const cursor = useRef(0);
+  useFrame(() => {
+    const n = tles.length;
+    if (!n) return;
     _altScale = altitudeScale;
     const now = new Date();
-    for (let i = 0; i < tles.length; i++) {
+    const batch = n <= 600 ? n : Math.ceil(n / 4);
+    for (let k = 0; k < batch; k++) {
+      const i = (cursor.current + k) % n;
       const s = propagateSat(tles[i]!, now);
       const [x, y, z] = geoToScene(s.lat, s.lon, s.alt);
       positions[i * 3] = x;
       positions[i * 3 + 1] = y;
       positions[i * 3 + 2] = z;
     }
+    cursor.current = (cursor.current + batch) % n;
     const attr = geomRef.current?.getAttribute("position") as THREE.BufferAttribute | undefined;
     if (attr) attr.needsUpdate = true;
-    geomRef.current?.computeBoundingSphere();
+    acc.current += 1;
+    if (acc.current % 60 === 0) geomRef.current?.computeBoundingSphere();
   });
 
   return (

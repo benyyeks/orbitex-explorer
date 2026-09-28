@@ -2,16 +2,30 @@
 // drawn over the Blue Marble map (same projection), with a marker at the
 // current subpoint. Polylines break at the antimeridian to avoid streaks.
 // Shared by the object detail page and the tracker compare panel.
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { propagateSat, type TLE } from "@/lib/satellite";
 
-export function GroundTrack({ tle, now }: { tle: TLE; now: Date }) {
+// Own live clock (10 updates a second) so the marker glides in step with
+// the 3D globe regardless of how often the parent re-renders.
+function useLiveNow(seed: Date) {
+  const [now, setNow] = useState(seed);
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 100);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
+export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
   const W = 720;
   const H = 360;
+  const now = useLiveNow(seed);
+  // Redraw the path every 30 s; the marker moves continuously.
+  const bucket = Math.floor(now.getTime() / 30_000);
 
   const tracks = useMemo(() => {
     const n = 260;
-    const start = now.getTime() - tle.periodMin * 60_000;
+    const start = bucket * 30_000 - tle.periodMin * 60_000;
     const span = tle.periodMin * 1.5 * 60_000;
     const lines: string[] = [];
     let cur: [number, number][] = [];
@@ -33,7 +47,7 @@ export function GroundTrack({ tle, now }: { tle: TLE; now: Date }) {
     }
     flush();
     return lines;
-  }, [tle, now]);
+  }, [tle, bucket]);
 
   const s = propagateSat(tle, now);
   const cx = ((s.lon + 180) / 360) * W;

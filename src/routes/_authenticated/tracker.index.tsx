@@ -313,7 +313,7 @@ function TrackerPage() {
 
   // Keep the previous group's data while a new group loads so the globe and
   // catalog never blank out between selections.
-  const query = useQuery({ ...satGroupQuery(group), placeholderData: keepPreviousData });
+  const query = useQuery({ ...satGroupQuery(group), placeholderData: keepPreviousData, refetchInterval: 30_000 });
   // The full scene skeleton shows only on first boot; once any catalog
   // response (success or failure) arrives, the real layout takes over.
   const [booted, setBooted] = useState(false);
