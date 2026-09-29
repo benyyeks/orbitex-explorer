@@ -13,7 +13,7 @@
 
 ## Open
 - [x] Roman news images: broken pictures fall back to a neutral placeholder tile
-- [ ] Tracker performance tuning on lower-powered phones
+- [x] Live satellite motion on 3D globe and 2D map, batched for phones
 
 ## Requested 2026-09-23
 - [x] Launch feed rate limiting: longer cache windows, no anonymous retry on quota errors
