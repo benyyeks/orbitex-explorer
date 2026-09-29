@@ -16,6 +16,7 @@ import { Route as EngineeringRouteImport } from './routes/engineering'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthenticatedAboutRouteImport } from './routes/_authenticated/about'
 import { Route as AuthenticatedAcademyRouteImport } from './routes/_authenticated/academy'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
 import { Route as AuthenticatedDeepspaceRouteImport } from './routes/_authenticated/deepspace'
 import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
@@ -34,6 +35,7 @@ import { Route as AuthenticatedDeepspaceIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedDeepspaceObjectIdRouteImport } from './routes/_authenticated/deepspace.$objectId'
 import { Route as AuthenticatedTrackerIndexRouteImport } from './routes/_authenticated/tracker.index'
 import { Route as AuthenticatedTrackerNoradIdRouteImport } from './routes/_authenticated/tracker.$noradId'
+import { Route as ApiPublicRefreshRouteImport } from './routes/api/public/refresh'
 import { Route as ApiPublicRefreshNewsRouteImport } from './routes/api/public/refresh-news'
 
 const IndexRoute = IndexRouteImport.update({
@@ -68,6 +70,11 @@ const AuthenticatedAboutRoute = AuthenticatedAboutRouteImport.update({
 const AuthenticatedAcademyRoute = AuthenticatedAcademyRouteImport.update({
   id: '/academy',
   path: '/academy',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAskRoute = AuthenticatedAskRouteImport.update({
@@ -165,6 +172,11 @@ const AuthenticatedTrackerNoradIdRoute =
     path: '/$noradId',
     getParentRoute: () => AuthenticatedTrackerRoute,
   } as any)
+const ApiPublicRefreshRoute = ApiPublicRefreshRouteImport.update({
+  id: '/api/public/refresh',
+  path: '/api/public/refresh',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicRefreshNewsRoute = ApiPublicRefreshNewsRouteImport.update({
   id: '/api/public/refresh-news',
   path: '/api/public/refresh-news',
@@ -178,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/about': typeof AuthenticatedAboutRoute
   '/academy': typeof AuthenticatedAcademyRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/ask': typeof AuthenticatedAskRoute
   '/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
   '/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -194,6 +207,7 @@ export interface FileRoutesByFullPath {
   '/list/$shareId': typeof ListShareIdRoute
   '/deepspace/$objectId': typeof AuthenticatedDeepspaceObjectIdRoute
   '/tracker/$noradId': typeof AuthenticatedTrackerNoradIdRoute
+  '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/deepspace/': typeof AuthenticatedDeepspaceIndexRoute
   '/tracker/': typeof AuthenticatedTrackerIndexRoute
@@ -205,6 +219,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/about': typeof AuthenticatedAboutRoute
   '/academy': typeof AuthenticatedAcademyRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/ask': typeof AuthenticatedAskRoute
   '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/launches': typeof AuthenticatedLaunchesRoute
@@ -219,6 +234,7 @@ export interface FileRoutesByTo {
   '/list/$shareId': typeof ListShareIdRoute
   '/deepspace/$objectId': typeof AuthenticatedDeepspaceObjectIdRoute
   '/tracker/$noradId': typeof AuthenticatedTrackerNoradIdRoute
+  '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/deepspace': typeof AuthenticatedDeepspaceIndexRoute
   '/tracker': typeof AuthenticatedTrackerIndexRoute
@@ -232,6 +248,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/_authenticated/about': typeof AuthenticatedAboutRoute
   '/_authenticated/academy': typeof AuthenticatedAcademyRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
   '/_authenticated/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
   '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
@@ -248,6 +265,7 @@ export interface FileRoutesById {
   '/list/$shareId': typeof ListShareIdRoute
   '/_authenticated/deepspace/$objectId': typeof AuthenticatedDeepspaceObjectIdRoute
   '/_authenticated/tracker/$noradId': typeof AuthenticatedTrackerNoradIdRoute
+  '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/_authenticated/deepspace/': typeof AuthenticatedDeepspaceIndexRoute
   '/_authenticated/tracker/': typeof AuthenticatedTrackerIndexRoute
@@ -261,6 +279,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/about'
     | '/academy'
+    | '/admin'
     | '/ask'
     | '/deepspace'
     | '/intelligence'
@@ -277,6 +296,7 @@ export interface FileRouteTypes {
     | '/list/$shareId'
     | '/deepspace/$objectId'
     | '/tracker/$noradId'
+    | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/deepspace/'
     | '/tracker/'
@@ -288,6 +308,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/about'
     | '/academy'
+    | '/admin'
     | '/ask'
     | '/intelligence'
     | '/launches'
@@ -302,6 +323,7 @@ export interface FileRouteTypes {
     | '/list/$shareId'
     | '/deepspace/$objectId'
     | '/tracker/$noradId'
+    | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/deepspace'
     | '/tracker'
@@ -314,6 +336,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/_authenticated/about'
     | '/_authenticated/academy'
+    | '/_authenticated/admin'
     | '/_authenticated/ask'
     | '/_authenticated/deepspace'
     | '/_authenticated/intelligence'
@@ -330,6 +353,7 @@ export interface FileRouteTypes {
     | '/list/$shareId'
     | '/_authenticated/deepspace/$objectId'
     | '/_authenticated/tracker/$noradId'
+    | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/_authenticated/deepspace/'
     | '/_authenticated/tracker/'
@@ -343,6 +367,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ApiAskRoute: typeof ApiAskRoute
   ListShareIdRoute: typeof ListShareIdRoute
+  ApiPublicRefreshRoute: typeof ApiPublicRefreshRoute
   ApiPublicRefreshNewsRoute: typeof ApiPublicRefreshNewsRoute
 }
 
@@ -395,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/academy'
       fullPath: '/academy'
       preLoaderRoute: typeof AuthenticatedAcademyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ask': {
@@ -523,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrackerNoradIdRouteImport
       parentRoute: typeof AuthenticatedTrackerRoute
     }
+    '/api/public/refresh': {
+      id: '/api/public/refresh'
+      path: '/api/public/refresh'
+      fullPath: '/api/public/refresh'
+      preLoaderRoute: typeof ApiPublicRefreshRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/refresh-news': {
       id: '/api/public/refresh-news'
       path: '/api/public/refresh-news'
@@ -565,6 +604,7 @@ const AuthenticatedTrackerRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAboutRoute: typeof AuthenticatedAboutRoute
   AuthenticatedAcademyRoute: typeof AuthenticatedAcademyRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
   AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
   AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
@@ -582,6 +622,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAboutRoute: AuthenticatedAboutRoute,
   AuthenticatedAcademyRoute: AuthenticatedAcademyRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedDeepspaceRoute: AuthenticatedDeepspaceRouteWithChildren,
   AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
@@ -607,6 +648,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ApiAskRoute: ApiAskRoute,
   ListShareIdRoute: ListShareIdRoute,
+  ApiPublicRefreshRoute: ApiPublicRefreshRoute,
   ApiPublicRefreshNewsRoute: ApiPublicRefreshNewsRoute,
 }
 export const routeTree = rootRouteImport
