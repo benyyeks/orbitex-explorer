@@ -49,7 +49,7 @@ function AdminPage() {
       <h1 className="font-serif text-4xl mt-2 mb-2">Site health</h1>
       <p className="text-muted-foreground mb-8">
         Every data feed is checked every 30 seconds. This view updates each second.
-        {diag.data?.lastCycle ? ` Last check ${timeAgo(diag.data.lastCycle)}.` : " Waiting for the first check."}
+        {diag.data?.lastCycle ? ` Last check ${timeAgo(new Date(diag.data.lastCycle))}.` : " Waiting for the first check."}
       </p>
       <div className="grid gap-4 sm:grid-cols-3 mb-8">
         <Stat label="Feeds healthy" value={`${healthy} / ${feeds.length}`} />
@@ -71,7 +71,7 @@ function AdminPage() {
                     {f.ok ? (f.source === "cache" ? "Healthy, up to date" : "Healthy, refreshed") : "Problem"}
                   </span>
                 </td>
-                <td className="p-3">{timeAgo(f.checkedAt)}</td>
+                <td className="p-3">{timeAgo(new Date(f.checkedAt))}</td>
                 <td className="p-3 font-mono">{f.durationMs ?? "-"} ms</td>
                 <td className="p-3 font-mono">{Math.round(f.okRate * 100)}% of {f.runs}</td>
                 <td className="p-3 text-muted-foreground">{f.error ?? ""}</td>
