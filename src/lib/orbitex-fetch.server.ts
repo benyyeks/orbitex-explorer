@@ -20,10 +20,35 @@ export async function fetchJson<T = any>(url: string, opts: { timeoutMs?: number
     if (!res.ok) {
       throw new Error(`Upstream returned HTTP ${res.status}.`);
     }
+    captureRateLimit(url, res.headers);
     return (await res.json()) as T;
   } finally {
     clearTimeout(timer);
   }
+}
+
+// NASA APIs return X-RateLimit-Limit / X-RateLimit-Remaining on every
+// response. Persist the latest reading so the admin health page can show the
+// live hourly quota. Fire and forget: quota tracking must never slow or
+// break a data feed.
+function captureRateLimit(url: string, headers: Headers) {
+  if (!url.includes("api.nasa.gov")) return;
+  const limit = Number(headers.get("x-ratelimit-limit"));
+  const remaining = Number(headers.get("x-ratelimit-remaining"));
+  if (!Number.isFinite(limit) && !Number.isFinite(remaining)) return;
+  void (async () => {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      await supabaseAdmin.from("api_quota").upsert({
+        provider: "nasa",
+        rate_limit: Number.isFinite(limit) ? limit : null,
+        remaining: Number.isFinite(remaining) ? remaining : null,
+        checked_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error("api_quota write failed:", err);
+    }
+  })();
 }
 
 export async function fetchText(url: string, opts: { timeoutMs?: number; headers?: Record<string, string> } = {}): Promise<string> {
