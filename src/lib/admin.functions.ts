@@ -46,5 +46,14 @@ export const getDiagnostics = createServerFn({ method: "GET" })
       const c = counts.get(f.feed)!;
       return { ...f, runs: c.all, okRate: c.all ? c.ok / c.all : 0 };
     }).sort((a, b) => a.feed.localeCompare(b.feed));
-    return { feeds, lastCycle: data?.[0]?.created_at ?? null, serverTime: new Date().toISOString() };
+    const { data: quotaRows } = await context.supabase
+      .from("api_quota")
+      .select("provider,rate_limit,remaining,checked_at");
+    const quota = (quotaRows ?? []).map((q) => ({
+      provider: q.provider,
+      rateLimit: q.rate_limit,
+      remaining: q.remaining,
+      checkedAt: q.checked_at,
+    }));
+    return { feeds, quota, lastCycle: data?.[0]?.created_at ?? null, serverTime: new Date().toISOString() };
   });

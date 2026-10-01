@@ -38,6 +38,27 @@ export type Database = {
         }
         Relationships: []
       }
+      api_quota: {
+        Row: {
+          checked_at: string
+          provider: string
+          rate_limit: number | null
+          remaining: number | null
+        }
+        Insert: {
+          checked_at?: string
+          provider: string
+          rate_limit?: number | null
+          remaining?: number | null
+        }
+        Update: {
+          checked_at?: string
+          provider?: string
+          rate_limit?: number | null
+          remaining?: number | null
+        }
+        Relationships: []
+      }
       ask_conversations: {
         Row: {
           created_at: string

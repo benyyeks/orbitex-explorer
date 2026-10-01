@@ -1,5 +1,13 @@
 # ORBITEX roadmap
 
+## In progress (approved plan 2026-10-01)
+- [x] NASA_API_KEY stored securely; quota headers captured on every NASA call
+- [x] Admin Site health shows live NASA hourly quota
+- [ ] Live satellite motion: wire live ISS telemetry into tracker, 1x/10x/60x time multiplier, pulsing beacon + heading vector
+- [ ] Move 3D controls below the canvas on Tracker and Deep Space
+- [ ] Palette utilization: alternating light/dark sections, reactive buttons, stronger type hierarchy (no gradients)
+- [ ] Ask ORBITEX knowledge overhaul: verified 2026 brief, DB-grounded answers, server-saved replies
+
 ## Done
 - [x] Roman WFI telescope simulator (filters, magnification, exposure)
 - [x] Roman mission timeline with status indicator

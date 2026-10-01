@@ -56,6 +56,15 @@ function AdminPage() {
         <Stat label="Feeds with problems" value={String(feeds.length - healthy)} />
         <Stat label="Checks in last hour" value={String(feeds.reduce((s, f) => s + f.runs, 0))} />
       </div>
+      {(diag.data?.quota ?? []).map((q) => (
+        <div key={q.provider} className="rounded-xl border border-border bg-card p-4 mb-8 flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">NASA hourly quota</p>
+          <p className="font-mono text-2xl">
+            {q.remaining ?? "?"} <span className="text-muted-foreground text-base">of {q.rateLimit ?? "?"} calls left</span>
+          </p>
+          <p className="text-sm text-muted-foreground">Last read {timeAgo(new Date(q.checkedAt))}. The counter resets at the top of each hour.</p>
+        </div>
+      ))}
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-sm">
           <thead className="text-left font-mono text-xs uppercase text-muted-foreground">
