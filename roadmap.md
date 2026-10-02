@@ -6,7 +6,7 @@
 - [ ] Live satellite motion: wire live ISS telemetry into tracker, 1x/10x/60x time multiplier, pulsing beacon + heading vector
 - [ ] Move 3D controls below the canvas on Tracker and Deep Space
 - [ ] Palette utilization: alternating light/dark sections, reactive buttons, stronger type hierarchy (no gradients)
-- [ ] Ask ORBITEX knowledge overhaul: verified 2026 brief, DB-grounded answers, server-saved replies
+- [x] Ask ORBITEX knowledge overhaul: verified 2026 brief, live telemetry + flares, live web search, server-saved replies
 
 ## Done
 - [x] Roman WFI telescope simulator (filters, magnification, exposure)
@@ -46,4 +46,4 @@
 - [ ] Launch live stream an hour before liftoff (also check YouTube)
 - [ ] Tracker compare below map, 5 objects; retired probes listed but not in 3D
 - [ ] Learning workspace: read shelf textbooks, take notes, chat with ORBITEX AI
-- [ ] ORBITEX AI on Lovable AI instead of OpenRouter, accuracy pass
+- [x] ORBITEX AI on Lovable AI, accuracy pass

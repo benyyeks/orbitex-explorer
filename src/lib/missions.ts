@@ -105,20 +105,21 @@ export const MISSIONS: MissionProfile[] = [
     id: "artemis-2",
     name: "Artemis II",
     agency: "NASA",
-    status: "planned",
+    status: "completed",
     category: "lunar",
-    launched: "2026-01-01",
-    launchLabel: "Target window published by NASA",
+    launched: "2026-04-01",
+    launchLabel: "1 April 2026",
     vehicle: "Space Launch System, Block 1",
     destination: "Free-return trajectory around the Moon",
     objective:
       "The first crewed flight of Orion, carrying four astronauts around the Moon to verify life support, communications and manual handling before a landing attempt.",
     highlights: [
       "Crew of four: Reid Wiseman, Victor Glover, Christina Koch and Jeremy Hansen.",
-      "No lunar landing. The flight profile is a crewed lunar flyby and return.",
-      "Check the official mission page for the current target date.",
+      "Crewed lunar flyby and return, the first humans beyond low Earth orbit since 1972.",
+      "Splashdown in the Pacific on 10 April 2026 (11 April UTC), with all four astronauts safe.",
     ],
     url: "https://www.nasa.gov/mission/artemis-ii/",
+    ended: "2026-04-11",
   },
 
   // ----------------------------- Planetary -------------------------------

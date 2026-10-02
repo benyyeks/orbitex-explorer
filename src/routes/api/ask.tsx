@@ -4,9 +4,10 @@
 // context when the upstream feeds answer. The gateway secret never leaves
 // the server; the browser talks only to this route.
 import { createFileRoute } from "@tanstack/react-router";
+import { knowledgeBlock } from "@/lib/orbitex-knowledge";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
-const MODEL = "google/gemini-2.5-flash";
+const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/responses";
+const MODEL = "openai/gpt-6-astra";
 const MAX_MESSAGES = 24;
 const MAX_CONTENT = 2000;
 // Per account throttle. Keeps a single signed in session from monopolising the
@@ -80,11 +81,20 @@ async function fetchJsonSafe(url: string): Promise<unknown> {
 }
 
 async function liveContext(): Promise<string> {
-  const [iss, kp, launch] = await Promise.allSettled([
+  const [iss, kp, launch, flares] = await Promise.allSettled([
     fetchJsonSafe("https://api.wheretheiss.at/v1/satellites/25544"),
     fetchJsonSafe("https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"),
     fetchJsonSafe("https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1"),
+    fetchJsonSafe("https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json"),
   ]);
+  const flareLine = (() => {
+    if (flares.status !== "fulfilled" || !Array.isArray(flares.value)) return null;
+    const list = flares.value as { max_class?: string; max_time?: string }[];
+    const big = list.filter((f) => /^[MX]/.test(f.max_class ?? ""));
+    const last = list.at(-1);
+    return `NOAA GOES flares, last 7 days: ${list.length} recorded, ${big.length} M or X class` +
+      (last?.max_class ? `; most recent ${last.max_class} at ${last.max_time} UTC` : "");
+  })();
 
   const lines: string[] = [`Current UTC time: ${new Date().toISOString()}`];
 
@@ -110,6 +120,7 @@ async function liveContext(): Promise<string> {
       lines.push(`Next scheduled orbital launch: ${first.name} at ${first.net} UTC`);
     }
   }
+  if (flareLine) lines.push(flareLine);
   return lines.join("\n");
 }
 
@@ -178,6 +189,13 @@ function buildSystemPrompt(mode: AskMode, context: string): string {
     "",
     MODE_PROMPTS[mode],
     "",
+    knowledgeBlock(),
+    "",
+    "Currency rules:",
+    "- The current date is given in the live telemetry below. Your training data is older than that, so never assume a mission is still upcoming just because it was when you were trained.",
+    "- For any question about recent or upcoming launches, mission status, crews, dates, or news, use the web search tool and prefer official sources (nasa.gov, esa.int, jaxa.jp, spacex.com, blueorigin.com, noaa.gov). Name the source briefly.",
+    "- If sources disagree or a date is only a target, say so.",
+    "",
     SITE_KNOWLEDGE,
     "",
     "Live ORBITEX telemetry for grounding:",
@@ -188,10 +206,21 @@ function buildSystemPrompt(mode: AskMode, context: string): string {
 }
 
 // ------------------------------ SSE transform -----------------------------
-// The gateway streams OpenAI-style SSE; the browser receives a plain text
-// stream of answer deltas, which keeps the client trivially simple.
-function deltaStream(upstream: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+// The gateway streams Responses API SSE; the browser receives a plain text
+// stream of answer deltas. When the stream ends (or the user stops it), the
+// accumulated answer is handed to onFinish so the server can save it.
+function deltaStream(
+  upstream: ReadableStream<Uint8Array>,
+  onFinish: (text: string) => Promise<void>
+): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
+  let acc = "";
+  let saved = false;
+  const finish = async () => {
+    if (saved) return;
+    saved = true;
+    if (acc.trim()) await onFinish(acc).catch((e) => console.error("ask save failed", e));
+  };
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       const reader = upstream.getReader();
@@ -211,12 +240,10 @@ function deltaStream(upstream: ReadableStream<Uint8Array>): ReadableStream<Uint8
               const payload = line.slice(5).trim();
               if (!payload || payload === "[DONE]") continue;
               try {
-                const json = JSON.parse(payload) as {
-                  choices?: { delta?: { content?: unknown } }[];
-                };
-                const delta = json.choices?.[0]?.delta?.content;
-                if (typeof delta === "string" && delta) {
-                  controller.enqueue(encoder.encode(delta));
+                const json = JSON.parse(payload) as { type?: string; delta?: unknown };
+                if (json.type === "response.output_text.delta" && typeof json.delta === "string" && json.delta) {
+                  acc += json.delta;
+                  controller.enqueue(encoder.encode(json.delta));
                 }
               } catch {
                 /* partial JSON chunk: ignore */
@@ -224,16 +251,21 @@ function deltaStream(upstream: ReadableStream<Uint8Array>): ReadableStream<Uint8
             }
           }
         }
+        await finish();
         controller.close();
       } catch (err) {
+        await finish();
         controller.error(err);
       }
     },
-    cancel() {
+    async cancel() {
+      await finish();
       void upstream.cancel().catch(() => {});
     },
   });
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // -------------------------------- Handler ---------------------------------
 export const Route = createFileRoute("/api/ask")({
@@ -264,6 +296,21 @@ export const Route = createFileRoute("/api/ask")({
           return Response.json({ error: "bad_request" }, { status: 400 });
         }
 
+        // Optional saved thread. Replies are written here, never by the browser,
+        // and only into a conversation the caller owns.
+        const convRaw = (raw as { conversationId?: unknown }).conversationId;
+        let conversationId: string | null = null;
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        if (typeof convRaw === "string" && UUID_RE.test(convRaw)) {
+          const { data: conv } = await supabaseAdmin
+            .from("ask_conversations")
+            .select("id")
+            .eq("id", convRaw)
+            .eq("user_id", userId)
+            .maybeSingle();
+          if (conv) conversationId = conv.id;
+        }
+
         const context = await liveContext();
         const system = buildSystemPrompt(parsed.mode, context);
 
@@ -275,12 +322,15 @@ export const Route = createFileRoute("/api/ask")({
             headers: {
               "Content-Type": "application/json",
               "Lovable-API-Key": apiKey,
+              "X-Lovable-AIG-SDK": "fetch",
             },
             body: JSON.stringify({
               model: MODEL,
               stream: true,
-              max_tokens: 2048,
-              messages: [{ role: "system", content: system }, ...parsed.messages],
+              store: false,
+              reasoning: { effort: "low" },
+              tools: [{ type: "web_search" }],
+              input: [{ role: "system", content: system }, ...parsed.messages],
             }),
           });
         } catch (err) {
@@ -295,15 +345,34 @@ export const Route = createFileRoute("/api/ask")({
           if (upstream.status === 429) {
             return Response.json({ error: "rate_limited" }, { status: 429 });
           }
+          if (upstream.status === 402 || upstream.status === 403) {
+            return Response.json({ error: "assistant_unavailable" }, { status: upstream.status });
+          }
           return Response.json({ error: "assistant_unavailable" }, { status: 503 });
         }
 
-        return new Response(deltaStream(upstream.body), {
-          headers: {
-            "content-type": "text/plain; charset=utf-8",
-            "cache-control": "no-store",
-          },
+        const save = async (text: string) => {
+          if (!conversationId) return;
+          await supabaseAdmin.from("ask_messages").insert({
+            conversation_id: conversationId,
+            user_id: userId,
+            role: "assistant",
+            content: text.slice(0, 20000),
+          });
+          await supabaseAdmin
+            .from("ask_conversations")
+            .update({ updated_at: new Date().toISOString() })
+            .eq("id", conversationId);
+        };
+
+        const headers: Record<string, string> = {
+          "content-type": "text/plain; charset=utf-8",
+          "cache-control": "no-store",
+        };
+        upstream.headers.forEach((v, k) => {
+          if (k.toLowerCase().startsWith("x-lovable-aig-")) headers[k] = v;
         });
+        return new Response(deltaStream(upstream.body, save), { headers });
       },
     },
   },
