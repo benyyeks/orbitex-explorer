@@ -179,7 +179,7 @@ function AskPage() {
           "content-type": "application/json",
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ mode, messages: thread.slice(-20) }),
+        body: JSON.stringify({ mode, messages: thread.slice(-20), conversationId }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) {
@@ -204,7 +204,8 @@ function AskPage() {
         setMessages((prev) => prev.slice(0, -1));
         setError("No answer came back. Please try again.");
       } else if (conversationId) {
-        await history.appendMessage(conversationId, { role: "assistant", content: acc });
+        // The server saved the reply; just bump the sidebar order.
+        void history.refresh();
       }
     } catch (err) {
       let partial = "";
@@ -215,12 +216,8 @@ function AskPage() {
       });
       if ((err as Error).name === "AbortError") {
         // User pressed stop: keep and save whatever partial answer arrived.
-        if (conversationId && partial.trim()) {
-          await history.appendMessage(conversationId, {
-            role: "assistant",
-            content: partial,
-          });
-        }
+        // The server saves the partial reply when the stream is cancelled.
+        if (conversationId && partial.trim()) void history.refresh();
       } else {
         setError((err as Error).message || errorCopy(0, undefined));
       }

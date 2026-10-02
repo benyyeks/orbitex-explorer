@@ -120,6 +120,7 @@ async function liveContext(): Promise<string> {
       lines.push(`Next scheduled orbital launch: ${first.name} at ${first.net} UTC`);
     }
   }
+  if (flareLine) lines.push(flareLine);
   return lines.join("\n");
 }
 
