@@ -1,16 +1,15 @@
 // Equirectangular ground track: one full past orbit plus half an orbit ahead,
-// drawn over the Blue Marble map (same projection), with a marker at the
-// current subpoint. Polylines break at the antimeridian to avoid streaks.
-// Shared by the object detail page and the tracker compare panel.
+// drawn over the Blue Marble map (same projection), with a pulsing marker at
+// the current subpoint and a heading arrow showing the direction of travel.
+// Driven by the shared simulation clock so it matches the 3D globe.
 import { useEffect, useMemo, useState } from "react";
 import { propagateSat, type TLE } from "@/lib/satellite";
+import { simNow } from "@/lib/sim-clock";
 
-// Own live clock (10 updates a second) so the marker glides in step with
-// the 3D globe regardless of how often the parent re-renders.
-function useLiveNow(seed: Date) {
+function useSimNowTick(seed: Date) {
   const [now, setNow] = useState(seed);
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 100);
+    const id = setInterval(() => setNow(simNow()), 100);
     return () => clearInterval(id);
   }, []);
   return now;
@@ -19,8 +18,8 @@ function useLiveNow(seed: Date) {
 export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
   const W = 720;
   const H = 360;
-  const now = useLiveNow(seed);
-  // Redraw the path every 30 s; the marker moves continuously.
+  const now = useSimNowTick(seed);
+  // Redraw the path every 30 s of simulated time; the marker moves continuously.
   const bucket = Math.floor(now.getTime() / 30_000);
 
   const tracks = useMemo(() => {
@@ -52,6 +51,14 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
   const s = propagateSat(tle, now);
   const cx = ((s.lon + 180) / 360) * W;
   const cy = ((90 - s.lat) / 180) * H;
+  // Heading: direction to the subpoint two minutes ahead, drawn at fixed length.
+  const ahead = propagateSat(tle, new Date(now.getTime() + 120_000));
+  let dx = ((ahead.lon + 180) / 360) * W - cx;
+  const dy = ((90 - ahead.lat) / 180) * H - cy;
+  if (Math.abs(dx) > W / 2) dx -= Math.sign(dx) * W;
+  const len = Math.hypot(dx, dy) || 1;
+  const hx = cx + (dx / len) * 22;
+  const hy = cy + (dy / len) * 22;
 
   return (
     <svg
@@ -60,6 +67,11 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
       role="img"
       aria-label={`Ground track of ${tle.name}`}
     >
+      <defs>
+        <marker id="gt-arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M0,0 L10,5 L0,10 z" fill="#ffd489" />
+        </marker>
+      </defs>
       <image
         href="/textures/earth-blue-marble.jpg"
         x={0}
@@ -93,6 +105,11 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
       {tracks.map((pts, i) => (
         <polyline key={i} points={pts} fill="none" stroke="#f0b35e" strokeWidth={1.6} opacity={0.9} />
       ))}
+      <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ffd489" strokeWidth={1.5}>
+        <animate attributeName="r" from="6" to="22" dur="1.8s" repeatCount="indefinite" />
+        <animate attributeName="opacity" from="0.9" to="0" dur="1.8s" repeatCount="indefinite" />
+      </circle>
+      <line x1={cx} y1={cy} x2={hx} y2={hy} stroke="#ffd489" strokeWidth={2} markerEnd="url(#gt-arrow)" />
       <circle cx={cx} cy={cy} r={5.5} fill="#ffd489" stroke="#04060d" strokeWidth={1.5} />
     </svg>
   );

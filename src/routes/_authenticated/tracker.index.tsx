@@ -12,6 +12,8 @@ import { ObserverLocationControls, PassForecast } from "@/components/tracker/obs
 import { FavButton } from "@/components/tracker/fav-button";
 import { ComparePanel } from "@/components/tracker/compare-panel";
 import { FavoritesTransfer } from "@/components/tracker/favorites-transfer";
+import { TIME_RATES, setSimRate, simNow, useSimRate } from "@/lib/sim-clock";
+import { getISSPosition } from "@/lib/orbitex-data.functions";
 import { SceneSkeleton, SceneBootOverlay } from "@/components/site/page-skeleton";
 
 // three.js is browser-only; the globe mounts after hydration.
@@ -226,17 +228,49 @@ function formatEpoch(jd: number): string {
   return timeAgo(new Date((jd - 2440587.5) * 86400000));
 }
 
+type IssFeed = { latitude?: number; longitude?: number; altitude?: number; velocity?: number; timestamp?: number };
+
 function SatelliteDetail({ tle }: { tle: TLE }) {
   const [now, setNow] = useState<Date | null>(null);
+  const rate = useSimRate();
   useEffect(() => {
-    const tick = () => setNow(new Date());
+    const tick = () => setNow(simNow());
     tick();
-    const id = setInterval(tick, 1000);
+    const id = setInterval(tick, 250);
     return () => clearInterval(id);
   }, []);
   const s = now ? propagateSat(tle, now) : null;
+  const isIss = tle.noradId === ISS_NORAD;
+  const live = useQuery({
+    queryKey: ["iss-live"],
+    queryFn: async () => {
+      const r = (await getISSPosition({ data: {} })) as unknown as { data?: IssFeed } & IssFeed;
+      return (r?.data ?? r) as IssFeed;
+    },
+    enabled: isIss,
+    refetchInterval: 5000,
+  });
+  const f = isIss && rate === 1 ? live.data : undefined;
   return (
     <>
+      <p className="detail-note live-row" style={{ marginTop: 0 }}>
+        <span className="live-dot" aria-hidden />
+        {rate === 1
+          ? f
+            ? "Live ISS telemetry, updated every 5 seconds"
+            : "Live position, updated 4 times a second"
+          : `Simulated time at ${rate}x: ${now ? now.toISOString().slice(11, 19) : "--"} UTC`}
+      </p>
+      {f && typeof f.latitude === "number" ? (
+        <div className="side-item-meta">
+          <span>
+            Feed <b className="mono">{fmtNum(f.latitude, 2)}°, {fmtNum(f.longitude ?? 0, 2)}°</b>
+          </span>
+          <span>
+            <b className="mono">{fmtNum(f.altitude ?? 0, 0)} km · {fmtNum(f.velocity ?? 0, 0)} km/h</b>
+          </span>
+        </div>
+      ) : null}
       <div className="side-item-meta">
         <span>
           Lat <b className="mono">{s ? `${fmtNum(s.lat, 2)}°` : "--"}</b>
@@ -283,6 +317,10 @@ function TrackerPage() {
   const [group, setGroup] = useState<SatGroup>("stations");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
+  const [resetKey, setResetKey] = useState(0);
+  const simRate = useSimRate();
+  // Leaving the tracker returns the shared clock to real time.
+  useEffect(() => () => setSimRate(1), []);
   const [filter, setFilter] = useState("");
   const [isFs, setIsFs] = useState(false);
   const [pseudoFs, setPseudoFs] = useState(false);
@@ -518,51 +556,8 @@ function TrackerPage() {
 
   const failed = query.isError || (query.isSuccess && !query.data.data);
 
-  return (
-    <main className="page-main">
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">CelesTrak orbital elements</span>
-          <h1>Orbit Tracker</h1>
-          <p className="tagline">
-            Every satellite you see is positioned from its latest published orbital
-            elements, propagated in real time with a Kepler solver corrected for Earth's
-            oblateness. Click any satellite for live telemetry, save favorites, or compare
-            two orbits side by side.
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <div className="container">
-          {!booted ? (
-            <SceneSkeleton label="Acquiring orbital elements" chips={8} />
-          ) : (
-          <div className="scene-layout">
-            <div
-              ref={shellRef}
-              className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
-              role="region"
-              aria-label="Interactive 3D globe showing live satellite positions"
-            >
-              {mounted && tles.length > 0 ? (
-                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
-                  <TrackerGlobe
-                    tles={tles}
-                    color={groupMeta.color}
-                    selected={selected}
-                    autoRotate={autoRotate}
-                    altitudeScale={regimeDef.altScale}
-                    pointSize={regimeDef.pointSize}
-                    onSelect={(t) => {
-                      if (!t) return;
-                      handlePick(tles.find((x) => x.noradId === t.noradId) ?? t);
-                    }}
-                  />
-                </Suspense>
-              ) : null}
-
-              <div className="scene-hud" role="toolbar" aria-label="Tracker controls">
+  const hud = (
+              <div className={`scene-hud${expanded ? "" : " scene-hud-docked"}`} role="toolbar" aria-label="Tracker controls">
                 <div className="scene-hud-group" role="group" aria-label="Satellite groups">
                   <div className="regime-tabs" role="tablist" aria-label="Orbital regime">
                     {REGIMES.map((r) => (
@@ -626,6 +621,28 @@ function TrackerPage() {
                 >
                   Compare
                 </button>
+                <div className="chip-row" role="group" aria-label="Time speed">
+                  {TIME_RATES.map((r) => (
+                    <button
+                      key={r.rate}
+                      type="button"
+                      className={`chip ${simRate === r.rate ? "chip-active" : ""}`}
+                      aria-pressed={simRate === r.rate}
+                      title={r.hint}
+                      onClick={() => setSimRate(r.rate)}
+                    >
+                      {r.label} <span className="chip-sub">{r.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="chip"
+                  aria-label="Reset the globe zoom and angle"
+                  onClick={() => setResetKey((k) => k + 1)}
+                >
+                  Reset zoom
+                </button>
                 <span className="scene-hud-spacer" />
                 <button
                   type="button"
@@ -637,6 +654,55 @@ function TrackerPage() {
                   {expanded ? "Exit fullscreen" : "Fullscreen"}
                 </button>
               </div>
+  );
+
+  return (
+    <main className="page-main">
+      <section className="page-hero">
+        <div className="container">
+          <span className="eyebrow">CelesTrak orbital elements</span>
+          <h1>Orbit Tracker</h1>
+          <p className="tagline">
+            Every satellite you see is positioned from its latest published orbital
+            elements, propagated in real time with a Kepler solver corrected for Earth's
+            oblateness. Click any satellite for live telemetry, save favorites, or compare
+            two orbits side by side.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div className="container">
+          {!booted ? (
+            <SceneSkeleton label="Acquiring orbital elements" chips={8} />
+          ) : (
+          <div className="scene-layout">
+            <div className="scene-main">
+            <div
+              ref={shellRef}
+              className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
+              role="region"
+              aria-label="Interactive 3D globe showing live satellite positions"
+            >
+              {mounted && tles.length > 0 ? (
+                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
+                  <TrackerGlobe
+                    tles={tles}
+                    color={groupMeta.color}
+                    selected={selected}
+                    autoRotate={autoRotate}
+                    resetKey={resetKey}
+                    altitudeScale={regimeDef.altScale}
+                    pointSize={regimeDef.pointSize}
+                    onSelect={(t) => {
+                      if (!t) return;
+                      handlePick(tles.find((x) => x.noradId === t.noradId) ?? t);
+                    }}
+                  />
+                </Suspense>
+              ) : null}
+
+              {expanded ? hud : null}
 
               {tles.length > 0 && (
                 <div className="scene-corner">
@@ -681,6 +747,8 @@ function TrackerPage() {
                   />
                 </div>
               ) : null}
+            </div>
+            {!expanded ? hud : null}
             </div>
 
             <aside className="scene-side">
