@@ -14,6 +14,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars, Line, Html, useTexture } from "@react-three/drei";
 import { propagateSat, RE_EARTH, type TLE } from "@/lib/satellite";
 import { DEG } from "@/lib/astronomy";
+import { simNow, simNowMs } from "@/lib/sim-clock";
 
 const EARTH_R = 2;
 const KM_PER_UNIT = RE_EARTH / EARTH_R;
@@ -116,7 +117,7 @@ function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSiz
   // Seed positions once so the first frame is not a clump at the origin.
   useEffect(() => {
     _altScale = altitudeScale;
-    const now = new Date();
+    const now = simNow();
     for (let i = 0; i < tles.length; i++) {
       const tle = tles[i]!;
       const s = propagateSat(tle, now);
@@ -138,7 +139,7 @@ function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSiz
     const n = tles.length;
     if (!n) return;
     _altScale = altitudeScale;
-    const now = new Date();
+    const now = simNow();
     const batch = n <= 600 ? n : Math.ceil(n / 4);
     for (let k = 0; k < batch; k++) {
       const i = (cursor.current + k) % n;
@@ -182,31 +183,56 @@ function Satellites({ tles, color, selectedId, onSelect, altitudeScale, pointSiz
 
 function SelectedSatellite({ tle, altitudeScale }: { tle: TLE; altitudeScale: number }) {
   const markerRef = useRef<THREE.Group>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
+  const headingRef = useRef<THREE.ArrowHelper | null>(null);
   const [orbitPts, setOrbitPts] = useState<[number, number, number][]>([]);
   const [trackPts, setTrackPts] = useState<[number, number, number][]>([]);
+  const [orbitAnchor, setOrbitAnchor] = useState(() => simNowMs());
 
-  // Sample one full revolution for the orbit path and its ground track.
+  // Sample one full revolution for the orbit path and its ground track,
+  // re-sampled as simulated time advances so the path follows Earth's rotation.
   useEffect(() => {
     _altScale = altitudeScale;
-    const now = Date.now();
     const n = 180;
     const orbit: [number, number, number][] = [];
     const track: [number, number, number][] = [];
     for (let k = 0; k <= n; k++) {
-      const t = new Date(now + (k / n) * tle.periodMin * 60000);
+      const t = new Date(orbitAnchor + (k / n) * tle.periodMin * 60000);
       const s = propagateSat(tle, t);
       orbit.push(geoToScene(s.lat, s.lon, s.alt));
-      track.push(geoToScene(s.lat, s.lon, Math.max(40, s.alt) * 0 + 30));
+      track.push(geoToScene(s.lat, s.lon, 30));
     }
     setOrbitPts(orbit);
     setTrackPts(track);
-  }, [tle, altitudeScale]);
+  }, [tle, altitudeScale, orbitAnchor]);
 
-  useFrame(() => {
+  const arrow = useMemo(() => {
+    const a = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.32, 0xffd489, 0.09, 0.06);
+    headingRef.current = a;
+    return a;
+  }, []);
+
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ clock, camera }) => {
     if (!markerRef.current) return;
     _altScale = altitudeScale;
-    const s = propagateSat(tle, new Date());
-    markerRef.current.position.set(...geoToScene(s.lat, s.lon, s.alt));
+    const nowMs = simNowMs();
+    if (Math.abs(nowMs - orbitAnchor) > 60_000) setOrbitAnchor(nowMs);
+    const s = propagateSat(tle, new Date(nowMs));
+    const p = geoToScene(s.lat, s.lon, s.alt);
+    markerRef.current.position.set(...p);
+    // Heading vector: toward the position 60 s ahead.
+    const a = propagateSat(tle, new Date(nowMs + 60_000));
+    const q = geoToScene(a.lat, a.lon, a.alt);
+    dir.set(q[0] - p[0], q[1] - p[1], q[2] - p[2]).normalize();
+    headingRef.current?.setDirection(dir);
+    // Pulsing beacon ring, always facing the camera.
+    if (pulseRef.current) {
+      const phase = (clock.getElapsedTime() % 1.8) / 1.8;
+      pulseRef.current.scale.setScalar(1 + phase * 3.2);
+      (pulseRef.current.material as THREE.MeshBasicMaterial).opacity = 0.85 * (1 - phase);
+      pulseRef.current.quaternion.copy(camera.quaternion);
+    }
   });
 
   return (
@@ -222,12 +248,30 @@ function SelectedSatellite({ tle, altitudeScale }: { tle: TLE; altitudeScale: nu
           <sphereGeometry args={[0.05, 16, 16]} />
           <meshBasicMaterial color="#ffd489" />
         </mesh>
+        <mesh ref={pulseRef}>
+          <ringGeometry args={[0.055, 0.07, 32]} />
+          <meshBasicMaterial color="#ffd489" transparent opacity={0.8} depthWrite={false} side={THREE.DoubleSide} />
+        </mesh>
+        <primitive object={arrow} />
         <Html center zIndexRange={[4, 0]} style={{ pointerEvents: "none" }}>
           <div className="scene-label">{tle.name}</div>
         </Html>
       </group>
     </>
   );
+}
+
+// Returns the camera to the default framing whenever resetKey changes.
+function ResetView({ resetKey }: { resetKey: number }) {
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update: () => void } | null;
+  useEffect(() => {
+    if (!resetKey) return;
+    camera.position.set(0, 1.3, 5.8);
+    controls?.target.set(0, 0, 0);
+    controls?.update();
+  }, [resetKey, camera, controls]);
+  return null;
 }
 
 // Keeps the whole Earth in frame when the canvas aspect changes (portrait
@@ -253,6 +297,7 @@ export type TrackerGlobeProps = {
   onSelect: (tle: TLE | null) => void;
   altitudeScale?: number;
   pointSize?: number;
+  resetKey?: number;
 };
 
 export default function TrackerGlobe({
@@ -263,6 +308,7 @@ export default function TrackerGlobe({
   onSelect,
   altitudeScale = 1,
   pointSize = 0.075,
+  resetKey = 0,
 }: TrackerGlobeProps) {
   return (
     <Canvas
@@ -275,6 +321,7 @@ export default function TrackerGlobe({
       onPointerMissed={() => onSelect(null)}
     >
       <FitCamera />
+      <ResetView resetKey={resetKey} />
       <color attach="background" args={["#04060d"]} />
       <ambientLight intensity={0.55} />
       <directionalLight position={[6, 3, 8]} intensity={2.6} />
