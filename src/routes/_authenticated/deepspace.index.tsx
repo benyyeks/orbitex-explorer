@@ -360,7 +360,7 @@ function DeepSpacePage() {
 
   const hud = (
               <div className={`scene-hud${expanded ? "" : " scene-hud-docked"}`} role="toolbar" aria-label="Deep space controls">
-                <div className="scene-hud-group" role="group" aria-label="Time controls">
+                <div className="chip-row" role="group" aria-label="Time controls">
                   <button
                     type="button"
                     className="chip"
