@@ -358,53 +358,8 @@ function DeepSpacePage() {
     items[next]?.focus();
   };
 
-  return (
-    <main className="page-main">
-      <section className="page-hero">
-        <div className="container">
-          <span className="eyebrow">JPL planetary elements · Horizons telemetry</span>
-          <h1>Deep Space</h1>
-          <p className="tagline">
-            A to-scale model of the solar system. Planets sit at their true positions from
-            JPL orbital elements, and deep-space probes report live distances from JPL
-            Horizons. Press play to watch the system move, click any body for a summary,
-            or open its full profile.
-          </p>
-        </div>
-      </section>
-
-      <section>
-        <div className="container">
-          {!mounted ? (
-            <SceneSkeleton label="Preparing the solar system model" chips={5} />
-          ) : (
-          <div className="scene-layout">
-            <div
-              ref={shellRef}
-              className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
-              role="region"
-              aria-label="Interactive 3D model of the solar system"
-            >
-              {mounted ? (
-                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
-                  <SolarSystemScene
-                    playing={playing}
-                    daysPerSecond={speed}
-                    selected={sel}
-                    focusRequest={focus}
-                    resetClockNonce={clockReset}
-                    onSelect={(s) => {
-                      if (s) setSel(s);
-                    }}
-                    onTick={(jdNow) => {
-                      setSimJd(jdNow);
-                      setSceneReady(true);
-                    }}
-                  />
-                </Suspense>
-              ) : null}
-
-              <div className="scene-hud" role="toolbar" aria-label="Deep space controls">
+  const hud = (
+              <div className={`scene-hud${expanded ? "" : " scene-hud-docked"}`} role="toolbar" aria-label="Deep space controls">
                 <div className="scene-hud-group" role="group" aria-label="Time controls">
                   <button
                     type="button"
@@ -464,6 +419,56 @@ function DeepSpacePage() {
                   {expanded ? "Exit fullscreen" : "Fullscreen"}
                 </button>
               </div>
+  );
+
+  return (
+    <main className="page-main">
+      <section className="page-hero">
+        <div className="container">
+          <span className="eyebrow">JPL planetary elements · Horizons telemetry</span>
+          <h1>Deep Space</h1>
+          <p className="tagline">
+            A to-scale model of the solar system. Planets sit at their true positions from
+            JPL orbital elements, and deep-space probes report live distances from JPL
+            Horizons. Press play to watch the system move, click any body for a summary,
+            or open its full profile.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div className="container">
+          {!mounted ? (
+            <SceneSkeleton label="Preparing the solar system model" chips={5} />
+          ) : (
+          <div className="scene-layout">
+            <div className="scene-main">
+            <div
+              ref={shellRef}
+              className={`scene-shell${pseudoFs ? " scene-shell-pseudo" : ""}`}
+              role="region"
+              aria-label="Interactive 3D model of the solar system"
+            >
+              {mounted ? (
+                <Suspense fallback={<SceneBootOverlay label="Loading the 3D engine" />}>
+                  <SolarSystemScene
+                    playing={playing}
+                    daysPerSecond={speed}
+                    selected={sel}
+                    focusRequest={focus}
+                    resetClockNonce={clockReset}
+                    onSelect={(s) => {
+                      if (s) setSel(s);
+                    }}
+                    onTick={(jdNow) => {
+                      setSimJd(jdNow);
+                      setSceneReady(true);
+                    }}
+                  />
+                </Suspense>
+              ) : null}
+
+              {expanded ? hud : null}
 
               <div className="scene-hint">
                 Drag to orbit · scroll to zoom · click a planet or probe
@@ -472,6 +477,8 @@ function DeepSpacePage() {
               {!sceneReady ? (
                 <SceneBootOverlay label="Preparing the solar system model" />
               ) : null}
+            </div>
+            {!expanded ? hud : null}
             </div>
 
             <aside className="scene-side">
