@@ -2565,3 +2565,5 @@ a.side-item { text-decoration: none; color: inherit; }
 .live-row { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; }
 .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #3ecf8e; animation: live-pulse 1.6s ease-out infinite; flex: none; }
 @keyframes live-pulse { 0% { box-shadow: 0 0 0 0 rgba(62, 207, 142, 0.6); } 100% { box-shadow: 0 0 0 8px rgba(62, 207, 142, 0); } }
+.scene-hud-docked .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.scene-hud-docked .chip { width: auto; flex: none; }
