@@ -90,7 +90,7 @@ function AdminPage() {
               <tr><td className="p-6 text-muted-foreground" colSpan={6}>No checks recorded in the last hour yet.</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </main>
   );
