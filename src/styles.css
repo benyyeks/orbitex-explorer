@@ -2603,3 +2603,12 @@ main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) {
   backdrop-filter: none;
 }
 main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) svg { color: #dda05f; }
+.accent-panel :is(.glass, .glass-card) {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--accent-panel-border);
+  color: var(--accent-panel-text);
+  box-shadow: none;
+}
+.accent-panel .glass::before { display: none; }
+.accent-panel .glass-card.interactive:hover { background: rgba(255,255,255,0.11); border-color: #dda05f; }
+.accent-panel :is(.explore-icon, .explore-lock) { color: #dda05f; }
