@@ -2596,3 +2596,10 @@ main p a:not(.btn):hover { text-decoration: underline; }
 h1 { font-size: clamp(2.2rem, 5.5vw, 4rem); letter-spacing: -0.025em; line-height: 1.05; }
 .section-head h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); letter-spacing: -0.015em; font-weight: 700; }
 .mono, [class*="telemetry"] { font-variant-numeric: tabular-nums; }
+main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) {
+  background: rgba(255,255,255,0.06);
+  border-color: var(--accent-panel-border);
+  color: var(--accent-panel-text);
+  backdrop-filter: none;
+}
+main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) svg { color: #dda05f; }
