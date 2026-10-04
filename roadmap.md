@@ -5,7 +5,7 @@
 - [x] Admin Site health shows live NASA hourly quota
 - [x] Live satellite motion: live ISS feed, 1x/10x/60x speed, pulsing beacon + heading arrow (3D and 2D)
 - [x] Move 3D controls below the canvas on Tracker and Deep Space, Reset zoom added
-- [ ] Palette utilization: alternating light/dark sections, reactive buttons, stronger type hierarchy (no gradients)
+- [x] Palette utilization: alternating light/dark sections, reactive buttons, stronger type hierarchy (no gradients)
 - [x] Ask ORBITEX knowledge overhaul: verified 2026 brief, live telemetry + flares, live web search, server-saved replies
 
 ## Done
