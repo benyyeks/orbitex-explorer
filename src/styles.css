@@ -2612,3 +2612,34 @@ main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) svg { 
 .accent-panel .glass::before { display: none; }
 .accent-panel .glass-card.interactive:hover { background: rgba(255,255,255,0.11); border-color: #dda05f; }
 .accent-panel :is(.explore-icon, .explore-lock) { color: #dda05f; }
+
+/* ---- Sitewide bands: every inner page gets a navy header band and a tinted stats band ---- */
+.page-main > section:first-child:has(> .container > .page-hero:first-child) { padding-top: 0; }
+:is(.page-main, .academy-page, .page-scaffold) .page-hero {
+  position: relative;
+  background: var(--accent-panel-solid);
+  color: var(--accent-panel-text);
+  box-shadow: 0 0 0 100vmax var(--accent-panel-solid);
+  clip-path: inset(0 -100vmax);
+  padding-block: clamp(32px, 6vw, 56px);
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--accent-panel-border);
+}
+:is(.page-main, .academy-page, .page-scaffold) .page-hero :is(h1, h2, h3) { color: var(--accent-panel-text); }
+:is(.page-main, .academy-page, .page-scaffold) .page-hero :is(p, .tagline, .muted, small) { color: var(--accent-panel-text-muted); }
+:is(.page-main, .academy-page, .page-scaffold) .page-hero :is(.eyebrow, a:not(.btn)) { color: #dda05f; }
+:is(.page-main, .academy-page, .page-scaffold) .page-hero .btn-ghost { color: var(--accent-panel-text); border-color: var(--accent-panel-border); }
+.page-hero h1 { font-size: clamp(2rem, 5vw, 3.2rem); letter-spacing: -0.02em; font-weight: 700; }
+.page-main .stat-grid {
+  background: var(--accent-wash);
+  box-shadow: 0 0 0 100vmax var(--accent-wash);
+  clip-path: inset(-1px -100vmax);
+  padding-block: 20px;
+  border-block: 1px solid var(--color-border, rgba(0,0,0,0.08));
+}
+.stat-value { font-variant-numeric: tabular-nums; font-weight: 700; }
+@media (max-width: 860px) {
+  .ask-layout { grid-template-columns: minmax(0, 1fr); }
+  .ask-history { position: static; min-width: 0; }
+}
+html, body { overflow-x: clip; }

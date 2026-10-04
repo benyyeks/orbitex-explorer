@@ -66,7 +66,7 @@ function AdminPage() {
         </div>
       ))}
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto"><table className="w-full text-sm">
           <thead className="text-left font-mono text-xs uppercase text-muted-foreground">
             <tr><th className="p-3">Feed</th><th className="p-3">Status</th><th className="p-3">Last check</th><th className="p-3">Response</th><th className="p-3">Success, last hour</th><th className="p-3">Note</th></tr>
           </thead>
@@ -90,7 +90,7 @@ function AdminPage() {
               <tr><td className="p-6 text-muted-foreground" colSpan={6}>No checks recorded in the last hour yet.</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </main>
   );
