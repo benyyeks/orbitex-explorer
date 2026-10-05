@@ -2645,3 +2645,4 @@ main > section:nth-of-type(4n):not(.hero) :is(.glass, .glass-card, .card) svg { 
 html, body { overflow-x: clip; }
 :is(.page-main, .academy-page, .page-scaffold) .page-hero { clip-path: inset(-240px -100vmax 0 -100vmax); }
 .container.page-scaffold { padding-left: 20px; padding-right: 20px; }
+.academy-page { padding-top: 68px; }
