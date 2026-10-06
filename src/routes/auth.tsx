@@ -108,6 +108,7 @@ function AccountView({ email }: { email: string }) {
         <h1>Your account</h1>
         <p className="tagline">{email}</p>
       </section>
+      <ProfileCard />
       <section className="glass glass-card auth-card">
         <h2>What syncs to this account</h2>
         <ul className="feature-list">
