@@ -27,7 +27,7 @@
 - [x] Launch feed rate limiting: longer cache windows, no anonymous retry on quota errors
 - [x] Restore engineering notes (orbital mechanics, regimes, spacecraft engineering) in the Academy
 - [x] Mars Image Gallery: craft telemetry cards, filters by craft/camera/date, lightbox, craft write-ups
-- [ ] Persistent AI widget bottom right, context across pages, grounded in live web search
+- [x] Persistent AI widget bottom right, context across pages (answers blocked: AI credits exhausted)
 - [ ] Deep Space tracker: real NORAD TLEs instead of placeholders, reset-zoom toggle
 - [ ] Asteroid 3D view with trajectory of the selected asteroid
 - [ ] Mobile: 3D controls below the canvas, controls inside only in full screen; no mobile menu bar changes on desktop
