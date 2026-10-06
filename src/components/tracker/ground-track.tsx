@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { propagateSat, type TLE } from "@/lib/satellite";
 import { simNow } from "@/lib/sim-clock";
+import { useObserverLocation } from "@/lib/location";
 
 function useSimNowTick(seed: Date) {
   const [now, setNow] = useState(seed);
@@ -19,6 +20,7 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
   const W = 720;
   const H = 360;
   const now = useSimNowTick(seed);
+  const { location: obs } = useObserverLocation();
   // Redraw the path every 30 s of simulated time; the marker moves continuously.
   const bucket = Math.floor(now.getTime() / 30_000);
 
@@ -105,6 +107,12 @@ export function GroundTrack({ tle, now: seed }: { tle: TLE; now: Date }) {
       {tracks.map((pts, i) => (
         <polyline key={i} points={pts} fill="none" stroke="#f0b35e" strokeWidth={1.6} opacity={0.9} />
       ))}
+      {obs ? (
+        <g aria-label="Your saved location">
+          <circle cx={((obs.lon + 180) / 360) * W} cy={((90 - obs.lat) / 180) * H} r={4} fill="#7fd1ff" stroke="#04060d" strokeWidth={1.5} />
+          <text x={((obs.lon + 180) / 360) * W + 7} y={((90 - obs.lat) / 180) * H + 4} fontSize={11} fill="#cfeaff" fontFamily="Inter, sans-serif">You</text>
+        </g>
+      ) : null}
       <circle cx={cx} cy={cy} r={6} fill="none" stroke="#ffd489" strokeWidth={1.5}>
         <animate attributeName="r" from="6" to="22" dur="1.8s" repeatCount="indefinite" />
         <animate attributeName="opacity" from="0.9" to="0" dur="1.8s" repeatCount="indefinite" />
