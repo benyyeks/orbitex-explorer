@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/lib/profile";
 
 // Only same-origin paths are ever followed after sign-in. Anything else, an
 // absolute URL or a protocol-relative path, falls back to the landing page.
@@ -271,5 +272,57 @@ function SignInView({ gated }: { gated: boolean }) {
         </form>
       </section>
     </>
+  );
+}
+
+function ProfileCard() {
+  const { profile, uploadAvatar, saveName } = useProfile();
+  const [name, setName] = useState("");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => setName(profile.displayName ?? ""), [profile.displayName]);
+
+  return (
+    <section className="glass glass-card auth-card profile-card">
+      <h2>Profile</h2>
+      <div className="profile-row">
+        <div className="profile-photo" aria-hidden="true">
+          {profile.avatarUrl ? <img src={profile.avatarUrl} alt="" /> : <span>{(name || "?").charAt(0).toUpperCase()}</span>}
+        </div>
+        <label className="btn btn-ghost">
+          {busy ? "Uploading..." : "Upload photo"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            hidden
+            disabled={busy}
+            onChange={async (e) => {
+              const f = e.target.files?.[0];
+              if (!f) return;
+              setBusy(true);
+              const err = await uploadAvatar(f);
+              setBusy(false);
+              setMsg(err ?? "Photo updated.");
+              e.target.value = "";
+            }}
+          />
+        </label>
+      </div>
+      <form
+        className="form-row"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const err = await saveName(name);
+          setMsg(err ?? "Name saved.");
+        }}
+      >
+        <label htmlFor="profile-name">Display name</label>
+        <div className="profile-name-row">
+          <input id="profile-name" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+          <button type="submit" className="btn btn-primary">Save</button>
+        </div>
+      </form>
+      {msg ? <p className="auth-note" role="status">{msg}</p> : null}
+    </section>
   );
 }
