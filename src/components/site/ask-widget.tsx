@@ -14,7 +14,7 @@ const KEY = "orbitex-widget-conversation";
 function errorCopy(status: number): string {
   if (status === 429) return "ORBITEX is answering many questions right now. Please try again in a moment.";
   if (status === 401) return "Your session has expired. Sign in again to continue.";
-  if (status === 503) return "The assistant is temporarily unavailable. Please try again later.";
+  if (status === 402 || status === 503) return "Ask ORBITEX is paused right now. Please try again later.";
   return "The answer link failed. Check your connection and try again.";
 }
 
