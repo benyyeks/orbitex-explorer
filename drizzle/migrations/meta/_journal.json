@@ -22,6 +22,13 @@
       "when": 1790927591530,
       "tag": "0002_ask_server_replies",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791266056010,
+      "tag": "0003_profiles_and_avatars",
+      "breakpoints": true
     }
   ]
 }

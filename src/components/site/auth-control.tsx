@@ -3,9 +3,11 @@
 // session is known, so server and client first paint stay identical.
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/lib/profile";
 
 export function AuthControl() {
   const { user, loading } = useAuth();
+  const { profile } = useProfile();
 
   if (loading) {
     return <span className="auth-control-placeholder" aria-hidden="true" />;
@@ -17,15 +19,14 @@ export function AuthControl() {
       </Link>
     );
   }
-  const email = user.email ?? "Account";
+  const label = profile.displayName ?? user.email ?? "Account";
   return (
-    <Link
-      to="/auth"
-      className="auth-avatar"
-      aria-label={`Account, signed in as ${email}`}
-      title={email}
-    >
-      {email.charAt(0).toUpperCase()}
+    <Link to="/auth" className="auth-avatar" aria-label={`Account, signed in as ${label}`} title={label}>
+      {profile.avatarUrl ? (
+        <img src={profile.avatarUrl} alt="" className="auth-avatar-img" />
+      ) : (
+        label.charAt(0).toUpperCase()
+      )}
     </Link>
   );
 }

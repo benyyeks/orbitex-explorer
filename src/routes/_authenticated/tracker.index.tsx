@@ -692,6 +692,7 @@ function TrackerPage() {
                     selected={selected}
                     autoRotate={autoRotate}
                     resetKey={resetKey}
+                    observer={loc.location}
                     altitudeScale={regimeDef.altScale}
                     pointSize={regimeDef.pointSize}
                     onSelect={(t) => {

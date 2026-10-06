@@ -298,6 +298,7 @@ export type TrackerGlobeProps = {
   altitudeScale?: number;
   pointSize?: number;
   resetKey?: number;
+  observer?: { lat: number; lon: number } | null;
 };
 
 export default function TrackerGlobe({
@@ -309,6 +310,7 @@ export default function TrackerGlobe({
   altitudeScale = 1,
   pointSize = 0.075,
   resetKey = 0,
+  observer = null,
 }: TrackerGlobeProps) {
   return (
     <Canvas
@@ -337,6 +339,7 @@ export default function TrackerGlobe({
         altitudeScale={altitudeScale}
         pointSize={pointSize}
       />
+      {observer ? <ObserverPin lat={observer.lat} lon={observer.lon} /> : null}
       {selected ? <SelectedSatellite tle={selected} altitudeScale={altitudeScale} /> : null}
       <OrbitControls
         makeDefault
@@ -349,5 +352,29 @@ export default function TrackerGlobe({
         dampingFactor={0.08}
       />
     </Canvas>
+  );
+}
+
+// Saved observer location, pinned on the Earth surface at the exact
+// coordinates (stored to 4 decimals, about 11 m).
+function ObserverPin({ lat, lon }: { lat: number; lon: number }) {
+  const r = EARTH_R * 1.003;
+  const phi = (90 - lat) * DEG;
+  const theta = (lon + 180) * DEG;
+  const pos: [number, number, number] = [
+    -r * Math.sin(phi) * Math.cos(theta),
+    r * Math.cos(phi),
+    r * Math.sin(phi) * Math.sin(theta),
+  ];
+  return (
+    <group position={pos}>
+      <mesh>
+        <sphereGeometry args={[0.035, 16, 16]} />
+        <meshBasicMaterial color="#7fd1ff" />
+      </mesh>
+      <Html center zIndexRange={[3, 0]} style={{ pointerEvents: "none" }}>
+        <div className="scene-label" style={{ transform: "translateY(-16px)" }}>You</div>
+      </Html>
+    </group>
   );
 }
