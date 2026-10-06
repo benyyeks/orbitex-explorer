@@ -217,6 +217,27 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_path: string | null
+          display_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_path?: string | null
+          display_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_path?: string | null
+          display_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       reading_list: {
         Row: {
           added_at: string
