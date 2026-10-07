@@ -1,13 +1,13 @@
 // Ask ORBITEX: streaming assistant endpoint. Scoped strictly to space and
 // astronomy; the system prompt refuses off-topic requests. Live ORBITEX
 // telemetry (ISS position, Kp index, next launch) is injected as grounding
-// context when the upstream feeds answer. The gateway secret never leaves
+// context when the upstream feeds answer. The OpenRouter secret never leaves
 // the server; the browser talks only to this route.
 import { createFileRoute } from "@tanstack/react-router";
 import { knowledgeBlock } from "@/lib/orbitex-knowledge";
 
-const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/responses";
-const MODEL = "openai/gpt-6-astra";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+const MODEL = "anthropic/claude-fable-5";
 const MAX_MESSAGES = 24;
 const MAX_CONTENT = 2000;
 // Per account throttle. Keeps a single signed in session from monopolising the
@@ -92,8 +92,10 @@ async function liveContext(): Promise<string> {
     const list = flares.value as { max_class?: string; max_time?: string }[];
     const big = list.filter((f) => /^[MX]/.test(f.max_class ?? ""));
     const last = list.at(-1);
-    return `NOAA GOES flares, last 7 days: ${list.length} recorded, ${big.length} M or X class` +
-      (last?.max_class ? `; most recent ${last.max_class} at ${last.max_time} UTC` : "");
+    return (
+      `NOAA GOES flares, last 7 days: ${list.length} recorded, ${big.length} M or X class` +
+      (last?.max_class ? `; most recent ${last.max_class} at ${last.max_time} UTC` : "")
+    );
   })();
 
   const lines: string[] = [`Current UTC time: ${new Date().toISOString()}`];
@@ -179,7 +181,7 @@ const MODE_PROMPTS: Record<AskMode, string> = {
   resources: [
     "Mode: study guide.",
     "Recommend a short, ordered learning path for the user's goal: name the relevant ORBITEX pages, then credible external sources such as NASA and ESA outreach, university open courseware, and standard textbooks.",
-    "The ORBITEX textbook shelf at /resources lists canonical titles by topic (orbital mechanics, propulsion, spacecraft systems, guidance and control, aerodynamics, structures); refer to those titles when they fit.",
+    "The ORBITEX textbook shelf at Learning resources lists canonical titles by topic (orbital mechanics, propulsion, spacecraft systems, guidance and control, aerodynamics, structures); refer to those titles when they fit.",
   ].join("\n"),
 };
 
@@ -193,7 +195,7 @@ function buildSystemPrompt(mode: AskMode, context: string): string {
     "",
     "Currency rules:",
     "- The current date is given in the live telemetry below. Your training data is older than that, so never assume a mission is still upcoming just because it was when you were trained.",
-    "- For any question about recent or upcoming launches, mission status, crews, dates, or news, use the web search tool and prefer official sources (nasa.gov, esa.int, jaxa.jp, spacex.com, blueorigin.com, noaa.gov). Name the source briefly.",
+    "- For any question about recent or upcoming launches, mission status, crews, dates, or news, prefer the verified mission brief and the live telemetry below. Name the source briefly when you cite live numbers.",
     "- If sources disagree or a date is only a target, say so.",
     "",
     SITE_KNOWLEDGE,
@@ -206,9 +208,10 @@ function buildSystemPrompt(mode: AskMode, context: string): string {
 }
 
 // ------------------------------ SSE transform -----------------------------
-// The gateway streams Responses API SSE; the browser receives a plain text
-// stream of answer deltas. When the stream ends (or the user stops it), the
-// accumulated answer is handed to onFinish so the server can save it.
+// OpenRouter streams OpenAI-compatible chat.completion.chunk SSE. The browser
+// receives a plain text stream of answer deltas. When the stream ends (or the
+// user stops it), the accumulated answer is handed to onFinish so the server
+// can save it.
 function deltaStream(
   upstream: ReadableStream<Uint8Array>,
   onFinish: (text: string) => Promise<void>
@@ -232,22 +235,23 @@ function deltaStream(
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
           let idx: number;
-          while ((idx = buffer.indexOf("\n\n")) >= 0) {
-            const event = buffer.slice(0, idx);
-            buffer = buffer.slice(idx + 2);
-            for (const line of event.split("\n")) {
-              if (!line.startsWith("data:")) continue;
-              const payload = line.slice(5).trim();
-              if (!payload || payload === "[DONE]") continue;
-              try {
-                const json = JSON.parse(payload) as { type?: string; delta?: unknown };
-                if (json.type === "response.output_text.delta" && typeof json.delta === "string" && json.delta) {
-                  acc += json.delta;
-                  controller.enqueue(encoder.encode(json.delta));
-                }
-              } catch {
-                /* partial JSON chunk: ignore */
+          while ((idx = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, idx).trimEnd();
+            buffer = buffer.slice(idx + 1);
+            if (!line.startsWith("data:")) continue;
+            const payload = line.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            try {
+              const json = JSON.parse(payload) as {
+                choices?: { delta?: { content?: unknown } }[];
+              };
+              const content = json.choices?.[0]?.delta?.content;
+              if (typeof content === "string" && content) {
+                acc += content;
+                controller.enqueue(encoder.encode(content));
               }
+            } catch {
+              /* partial JSON chunk: ignore */
             }
           }
         }
@@ -272,7 +276,7 @@ export const Route = createFileRoute("/api/ask")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = process.env["LOVABLE_API_KEY"];
+        const apiKey = process.env["OPENROUTER_API_KEY"];
         if (!apiKey) {
           return Response.json({ error: "assistant_unavailable" }, { status: 503 });
         }
@@ -316,21 +320,19 @@ export const Route = createFileRoute("/api/ask")({
 
         let upstream: Response;
         try {
-          upstream = await fetch(GATEWAY_URL, {
+          upstream = await fetch(OPENROUTER_URL, {
             method: "POST",
             signal: request.signal,
             headers: {
               "Content-Type": "application/json",
-              "Lovable-API-Key": apiKey,
-              "X-Lovable-AIG-SDK": "fetch",
+              Authorization: `Bearer ${apiKey}`,
+              "HTTP-Referer": "https://orbitex-explorer.lovable.app",
+              "X-OpenRouter-Title": "ORBITEX",
             },
             body: JSON.stringify({
               model: MODEL,
               stream: true,
-              store: false,
-              reasoning: { effort: "low" },
-              tools: [{ type: "web_search" }],
-              input: [{ role: "system", content: system }, ...parsed.messages],
+              messages: [{ role: "system", content: system }, ...parsed.messages],
             }),
           });
         } catch (err) {
@@ -345,7 +347,7 @@ export const Route = createFileRoute("/api/ask")({
           if (upstream.status === 429) {
             return Response.json({ error: "rate_limited" }, { status: 429 });
           }
-          if (upstream.status === 402 || upstream.status === 403) {
+          if (upstream.status === 401 || upstream.status === 402 || upstream.status === 403) {
             return Response.json({ error: "assistant_unavailable" }, { status: upstream.status });
           }
           return Response.json({ error: "assistant_unavailable" }, { status: 503 });
@@ -365,14 +367,12 @@ export const Route = createFileRoute("/api/ask")({
             .eq("id", conversationId);
         };
 
-        const headers: Record<string, string> = {
-          "content-type": "text/plain; charset=utf-8",
-          "cache-control": "no-store",
-        };
-        upstream.headers.forEach((v, k) => {
-          if (k.toLowerCase().startsWith("x-lovable-aig-")) headers[k] = v;
+        return new Response(deltaStream(upstream.body, save), {
+          headers: {
+            "content-type": "text/plain; charset=utf-8",
+            "cache-control": "no-store",
+          },
         });
-        return new Response(deltaStream(upstream.body, save), { headers });
       },
     },
   },
