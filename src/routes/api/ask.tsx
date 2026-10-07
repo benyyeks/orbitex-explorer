@@ -7,7 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { knowledgeBlock } from "@/lib/orbitex-knowledge";
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "anthropic/claude-fable-5";
+const MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free";
 const MAX_MESSAGES = 24;
 const MAX_CONTENT = 2000;
 // Per account throttle. Keeps a single signed in session from monopolising the
