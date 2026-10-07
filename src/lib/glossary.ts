@@ -14,7 +14,8 @@ export type GlossaryCategory =
   | "comms"
   | "launch"
   | "environment"
-  | "operations";
+  | "operations"
+  | "aviation";
 
 export type GlossaryEntry = {
   term: string;
@@ -71,6 +72,11 @@ export const GLOSSARY_CATEGORIES: { id: GlossaryCategory; label: string; blurb: 
     id: "operations",
     label: "Mission operations",
     blurb: "Planning, tracking, catalogues, and the vocabulary of flight control.",
+  },
+  {
+    id: "aviation",
+    label: "Aviation and aerodynamics",
+    blurb: "Atmospheric flight terms shared by aircraft, launch vehicles, and returning spacecraft.",
   },
 ];
 
@@ -1417,6 +1423,82 @@ export const GLOSSARY: GlossaryEntry[] = [
     short: "Making a retired spacecraft inert.",
     detail:
       "Venting propellant, discharging batteries, and disabling pressure and energy sources so the object cannot explode and generate debris years later. A core debris mitigation requirement.",
+  },
+  {
+    term: "Angle of Attack",
+    category: "aviation",
+    short: "The angle between the wing chord and the oncoming airflow.",
+    detail:
+      "Lift rises with angle of attack until the flow separates from the upper surface. Launch vehicles fly near zero angle of attack through peak loads to limit side forces.",
+  },
+  {
+    term: "Stall",
+    category: "aviation",
+    short: "Loss of lift when the airflow separates from a wing.",
+    detail:
+      "Happens past the critical angle of attack, regardless of airspeed. Recovery means lowering the nose to reduce the angle of attack.",
+  },
+  {
+    term: "Mach Number",
+    category: "aviation",
+    short: "Speed divided by the local speed of sound.",
+    detail:
+      "Below about Mach 0.8 flow is subsonic, around Mach 1 transonic, above 5 hypersonic. The speed of sound falls with temperature, so the same true speed gives a higher Mach number at altitude.",
+    symbol: "M",
+  },
+  {
+    term: "Lift-to-Drag Ratio",
+    category: "aviation",
+    short: "Lift divided by drag; a measure of aerodynamic efficiency.",
+    detail:
+      "Sets glide range. Airliners reach roughly 15 to 20; the Space Shuttle orbiter was close to 1 at hypersonic speed and about 4.5 on final approach (approximate).",
+    symbol: "L/D",
+  },
+  {
+    term: "Dynamic Pressure",
+    category: "aviation",
+    short: "The pressure from moving through air, one half of density times speed squared.",
+    detail:
+      "Peaks during ascent at Max Q. Structural and control loads scale with it.",
+    symbol: "q",
+  },
+  {
+    term: "Indicated Airspeed",
+    category: "aviation",
+    short: "Airspeed read from the pitot static system without corrections.",
+    detail:
+      "What the wing actually feels, so stall and structural limits are quoted in it. True airspeed is higher at altitude.",
+    symbol: "IAS",
+  },
+  {
+    term: "Flight Level",
+    category: "aviation",
+    short: "Altitude in hundreds of feet based on standard pressure.",
+    detail:
+      "FL350 means 35,000 feet with the altimeter set to 1013.25 hPa, so all aircraft above the transition altitude share one reference.",
+    symbol: "FL",
+  },
+  {
+    term: "Center of Pressure",
+    category: "aviation",
+    short: "The point where the total aerodynamic force acts.",
+    detail:
+      "For stable flight it sits behind the center of gravity. Rockets add fins to move it aft.",
+    symbol: "CP",
+  },
+  {
+    term: "Boundary Layer",
+    category: "aviation",
+    short: "The thin layer of air slowed by friction next to a surface.",
+    detail:
+      "It can be smooth (laminar) or turbulent. Turbulent boundary layers greatly raise heating on reentry vehicles.",
+  },
+  {
+    term: "Sonic Boom",
+    category: "aviation",
+    short: "The shock wave pressure jump heard when a vehicle flies faster than sound.",
+    detail:
+      "Returning Falcon 9 boosters and the Space Shuttle produced audible double booms near landing sites.",
   },
 ];
 
