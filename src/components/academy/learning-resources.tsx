@@ -2,6 +2,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { EngineeringNotes } from "@/components/academy/engineering-notes";
+import { useQuery } from "@tanstack/react-query";
+import { getCompetitions } from "@/lib/news.functions";
 import {
   BOOKS,
   BOOK_TOPICS,
@@ -256,6 +258,20 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
                 missions, internships, and career pathways.
               </li>
             </ul>
+            <h3 className="stem-subhead">International programs</h3>
+            <ul className="feature-list">
+              {INTL_STEM.map((p) => (
+                <li key={p.name}>
+                  <strong>
+                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-accent">
+                      {p.name}
+                    </a>
+                    :{" "}
+                  </strong>
+                  {p.text}
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div
@@ -296,34 +312,7 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
               These are verified, active competitions for student teams
               interested in aerospace engineering and space science.
             </p>
-            <ul className="feature-list">
-              <li>
-                <strong>NASA Human Exploration Rover Challenge:</strong> student
-                teams design, build, and test rovers for Moon and Mars
-                exploration.{" "}
-                <a
-                  href="https://www.nasa.gov/centers-and-facilities/marshall/nasa-seeks-proposals-for-2026-human-exploration-rover-challenge/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-accent"
-                >
-                  2026 challenge details
-                </a>
-                .
-              </li>
-              <li>
-                <strong>
-                  <Link to="/" className="text-accent">
-                    ORBITEX Competitions Board
-                  </Link>
-                  :{" "}
-                </strong>
-                Five verified competitions tracked on the home page, including
-                NASA Space Apps Challenge, the Conrad Challenge, AIAA
-                Design/Build/Fly, the CanSat Competition, and the International
-                Space Science and Engineering Competition.
-              </li>
-            </ul>
+            <CompetitionGrid />
           </div>
 
           {sharedBooks.length > 0 && (
@@ -671,5 +660,46 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
           </div>
         </div>
     </section>
+  );
+}
+
+const INTL_STEM = [
+  { name: "ESA Education", url: "https://www.esa.int/Education", text: "European Space Agency programs for schools and universities, including Fly Your Satellite and the ESA Academy training courses." },
+  { name: "Canadian Space Agency: Youth and educators", url: "https://www.asc-csa.gc.ca/eng/youth-educators/", text: "Classroom activities, student challenges and internships run by Canada's space agency." },
+  { name: "JAXA Space Education Center", url: "https://edu.jaxa.jp/en/", text: "Japan's space agency program of school activities, teacher support and youth events." },
+  { name: "ISRO YUVIKA", url: "https://www.isro.gov.in/", text: "The Indian Space Research Organisation's young scientist program for school students." },
+  { name: "UNOOSA capacity building", url: "https://www.unoosa.org/oosa/en/ourwork/capacitybuilding/index.html", text: "United Nations Office for Outer Space Affairs fellowships and training open to students from every country." },
+  { name: "Space Generation Advisory Council", url: "https://spacegeneration.org/", text: "A global network for students and young professionals in the space sector, with congresses and project groups." },
+];
+
+function fmtDeadline(d: string | null) {
+  if (!d) return "Rolling";
+  return new Date(d + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+}
+
+function CompetitionGrid() {
+  const q = useQuery({ queryKey: ["orbitex", "competitions"], queryFn: () => getCompetitions() });
+  if (q.isLoading) return <p className="academy-count">Loading competitions.</p>;
+  const items = q.data?.items ?? [];
+  if (items.length === 0) {
+    return <p className="academy-count">Competitions are unavailable right now. Please check back soon.</p>;
+  }
+  return (
+    <div className="competition-grid">
+      {items.map((c) => (
+        <article key={c.id} className="competition-card">
+          {c.category ? <span className="competition-tag">{c.category}</span> : null}
+          <h3>{c.name}</h3>
+          {c.organizer ? <p className="competition-org">{c.organizer}</p> : null}
+          {c.description ? <p className="competition-desc">{c.description}</p> : null}
+          <div className="competition-foot">
+            <span className="mono">Deadline {fmtDeadline(c.deadline)}</span>
+            <a href={c.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">
+              Details
+            </a>
+          </div>
+        </article>
+      ))}
+    </div>
   );
 }

@@ -2692,3 +2692,14 @@ html, body { overflow-x: clip; }
 .profile-photo img { width: 100%; height: 100%; object-fit: cover; }
 .profile-name-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .profile-name-row input { flex: 1 1 180px; min-width: 0; }
+
+/* Academy: international STEM + competition cards */
+.stem-subhead { margin-top: 20px; font-size: 1.05rem; }
+.competition-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; margin-top: 14px; }
+.competition-card { display: flex; flex-direction: column; gap: 6px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); transition: transform 150ms ease, border-color 150ms ease; }
+.competition-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+.competition-card h3 { font-size: 1.05rem; margin: 0; }
+.competition-tag { align-self: flex-start; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border: 1px solid currentColor; border-radius: 999px; padding: 2px 8px; }
+.competition-org { font-size: 0.85rem; opacity: 0.75; margin: 0; }
+.competition-desc { font-size: 0.9rem; margin: 0; flex: 1; }
+.competition-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 0.8rem; flex-wrap: wrap; }

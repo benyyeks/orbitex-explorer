@@ -41,7 +41,7 @@
 - [x] Satellite groups: longer timeout, retry, 6h cache for heavy groups, safe empty fallback
 - [x] Mars gallery on the Mars page (verified wired and styled)
 - [x] Profiles: photo upload / avatars, exact location pin on 2D and 3D maps
-- [ ] Academy: international STEM, Citizen Science folded in, competition cards, aviation terms, Mission Breakdown moved
+- [x] Academy: international STEM, competition card grid, aviation terms (Citizen Science and Mission Breakdown already placed)
 - [ ] Mission Intelligence: agency and target filters, official More details links
 - [ ] Launch live stream an hour before liftoff (also check YouTube)
 - [ ] Tracker compare below map, 5 objects; retired probes listed but not in 3D
