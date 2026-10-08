@@ -19,6 +19,7 @@ import { Route as AuthenticatedAcademyRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
 import { Route as AuthenticatedDeepspaceRouteImport } from './routes/_authenticated/deepspace'
+import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
 import { Route as AuthenticatedLaunchesRouteImport } from './routes/_authenticated/launches'
 import { Route as AuthenticatedMarsRouteImport } from './routes/_authenticated/mars'
 import { Route as AuthenticatedNeoRouteImport } from './routes/_authenticated/neo'
@@ -87,6 +88,12 @@ const AuthenticatedDeepspaceRoute = AuthenticatedDeepspaceRouteImport.update({
   path: '/deepspace',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIntelligenceRoute =
+  AuthenticatedIntelligenceRouteImport.update({
+    id: '/intelligence',
+    path: '/intelligence',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLaunchesRoute = AuthenticatedLaunchesRouteImport.update({
   id: '/launches',
   path: '/launches',
@@ -156,9 +163,9 @@ const AuthenticatedDeepspaceObjectIdRoute =
   } as any)
 const AuthenticatedIntelligenceIndexRoute =
   AuthenticatedIntelligenceIndexRouteImport.update({
-    id: '/intelligence/',
-    path: '/intelligence/',
-    getParentRoute: () => AuthenticatedRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedIntelligenceRoute,
   } as any)
 const AuthenticatedTrackerIndexRoute =
   AuthenticatedTrackerIndexRouteImport.update({
@@ -193,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/ask': typeof AuthenticatedAskRoute
   '/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
+  '/intelligence': typeof AuthenticatedIntelligenceRouteWithChildren
   '/launches': typeof AuthenticatedLaunchesRoute
   '/mars': typeof AuthenticatedMarsRoute
   '/neo': typeof AuthenticatedNeoRoute
@@ -251,6 +259,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
   '/_authenticated/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
+  '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRouteWithChildren
   '/_authenticated/launches': typeof AuthenticatedLaunchesRoute
   '/_authenticated/mars': typeof AuthenticatedMarsRoute
   '/_authenticated/neo': typeof AuthenticatedNeoRoute
@@ -282,6 +291,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ask'
     | '/deepspace'
+    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/ask'
     | '/_authenticated/deepspace'
+    | '/_authenticated/intelligence'
     | '/_authenticated/launches'
     | '/_authenticated/mars'
     | '/_authenticated/neo'
@@ -443,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeepspaceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/intelligence': {
+      id: '/_authenticated/intelligence'
+      path: '/intelligence'
+      fullPath: '/intelligence'
+      preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/launches': {
       id: '/_authenticated/launches'
       path: '/launches'
@@ -536,10 +554,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/intelligence/': {
       id: '/_authenticated/intelligence/'
-      path: '/intelligence'
+      path: '/'
       fullPath: '/intelligence/'
       preLoaderRoute: typeof AuthenticatedIntelligenceIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+      parentRoute: typeof AuthenticatedIntelligenceRoute
     }
     '/_authenticated/tracker/': {
       id: '/_authenticated/tracker/'
@@ -588,6 +606,20 @@ const AuthenticatedDeepspaceRouteWithChildren =
     AuthenticatedDeepspaceRouteChildren,
   )
 
+interface AuthenticatedIntelligenceRouteChildren {
+  AuthenticatedIntelligenceIndexRoute: typeof AuthenticatedIntelligenceIndexRoute
+}
+
+const AuthenticatedIntelligenceRouteChildren: AuthenticatedIntelligenceRouteChildren =
+  {
+    AuthenticatedIntelligenceIndexRoute: AuthenticatedIntelligenceIndexRoute,
+  }
+
+const AuthenticatedIntelligenceRouteWithChildren =
+  AuthenticatedIntelligenceRoute._addFileChildren(
+    AuthenticatedIntelligenceRouteChildren,
+  )
+
 interface AuthenticatedTrackerRouteChildren {
   AuthenticatedTrackerNoradIdRoute: typeof AuthenticatedTrackerNoradIdRoute
   AuthenticatedTrackerIndexRoute: typeof AuthenticatedTrackerIndexRoute
@@ -607,6 +639,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
   AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
+  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRouteWithChildren
   AuthenticatedLaunchesRoute: typeof AuthenticatedLaunchesRoute
   AuthenticatedMarsRoute: typeof AuthenticatedMarsRoute
   AuthenticatedNeoRoute: typeof AuthenticatedNeoRoute
@@ -616,7 +649,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSkyRoute: typeof AuthenticatedSkyRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRouteWithChildren
   AuthenticatedWeatherRoute: typeof AuthenticatedWeatherRoute
-  AuthenticatedIntelligenceIndexRoute: typeof AuthenticatedIntelligenceIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -625,6 +657,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedDeepspaceRoute: AuthenticatedDeepspaceRouteWithChildren,
+  AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRouteWithChildren,
   AuthenticatedLaunchesRoute: AuthenticatedLaunchesRoute,
   AuthenticatedMarsRoute: AuthenticatedMarsRoute,
   AuthenticatedNeoRoute: AuthenticatedNeoRoute,
@@ -634,7 +667,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSkyRoute: AuthenticatedSkyRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRouteWithChildren,
   AuthenticatedWeatherRoute: AuthenticatedWeatherRoute,
-  AuthenticatedIntelligenceIndexRoute: AuthenticatedIntelligenceIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
