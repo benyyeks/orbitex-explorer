@@ -1,3 +1,5 @@
+import { EXTRA_MISSIONS } from "./missions-extra";
+
 // Curated mission profiles for the Mission Intelligence directory.
 //
 // Every record here is drawn from NASA (and, where noted, partner agency)
@@ -40,6 +42,8 @@ export type MissionProfile = {
   internal?: { label: string; to: string };
   /** Set when the mission has ended, so the card can show the operating span. */
   ended?: string;
+  /** Dated events beyond launch and end, shown on the dossier timeline. */
+  milestones?: { date: string; label: string }[];
 };
 
 export const STATUS_LABEL: Record<MissionStatus, string> = {
@@ -59,7 +63,7 @@ export const CATEGORY_LABEL: Record<MissionCategory, string> = {
   lunar: "Lunar exploration",
 };
 
-export const MISSIONS: MissionProfile[] = [
+const CORE_MISSIONS: MissionProfile[] = [
   // ----------------------------- Human spaceflight -----------------------
   {
     id: "iss",
@@ -777,6 +781,10 @@ export const MISSIONS: MissionProfile[] = [
   },
 ];
 
+export const MISSIONS: MissionProfile[] = [...CORE_MISSIONS, ...EXTRA_MISSIONS];
+
+
+
 // ------------------------------- Directories --------------------------------
 // Official catalogues a reader can use to go beyond this curated set.
 export const MISSION_DIRECTORIES = [
@@ -810,4 +818,54 @@ export const MISSION_DIRECTORIES = [
 export function missionYear(m: MissionProfile): number {
   const y = Number(m.launched.slice(0, 4));
   return Number.isFinite(y) ? y : 0;
+}
+
+export type AgencyGroup = "nasa" | "esa" | "intl" | "commercial";
+export const AGENCY_LABEL: Record<AgencyGroup, string> = {
+  nasa: "NASA",
+  esa: "With ESA",
+  intl: "Other international partners",
+  commercial: "Commercial partners",
+};
+export function agencyGroup(m: MissionProfile): AgencyGroup {
+  const a = m.agency;
+  if (/ESA/.test(a)) return "esa";
+  if (/ISRO|JAXA|CSA|Roscosmos|DLR|GFZ|CNES/.test(a)) return "intl";
+  if (/SpaceX|Boeing|Intuitive|Firefly|CLPS/.test(a)) return "commercial";
+  return "nasa";
+}
+
+export type TargetGroup = "earth" | "moon" | "sun" | "mars" | "inner" | "outer";
+export const TARGET_LABEL: Record<TargetGroup, string> = {
+  earth: "Earth orbit",
+  moon: "Moon",
+  sun: "Sun and Lagrange points",
+  mars: "Mars",
+  inner: "Mercury and Venus",
+  outer: "Outer planets and small bodies",
+};
+export function targetGroup(m: MissionProfile): TargetGroup {
+  const d = m.destination;
+  if (/Moon|lunar/i.test(d)) return "moon";
+  if (/Mars/.test(d)) return "mars";
+  if (/Mercury|Venus/.test(d)) return "inner";
+  if (/Jupiter|Saturn|Pluto|Kuiper|interstellar|asteroid|comet|Vesta|Dimorphos|Uranus|Neptune|Psyche|Trojan|Bennu|Apophis/i.test(d))
+    return "outer";
+  if (/L1|L2|Lagrange|Sun|solar|Heliocentric/i.test(d)) return "sun";
+  return "earth";
+}
+
+export function missionById(id: string): MissionProfile | undefined {
+  return MISSIONS.find((m) => m.id === id);
+}
+
+/** Research links that apply to every mission, built from its name. */
+export function researchLinks(m: MissionProfile) {
+  const q = encodeURIComponent(m.name.replace(/\s*\(.*\)$/, ""));
+  return [
+    { label: "Official mission page", url: m.url, note: "Primary source for every figure on this page." },
+    { label: "NASA Space Science Data Coordinated Archive", url: "https://nssdc.gsfc.nasa.gov/nmc/SpacecraftQuery.jsp", note: "Spacecraft and experiment records, searchable by name." },
+    { label: "NASA Technical Reports Server", url: `https://ntrs.nasa.gov/search?q=${q}`, note: "Engineering and science reports about this mission." },
+    { label: "SAO/NASA Astrophysics Data System", url: `https://ui.adsabs.harvard.edu/search/q=${q}`, note: "Peer-reviewed papers using this mission's data." },
+  ];
 }

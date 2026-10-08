@@ -1,7 +1,7 @@
 // Ask ORBITEX: a space-only study assistant. Four modes (chat, practice
 // quizzes, explanations, resource guidance) all post to /api/ask, which
 // grounds answers in live ORBITEX telemetry and enforces the space-only
-// scope. Replies stream token by token.
+// scope. Replies stream in token by token.
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AnswerText } from "@/components/site/answer-text";
@@ -70,8 +70,6 @@ const DIFFICULTIES = [
   { id: "advanced", label: "Advanced" },
 ] as const;
 
-const NEAR_BOTTOM_PX = 96;
-
 function errorCopy(status: number, code: string | undefined): string {
   if (status === 429 || code === "rate_limited") {
     return "ORBITEX is answering a high volume of questions right now. Please try again in a moment.";
@@ -79,13 +77,11 @@ function errorCopy(status: number, code: string | undefined): string {
   if (status === 401 || code === "unauthorized") {
     return "Your session has expired. Sign in again to continue the conversation.";
   }
-  if (status === 402 || status === 503 || code === "assistant_unavailable") {
+  if (status === 503 || code === "assistant_unavailable") {
     return "The assistant is temporarily unavailable. Please try again later.";
   }
-  if (status === 502) {
-    return "The model did not respond in time. Retry the same question.";
-  }
-  return "The answer link failed. Check your connection and retry.";
+
+  return "The answer link failed. Check your connection and try again.";
 }
 
 function AskPage() {
@@ -99,7 +95,6 @@ function AskPage() {
   const [level, setLevel] = useState<string>("curious beginner");
   const abortRef = useRef<AbortController | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
-  const stickRef = useRef(true);
 
   const history = useAskHistory();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -109,19 +104,13 @@ function AskPage() {
   const activeIdRef = useRef<string | null>(null);
   activeIdRef.current = activeId;
 
-  // Auto-scroll only when the reader is already near the bottom.
+  // Keep the latest exchange in view as tokens stream in.
   useEffect(() => {
     const el = threadRef.current;
-    if (!el || !stickRef.current) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, streaming, error]);
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages]);
 
-  const onThreadScroll = () => {
-    const el = threadRef.current;
-    if (!el) return;
-    stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
-  };
-
+  // Stop an in-flight answer if the page unmounts.
   useEffect(() => () => abortRef.current?.abort(), []);
 
   const openConversation = async (id: string) => {
@@ -132,7 +121,6 @@ function AskPage() {
     if (saved) setMode(saved.mode);
     const thread = await history.loadMessages(id);
     setMessages(thread);
-    stickRef.current = true;
   };
 
   const startNewChat = () => {
@@ -140,7 +128,6 @@ function AskPage() {
     setActiveId(null);
     setMessages([]);
     setError(null);
-    setInput("");
   };
 
   const removeConversation = async (id: string) => {
@@ -161,13 +148,14 @@ function AskPage() {
   const send = async (rawText: string) => {
     const content = rawText.trim();
     if (!content || streaming) return;
-    stickRef.current = true;
     const thread = [...messages, { role: "user" as const, content }];
     setMessages([...thread, { role: "assistant", content: "" }]);
     setInput("");
     setError(null);
     setStreaming(true);
 
+    // Signed-in accounts keep the thread; a new chat gets its conversation now
+    // so the question is saved even if the answer never arrives.
     let conversationId = activeId;
     if (history.signedIn) {
       if (!conversationId) {
@@ -182,6 +170,7 @@ function AskPage() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
+      // The endpoint only answers signed in accounts, so attach the session token.
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       const res = await fetch("/api/ask", {
@@ -213,8 +202,9 @@ function AskPage() {
       }
       if (!acc.trim()) {
         setMessages((prev) => prev.slice(0, -1));
-        setError("No answer came back. Retry the same question.");
+        setError("No answer came back. Please try again.");
       } else if (conversationId) {
+        // The server saved the reply; just bump the sidebar order.
         void history.refresh();
       }
     } catch (err) {
@@ -225,6 +215,8 @@ function AskPage() {
         return last?.role === "assistant" && !last.content ? prev.slice(0, -1) : prev;
       });
       if ((err as Error).name === "AbortError") {
+        // User pressed stop: keep and save whatever partial answer arrived.
+        // The server saves the partial reply when the stream is cancelled.
         if (conversationId && partial.trim()) void history.refresh();
       } else {
         setError((err as Error).message || errorCopy(0, undefined));
@@ -233,30 +225,6 @@ function AskPage() {
       setStreaming(false);
       abortRef.current = null;
     }
-  };
-
-  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-
-  const retryLast = () => {
-    if (!lastUser || streaming) return;
-    setMessages((prev) => {
-      const last = prev.at(-1);
-      if (last?.role === "assistant") return prev.slice(0, -1);
-      return prev;
-    });
-    void send(lastUser);
-  };
-
-  const editLast = () => {
-    if (!lastUser || streaming) return;
-    setInput(lastUser);
-    setMessages((prev) => {
-      const cut = [...prev];
-      while (cut.length && cut[cut.length - 1]?.role === "assistant") cut.pop();
-      if (cut.length && cut[cut.length - 1]?.role === "user") cut.pop();
-      return cut;
-    });
-    setError(null);
   };
 
   const startQuiz = () => {
@@ -310,29 +278,36 @@ function AskPage() {
             <>
               <ul className="ask-history-list">
                 {history.conversations.map((c) => (
-                  <li key={c.id} className={c.id === activeId ? "active" : ""}>
+                  <li
+                    key={c.id}
+                    className={c.id === activeId ? "ask-history-row active" : "ask-history-row"}
+                  >
                     {renamingId === c.id ? (
                       <form
-                        className="ask-rename-form"
+                        className="ask-rename"
                         onSubmit={(e) => {
                           e.preventDefault();
-                          const title = renameValue.trim();
-                          if (title) void history.renameConversation(c.id, title);
+                          void history.renameConversation(c.id, renameValue);
                           setRenamingId(null);
                         }}
                       >
+                        <label htmlFor={`rename-${c.id}`} className="sr-only">
+                          Chat title
+                        </label>
                         <input
+                          id={`rename-${c.id}`}
+                          type="text"
                           value={renameValue}
+                          maxLength={120}
                           onChange={(e) => setRenameValue(e.target.value)}
-                          aria-label="Chat title"
                           autoFocus
                         />
-                        <button type="submit" className="btn btn-ghost btn-sm">
+                        <button type="submit" className="btn btn-primary">
                           Save
                         </button>
                         <button
                           type="button"
-                          className="btn btn-ghost btn-sm"
+                          className="btn btn-ghost"
                           onClick={() => setRenamingId(null)}
                         >
                           Cancel
@@ -342,11 +317,15 @@ function AskPage() {
                       <>
                         <button
                           type="button"
-                          className="ask-history-item"
+                          className="ask-history-open"
+                          aria-current={c.id === activeId ? "true" : undefined}
                           onClick={() => void openConversation(c.id)}
                         >
                           <span className="ask-history-title">{c.title}</span>
-                          <span className="ask-history-meta">{MODE_LABELS[c.mode as Mode] ?? c.mode}</span>
+                          <span className="ask-history-meta">
+                            {MODE_LABELS[c.mode]} ·{" "}
+                            {new Date(c.updatedAt).toLocaleDateString()}
+                          </span>
                         </button>
                         <span className="ask-history-actions">
                           <button
@@ -406,218 +385,207 @@ function AskPage() {
         </aside>
 
         <div className="ask-main">
-          <div className="ask-modes" role="tablist" aria-label="Assistant mode">
-            {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={mode === m}
-                className={mode === m ? "active" : ""}
-                onClick={() => {
-                  setMode(m);
-                  if (activeId) void history.setConversationMode(activeId, m);
-                }}
-              >
-                {MODE_LABELS[m]}
-              </button>
-            ))}
-          </div>
-
-          {mode === "quiz" && (
-            <div className="ask-controls glass">
-              <label>
-                Topic
-                <select value={quizTopic} onChange={(e) => setQuizTopic(e.target.value)}>
-                  {BOOK_TOPICS.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Difficulty
-                <select value={quizDifficulty} onChange={(e) => setQuizDifficulty(e.target.value)}>
-                  {DIFFICULTIES.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="button" className="btn btn-primary" onClick={startQuiz} disabled={streaming}>
-                Generate quiz
-              </button>
-            </div>
-          )}
-
-          {mode === "explain" && (
-            <div className="ask-controls glass">
-              <label>
-                Level
-                <select value={level} onChange={(e) => setLevel(e.target.value)}>
-                  {LEVELS.map((l) => (
-                    <option key={l.id} value={l.id}>
-                      {l.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          )}
-
-          <section
-            className="chat-thread glass"
-            ref={threadRef}
-            onScroll={onThreadScroll}
-            aria-live="polite"
-          >
-            {messages.length === 0 ? (
-              <div className="chat-empty">
-                <p>
-                  {mode === "quiz"
-                    ? "Pick a topic and difficulty, then generate a practice set."
-                    : mode === "explain"
-                      ? "Name a concept and ORBITEX will explain it at your level."
-                      : mode === "resources"
-                        ? "Describe what you want to learn and ORBITEX will map out a study path."
-                        : "Ask anything about space, missions, satellites, or space weather."}
-                </p>
-                {SUGGESTIONS[mode].length > 0 && (
-                  <div className="chat-suggestions">
-                    {SUGGESTIONS[mode].map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        className="chat-chip"
-                        onClick={() => void send(explainPrompt(s))}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              messages.map((m, i) => {
-                const isLast = i === messages.length - 1;
-                const isLastUser =
-                  m.role === "user" && !messages.slice(i + 1).some((x) => x.role === "user");
-                return (
-                  <div key={i} className={m.role === "user" ? "msg msg-user" : "msg msg-ai"}>
-                    {m.role === "assistant" && <span className="msg-who">ORBITEX</span>}
-                    {m.role === "assistant" ? (
-                      m.content ? (
-                        <AnswerText text={m.content} />
-                      ) : (
-                        <span className="live-dot" aria-label="Thinking" />
-                      )
-                    ) : (
-                      <p>{m.content}</p>
-                    )}
-                    {streaming && isLast && m.role === "assistant" && (
-                      <span className="msg-cursor" aria-hidden="true" />
-                    )}
-                    {!streaming && isLastUser && (
-                      <div className="ask-msg-actions">
-                        <button type="button" className="ask-msg-action" onClick={editLast}>
-                          Edit
-                        </button>
-                        <button type="button" className="ask-msg-action" onClick={retryLast}>
-                          Retry
-                        </button>
-                      </div>
-                    )}
-                    {!streaming && isLast && m.role === "assistant" && m.content && (
-                      <div className="ask-msg-actions">
-                        <button type="button" className="ask-msg-action" onClick={retryLast}>
-                          Retry
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-            {quizReady && lastMessage?.role === "assistant" && (
-              <div className="chat-suggestions">
-                <button
-                  type="button"
-                  className="chat-chip"
-                  onClick={() => void send("Show the answers, each with a brief explanation.")}
-                >
-                  Show answers with explanations
-                </button>
-                <button type="button" className="chat-chip" onClick={startQuiz}>
-                  New set of questions
-                </button>
-              </div>
-            )}
-          </section>
-
-          {error && (
-            <div className="ask-error-bar" role="alert">
-              <p>{error}</p>
-              {lastUser && (
-                <button type="button" className="btn btn-ghost btn-sm" onClick={retryLast}>
-                  Retry
-                </button>
-              )}
-            </div>
-          )}
-
-          <form
-            className="chat-composer"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void send(mode === "explain" ? explainPrompt(input) : input);
+      <div className="ask-modes" role="tablist" aria-label="Assistant mode">
+        {(Object.keys(MODE_LABELS) as Mode[]).map((m) => (
+          <button
+            key={m}
+            type="button"
+            role="tab"
+            aria-selected={mode === m}
+            className={mode === m ? "active" : ""}
+            onClick={() => {
+              setMode(m);
+              if (activeId) void history.setConversationMode(activeId, m);
             }}
           >
-            <label htmlFor="ask-input" className="sr-only">
-              Your question
-            </label>
-            <input
-              id="ask-input"
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder={
-                mode === "quiz"
-                  ? "Ask a follow-up, or request the answers..."
-                  : "Ask a space question..."
-              }
-              maxLength={2000}
-              disabled={streaming}
-              autoComplete="off"
-            />
-            {streaming ? (
-              <button
-                type="button"
-                className="btn btn-ghost"
-                onClick={() => abortRef.current?.abort()}
-              >
-                Stop
-              </button>
-            ) : (
-              <button type="submit" className="btn btn-primary" disabled={!input.trim()}>
-                Send
-              </button>
-            )}
-            {messages.length > 0 && !streaming && (
-              <button type="button" className="btn btn-ghost" onClick={startNewChat}>
-                Clear
-              </button>
-            )}
-          </form>
-          <p className="ask-scope-note">
-            ORBITEX answers questions about space and space studies only.
-            {history.signedIn
-              ? " Saved chats stay on your account and can be deleted at any time."
-              : ""}
+            {MODE_LABELS[m]}
+          </button>
+        ))}
+      </div>
+
+
+      {mode === "quiz" && (
+        <section className="glass glass-card ask-controls" aria-label="Quiz settings">
+          <div className="form-row">
+            <label htmlFor="quiz-topic">Topic</label>
+            <select
+              id="quiz-topic"
+              value={quizTopic}
+              onChange={(e) => setQuizTopic(e.target.value)}
+            >
+              {BOOK_TOPICS.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-row">
+            <label htmlFor="quiz-difficulty">Difficulty</label>
+            <select
+              id="quiz-difficulty"
+              value={quizDifficulty}
+              onChange={(e) => setQuizDifficulty(e.target.value)}
+            >
+              {DIFFICULTIES.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={startQuiz}
+            disabled={streaming}
+          >
+            Generate practice questions
+          </button>
+          <p className="ask-hint">
+            Questions follow the topics of the textbook shelf on the resources
+            page. Answers stay hidden until you ask for them.
           </p>
+        </section>
+      )}
+
+      {mode === "explain" && (
+        <section className="glass glass-card ask-controls" aria-label="Explanation level">
+          <div className="form-row">
+            <label htmlFor="explain-level">Explain for</label>
+            <select id="explain-level" value={level} onChange={(e) => setLevel(e.target.value)}>
+              {LEVELS.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <p className="ask-hint">
+            Pick a level, then ask about any space concept below.
+          </p>
+        </section>
+      )}
+
+      <section
+        className="glass glass-card chat-thread"
+        ref={threadRef}
+        aria-live="polite"
+        aria-label="Conversation"
+      >
+        {messages.length === 0 ? (
+          <div className="chat-empty">
+            <p>
+              {mode === "quiz"
+                ? "Choose a topic above and generate a set of practice questions."
+                : mode === "resources"
+                  ? "Describe what you want to learn and ORBITEX will map out a study path."
+                  : "Ask anything about space, missions, satellites, or space weather."}
+            </p>
+            {SUGGESTIONS[mode].length > 0 && (
+              <div className="chat-suggestions">
+                {SUGGESTIONS[mode].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className="chat-chip"
+                    onClick={() => void send(explainPrompt(s))}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          messages.map((m, i) => (
+            <div key={i} className={m.role === "user" ? "msg msg-user" : "msg msg-ai"}>
+              {m.role === "assistant" && <span className="msg-who">ORBITEX</span>}
+              {m.role === "assistant" ? (
+                <AnswerText text={m.content} />
+              ) : (
+                <p>{m.content}</p>
+              )}
+              {streaming && i === messages.length - 1 && m.role === "assistant" && (
+                <span className="msg-cursor" aria-hidden="true" />
+              )}
+            </div>
+          ))
+        )}
+        {quizReady && lastMessage?.role === "assistant" && (
+          <div className="chat-suggestions">
+            <button
+              type="button"
+              className="chat-chip"
+              onClick={() => void send("Show the answers, each with a brief explanation.")}
+            >
+              Show answers with explanations
+            </button>
+            <button type="button" className="chat-chip" onClick={startQuiz}>
+              New set of questions
+            </button>
+          </div>
+        )}
+      </section>
+
+      {error && (
+        <p className="form-status error" role="alert">
+          {error}
+        </p>
+      )}
+
+      <form
+        className="chat-composer"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void send(mode === "explain" ? explainPrompt(input) : input);
+        }}
+      >
+        <label htmlFor="ask-input" className="sr-only">
+          Your question
+        </label>
+        <input
+          id="ask-input"
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          placeholder={
+            mode === "quiz"
+              ? "Ask a follow-up, or request the answers..."
+              : "Ask a space question..."
+          }
+          maxLength={2000}
+          disabled={streaming}
+          autoComplete="off"
+        />
+        {streaming ? (
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => abortRef.current?.abort()}
+          >
+            Stop
+          </button>
+        ) : (
+          <button type="submit" className="btn btn-primary" disabled={!input.trim()}>
+            Send
+          </button>
+        )}
+        {messages.length > 0 && !streaming && (
+          <button type="button" className="btn btn-ghost" onClick={startNewChat}>
+            Clear
+          </button>
+        )}
+      </form>
+      <p className="ask-scope-note">
+        ORBITEX answers questions about space and space studies only.
+        {history.signedIn
+          ? " Saved chats stay on your account and can be deleted at any time."
+          : ""}
+      </p>
         </div>
       </div>
     </main>
+
   );
 }

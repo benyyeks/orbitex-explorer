@@ -1,6 +1,7 @@
 // Renders assistant answers as React elements. The model returns a light
-// Markdown subset: headings, lists, tables, blockquotes, code, emphasis, links.
-// Nothing is ever injected as HTML.
+// Markdown subset, so this parser handles headings, lists, tables, blockquotes,
+// code blocks and inline emphasis and links. Nothing is ever injected as HTML,
+// so an answer cannot smuggle markup or script into the page.
 import type { ReactNode } from "react";
 
 type Block =
@@ -73,6 +74,7 @@ function parseBlocks(source: string): Block[] {
       continue;
     }
 
+    // A table needs a header row followed by a divider row.
     if (line.includes("|") && TABLE_DIVIDER.test(lines[i + 1] ?? "")) {
       flushParagraph();
       const head = splitRow(line);
@@ -122,6 +124,8 @@ function parseBlocks(source: string): Block[] {
   return blocks;
 }
 
+// Inline emphasis, inline code and links. Only http and https links render as
+// anchors; anything else stays plain text.
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const out: ReactNode[] = [];
   const pattern =
@@ -140,13 +144,13 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
       out.push(
         <code key={key} className="answer-code-inline">
           {token.slice(1, -1)}
-        </code>
+        </code>,
       );
     } else if (token.startsWith("***")) {
       out.push(
         <strong key={key}>
           <em>{token.slice(3, -3)}</em>
-        </strong>
+        </strong>,
       );
     } else if (token.startsWith("**") || token.startsWith("__")) {
       out.push(<strong key={key}>{token.slice(2, -2)}</strong>);
@@ -157,18 +161,17 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
         out.push(
           <a key={key} href={href} target="_blank" rel="noopener noreferrer">
             {label}
-          </a>
+          </a>,
         );
       } else {
-        out.push(token);
+        out.push(label);
       }
-    } else if (token.startsWith("*")) {
-      out.push(<em key={key}>{token.slice(1, -1)}</em>);
     } else {
-      out.push(token);
+      out.push(<em key={key}>{token.slice(1, -1)}</em>);
     }
     cursor = match.index + token.length;
   }
+
   if (cursor < text.length) out.push(text.slice(cursor));
   return out;
 }
@@ -213,8 +216,8 @@ export function AnswerText({ text }: { text: string }) {
             );
           case "table":
             return (
-              <div key={key} className="answer-table-wrap" tabIndex={0} role="region" aria-label="Table">
-                <table className="answer-table">
+              <div key={key} className="answer-table-wrap">
+                <table className="data-table">
                   <thead>
                     <tr>
                       {block.head.map((cell, j) => (
@@ -226,7 +229,9 @@ export function AnswerText({ text }: { text: string }) {
                     {block.rows.map((row, j) => (
                       <tr key={`${key}-r${j}`}>
                         {row.map((cell, k) => (
-                          <td key={`${key}-r${j}-${k}`}>{renderInline(cell, `${key}-r${j}-${k}`)}</td>
+                          <td key={`${key}-r${j}-${k}`}>
+                            {renderInline(cell, `${key}-r${j}-${k}`)}
+                          </td>
                         ))}
                       </tr>
                     ))}
