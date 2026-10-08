@@ -19,7 +19,6 @@ import { Route as AuthenticatedAcademyRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAskRouteImport } from './routes/_authenticated/ask'
 import { Route as AuthenticatedDeepspaceRouteImport } from './routes/_authenticated/deepspace'
-import { Route as AuthenticatedIntelligenceRouteImport } from './routes/_authenticated/intelligence'
 import { Route as AuthenticatedLaunchesRouteImport } from './routes/_authenticated/launches'
 import { Route as AuthenticatedMarsRouteImport } from './routes/_authenticated/mars'
 import { Route as AuthenticatedNeoRouteImport } from './routes/_authenticated/neo'
@@ -33,6 +32,7 @@ import { Route as ApiAskRouteImport } from './routes/api/ask'
 import { Route as ListShareIdRouteImport } from './routes/list.$shareId'
 import { Route as AuthenticatedDeepspaceIndexRouteImport } from './routes/_authenticated/deepspace.index'
 import { Route as AuthenticatedDeepspaceObjectIdRouteImport } from './routes/_authenticated/deepspace.$objectId'
+import { Route as AuthenticatedIntelligenceIndexRouteImport } from './routes/_authenticated/intelligence.index'
 import { Route as AuthenticatedTrackerIndexRouteImport } from './routes/_authenticated/tracker.index'
 import { Route as AuthenticatedTrackerNoradIdRouteImport } from './routes/_authenticated/tracker.$noradId'
 import { Route as ApiPublicRefreshRouteImport } from './routes/api/public/refresh'
@@ -87,12 +87,6 @@ const AuthenticatedDeepspaceRoute = AuthenticatedDeepspaceRouteImport.update({
   path: '/deepspace',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedIntelligenceRoute =
-  AuthenticatedIntelligenceRouteImport.update({
-    id: '/intelligence',
-    path: '/intelligence',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedLaunchesRoute = AuthenticatedLaunchesRouteImport.update({
   id: '/launches',
   path: '/launches',
@@ -160,6 +154,12 @@ const AuthenticatedDeepspaceObjectIdRoute =
     path: '/$objectId',
     getParentRoute: () => AuthenticatedDeepspaceRoute,
   } as any)
+const AuthenticatedIntelligenceIndexRoute =
+  AuthenticatedIntelligenceIndexRouteImport.update({
+    id: '/intelligence/',
+    path: '/intelligence/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTrackerIndexRoute =
   AuthenticatedTrackerIndexRouteImport.update({
     id: '/',
@@ -193,7 +193,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/ask': typeof AuthenticatedAskRoute
   '/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
-  '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/launches': typeof AuthenticatedLaunchesRoute
   '/mars': typeof AuthenticatedMarsRoute
   '/neo': typeof AuthenticatedNeoRoute
@@ -210,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/deepspace/': typeof AuthenticatedDeepspaceIndexRoute
+  '/intelligence/': typeof AuthenticatedIntelligenceIndexRoute
   '/tracker/': typeof AuthenticatedTrackerIndexRoute
 }
 export interface FileRoutesByTo {
@@ -221,7 +221,6 @@ export interface FileRoutesByTo {
   '/academy': typeof AuthenticatedAcademyRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/ask': typeof AuthenticatedAskRoute
-  '/intelligence': typeof AuthenticatedIntelligenceRoute
   '/launches': typeof AuthenticatedLaunchesRoute
   '/mars': typeof AuthenticatedMarsRoute
   '/neo': typeof AuthenticatedNeoRoute
@@ -237,6 +236,7 @@ export interface FileRoutesByTo {
   '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/deepspace': typeof AuthenticatedDeepspaceIndexRoute
+  '/intelligence': typeof AuthenticatedIntelligenceIndexRoute
   '/tracker': typeof AuthenticatedTrackerIndexRoute
 }
 export interface FileRoutesById {
@@ -251,7 +251,6 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/ask': typeof AuthenticatedAskRoute
   '/_authenticated/deepspace': typeof AuthenticatedDeepspaceRouteWithChildren
-  '/_authenticated/intelligence': typeof AuthenticatedIntelligenceRoute
   '/_authenticated/launches': typeof AuthenticatedLaunchesRoute
   '/_authenticated/mars': typeof AuthenticatedMarsRoute
   '/_authenticated/neo': typeof AuthenticatedNeoRoute
@@ -268,6 +267,7 @@ export interface FileRoutesById {
   '/api/public/refresh': typeof ApiPublicRefreshRoute
   '/api/public/refresh-news': typeof ApiPublicRefreshNewsRoute
   '/_authenticated/deepspace/': typeof AuthenticatedDeepspaceIndexRoute
+  '/_authenticated/intelligence/': typeof AuthenticatedIntelligenceIndexRoute
   '/_authenticated/tracker/': typeof AuthenticatedTrackerIndexRoute
 }
 export interface FileRouteTypes {
@@ -282,7 +282,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/ask'
     | '/deepspace'
-    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
@@ -299,6 +298,7 @@ export interface FileRouteTypes {
     | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/deepspace/'
+    | '/intelligence/'
     | '/tracker/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -310,7 +310,6 @@ export interface FileRouteTypes {
     | '/academy'
     | '/admin'
     | '/ask'
-    | '/intelligence'
     | '/launches'
     | '/mars'
     | '/neo'
@@ -326,6 +325,7 @@ export interface FileRouteTypes {
     | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/deepspace'
+    | '/intelligence'
     | '/tracker'
   id:
     | '__root__'
@@ -339,7 +339,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/ask'
     | '/_authenticated/deepspace'
-    | '/_authenticated/intelligence'
     | '/_authenticated/launches'
     | '/_authenticated/mars'
     | '/_authenticated/neo'
@@ -356,6 +355,7 @@ export interface FileRouteTypes {
     | '/api/public/refresh'
     | '/api/public/refresh-news'
     | '/_authenticated/deepspace/'
+    | '/_authenticated/intelligence/'
     | '/_authenticated/tracker/'
   fileRoutesById: FileRoutesById
 }
@@ -441,13 +441,6 @@ declare module '@tanstack/react-router' {
       path: '/deepspace'
       fullPath: '/deepspace'
       preLoaderRoute: typeof AuthenticatedDeepspaceRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/intelligence': {
-      id: '/_authenticated/intelligence'
-      path: '/intelligence'
-      fullPath: '/intelligence'
-      preLoaderRoute: typeof AuthenticatedIntelligenceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/launches': {
@@ -541,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeepspaceObjectIdRouteImport
       parentRoute: typeof AuthenticatedDeepspaceRoute
     }
+    '/_authenticated/intelligence/': {
+      id: '/_authenticated/intelligence/'
+      path: '/intelligence'
+      fullPath: '/intelligence/'
+      preLoaderRoute: typeof AuthenticatedIntelligenceIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tracker/': {
       id: '/_authenticated/tracker/'
       path: '/'
@@ -607,7 +607,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAskRoute: typeof AuthenticatedAskRoute
   AuthenticatedDeepspaceRoute: typeof AuthenticatedDeepspaceRouteWithChildren
-  AuthenticatedIntelligenceRoute: typeof AuthenticatedIntelligenceRoute
   AuthenticatedLaunchesRoute: typeof AuthenticatedLaunchesRoute
   AuthenticatedMarsRoute: typeof AuthenticatedMarsRoute
   AuthenticatedNeoRoute: typeof AuthenticatedNeoRoute
@@ -617,6 +616,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSkyRoute: typeof AuthenticatedSkyRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRouteWithChildren
   AuthenticatedWeatherRoute: typeof AuthenticatedWeatherRoute
+  AuthenticatedIntelligenceIndexRoute: typeof AuthenticatedIntelligenceIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -625,7 +625,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAskRoute: AuthenticatedAskRoute,
   AuthenticatedDeepspaceRoute: AuthenticatedDeepspaceRouteWithChildren,
-  AuthenticatedIntelligenceRoute: AuthenticatedIntelligenceRoute,
   AuthenticatedLaunchesRoute: AuthenticatedLaunchesRoute,
   AuthenticatedMarsRoute: AuthenticatedMarsRoute,
   AuthenticatedNeoRoute: AuthenticatedNeoRoute,
@@ -635,6 +634,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSkyRoute: AuthenticatedSkyRoute,
   AuthenticatedTrackerRoute: AuthenticatedTrackerRouteWithChildren,
   AuthenticatedWeatherRoute: AuthenticatedWeatherRoute,
+  AuthenticatedIntelligenceIndexRoute: AuthenticatedIntelligenceIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

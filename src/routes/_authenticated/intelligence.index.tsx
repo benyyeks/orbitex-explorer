@@ -9,14 +9,19 @@ import {
   MISSIONS,
   MISSION_DIRECTORIES,
   STATUS_LABEL,
-  missionYear,
+  AGENCY_LABEL,
+  TARGET_LABEL,
+  agencyGroup,
+  targetGroup,
+  type AgencyGroup,
+  type TargetGroup,
   type MissionCategory,
   type MissionProfile,
   type MissionStatus,
 } from "@/lib/missions";
 import { ExportButtons } from "@/components/site/export-buttons";
 
-export const Route = createFileRoute("/_authenticated/intelligence")({
+export const Route = createFileRoute("/_authenticated/intelligence/")({
   head: () => ({
     meta: [
       { title: "Mission Intelligence - Space Mission Directory - ORBITEX" },
@@ -76,7 +81,8 @@ function IntelligencePage() {
   const [status, setStatus] = useState<MissionStatus | "all">("all");
   const [category, setCategory] = useState<MissionCategory | "all">("all");
   const [query, setQuery] = useState("");
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [agency, setAgency] = useState<AgencyGroup | "all">("all");
+  const [target, setTarget] = useState<TargetGroup | "all">("all");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -84,12 +90,14 @@ function IntelligencePage() {
       (m) =>
         (status === "all" || m.status === status) &&
         (category === "all" || m.category === category) &&
+        (agency === "all" || agencyGroup(m) === agency) &&
+        (target === "all" || targetGroup(m) === target) &&
         (q === "" ||
           m.name.toLowerCase().includes(q) ||
           m.destination.toLowerCase().includes(q) ||
           m.agency.toLowerCase().includes(q))
     ).sort((a, b) => a.name.localeCompare(b.name));
-  }, [status, category, query]);
+  }, [status, category, agency, target, query]);
 
   // Alphabetical grouping so the directory reads as an A to Z list.
   const groups = useMemo(() => {
@@ -209,6 +217,9 @@ function IntelligencePage() {
           ))}
         </div>
 
+        <FilterRow label="Filter by agency" value={agency} onChange={setAgency} labels={AGENCY_LABEL} allLabel="All agencies" />
+        <FilterRow label="Filter by destination" value={target} onChange={setTarget} labels={TARGET_LABEL} allLabel="All destinations" />
+
         <p className="roman-note" role="status">
           Showing {filtered.length} of {MISSIONS.length} missions.
         </p>
@@ -225,19 +236,14 @@ function IntelligencePage() {
             <h3 className="mission-letter mono">{letter}</h3>
             <div className="mission-list">
               {missions.map((m) => {
-                const open = openId === m.id;
                 return (
-                  <article
+                  <Link
                     key={m.id}
-                    className="glass glass-card mission-card"
-                    data-open={open ? "true" : undefined}
+                    to="/intelligence/$missionId"
+                    params={{ missionId: m.id }}
+                    className="glass glass-card mission-card mission-card-link"
                   >
-                    <button
-                      type="button"
-                      className="mission-head"
-                      aria-expanded={open}
-                      onClick={() => setOpenId(open ? null : m.id)}
-                    >
+                    <span className="mission-head">
                       <span className="mission-title">
                         <b>{m.name}</b>
                         <span className="mission-sub">
@@ -246,70 +252,14 @@ function IntelligencePage() {
                         </span>
                       </span>
                       <span className="mission-side">
-                        <span
-                          className={`badge${
-                            m.status === "active" || m.status === "extended"
-                              ? " badge-success"
-                              : m.status === "planned"
-                                ? ""
-                                : m.status === "cruise"
-                                  ? " badge-warning"
-                                  : ""
-                          }`}
-                        >
+                        <span className={`badge${m.status === "active" || m.status === "extended" ? " badge-success" : m.status === "cruise" ? " badge-warning" : ""}`}>
                           {STATUS_LABEL[m.status]}
                         </span>
-                        <span className="mission-chevron" aria-hidden="true">
-                          {open ? "-" : "+"}
-                        </span>
+                        <span className="mission-chevron" aria-hidden="true">→</span>
                       </span>
-                    </button>
-
-                    <p className="mission-objective">{m.objective}</p>
-
-                    {open ? (
-                      <div className="mission-body">
-                        <div className="detail-rows">
-                          <div className="detail-row">
-                            <span>Launched</span>
-                            <b className="mono">{m.launchLabel}</b>
-                          </div>
-                          <div className="detail-row">
-                            <span>Launch vehicle</span>
-                            <b className="mono">{m.vehicle}</b>
-                          </div>
-                          <div className="detail-row">
-                            <span>Destination</span>
-                            <b className="mono">{m.destination}</b>
-                          </div>
-                          <div className="detail-row">
-                            <span>Operating year</span>
-                            <b className="mono">{missionYear(m)}</b>
-                          </div>
-                        </div>
-                        <ul className="feature-list">
-                          {m.highlights.map((h) => (
-                            <li key={h}>{h}</li>
-                          ))}
-                        </ul>
-                        <div className="mission-links">
-                          {m.internal ? (
-                            <Link to={m.internal.to} className="detail-link">
-                              {m.internal.label}
-                            </Link>
-                          ) : null}
-                          <a
-                            href={m.url}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                            className="detail-link"
-                          >
-                            Official mission page
-                          </a>
-                        </div>
-                      </div>
-                    ) : null}
-                  </article>
+                    </span>
+                    <span className="mission-objective">{m.objective}</span>
+                  </Link>
                 );
               })}
             </div>
@@ -364,5 +314,32 @@ function IntelligencePage() {
         </p>
       </section>
     </main>
+  );
+}
+
+function FilterRow<T extends string>({
+  label, value, onChange, labels, allLabel,
+}: {
+  label: string;
+  value: T | "all";
+  onChange: (v: T | "all") => void;
+  labels: Record<T, string>;
+  allLabel: string;
+}) {
+  const keys = Object.keys(labels) as T[];
+  return (
+    <div className="chip-row" role="group" aria-label={label}>
+      {(["all", ...keys] as (T | "all")[]).map((k) => (
+        <button
+          key={k}
+          type="button"
+          className={`chip${value === k ? " chip-active" : ""}`}
+          aria-pressed={value === k}
+          onClick={() => onChange(k)}
+        >
+          {k === "all" ? allLabel : labels[k as T]}
+        </button>
+      ))}
+    </div>
   );
 }
