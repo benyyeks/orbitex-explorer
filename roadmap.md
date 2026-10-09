@@ -45,5 +45,5 @@
 - [ ] Mission Intelligence: agency and target filters, official More details links
 - [ ] Launch live stream an hour before liftoff (also check YouTube)
 - [ ] Tracker compare below map, 5 objects; retired probes listed but not in 3D
-- [ ] Learning workspace: read shelf textbooks, take notes, chat with ORBITEX AI
+- [x] Learning workspace: textbook-linked Study desk with persistent notes, checklists, study paths, and prefilled Ask handoffs
 - [x] ORBITEX AI on Lovable AI, accuracy pass

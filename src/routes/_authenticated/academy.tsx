@@ -1,16 +1,18 @@
-// The Academy: one destination for aerospace terminology, the research
-// library, and learning resources. Tab state lives in the URL so any view is
-// shareable and the browser back button behaves.
+// The Academy: aerospace terminology, research library, learning resources,
+// Study desk, and the Roman study hub. Tab state lives in the URL so any view
+// is shareable and the browser back button behaves.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LearningResourcesTab } from "@/components/academy/learning-resources";
 import { ResearchLibraryTab } from "@/components/academy/research-library";
 import { TerminologiesTab } from "@/components/academy/terminologies";
 import { RomanHub } from "@/components/academy/roman-hub";
+import { StudyDeskTab } from "@/components/academy/study-desk";
 
 const TABS = [
   { id: "terminologies", label: "Aerospace terminologies" },
   { id: "library", label: "Research library" },
   { id: "resources", label: "Learning resources" },
+  { id: "study", label: "Study desk" },
   { id: "roman", label: "Roman study hub" },
 ] as const;
 
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/academy")({
       {
         name: "description",
         content:
-          "An aerospace reference desk: a working glossary of orbital and spacecraft terminology, an index of accredited research archives with mission breakdowns, and curated learning resources.",
+          "An aerospace reference desk: terminology, research archives, curated learning resources, and a personal Study desk linked to Ask ORBITEX.",
       },
       {
         property: "og:title",
@@ -43,9 +45,10 @@ export const Route = createFileRoute("/_authenticated/academy")({
       {
         property: "og:description",
         content:
-          "Glossary, accredited research archives, mission breakdowns, and learning resources in one reference desk.",
+          "Glossary, research archives, study paths, a personal Study desk, and learning resources in one reference desk.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AcademyPage,
@@ -60,8 +63,8 @@ function AcademyPage() {
         <span className="badge">Reference desk</span>
         <h1>The Academy</h1>
         <p className="tagline">
-          The vocabulary, the primary sources, and the study material behind everything
-          else on ORBITEX.
+          Look up the vocabulary, follow primary sources, follow a study path, and keep notes
+          on the Study desk. Ask ORBITEX when a concept needs a clearer explanation.
         </p>
       </section>
 
@@ -87,6 +90,7 @@ function AcademyPage() {
         {tab === "terminologies" && <TerminologiesTab />}
         {tab === "library" && <ResearchLibraryTab />}
         {tab === "resources" && <LearningResourcesTab sharedParam={list} />}
+        {tab === "study" && <StudyDeskTab />}
         {tab === "roman" && <RomanHub />}
       </div>
     </main>

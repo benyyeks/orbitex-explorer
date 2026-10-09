@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Academy study workspaces persist in browser localStorage and pass one-time Ask prompts through sessionStorage, keeping study handoffs independent of assistant streaming and saved conversations.
