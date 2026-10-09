@@ -166,7 +166,7 @@ export function consumeAskPrefill(): AskPrefill | null {
     sessionStorage.removeItem(ASK_PREFILL_KEY);
     const parsed = JSON.parse(raw) as AskPrefill;
     if (typeof parsed?.text !== "string" || !parsed.text.trim()) return null;
-    return { mode: parsed.mode, text: parsed.text.trim() };
+    return { ...(parsed.mode ? { mode: parsed.mode } : {}), text: parsed.text.trim() };
   } catch {
     return null;
   }

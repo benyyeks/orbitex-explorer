@@ -25,6 +25,8 @@ export const Route = createFileRoute("/_authenticated/ask")({
         content:
           "A space-only study assistant: answers, practice quizzes, explanations, and resource guidance, grounded in live ORBITEX data.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AskPage,

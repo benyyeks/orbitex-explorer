@@ -48,6 +48,7 @@ export const Route = createFileRoute("/_authenticated/academy")({
           "Glossary, research archives, study paths, a personal Study desk, and learning resources in one reference desk.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AcademyPage,

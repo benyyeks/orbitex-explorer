@@ -210,7 +210,7 @@ export function StudyDeskTab() {
                       <p className="study-desk-bookline">
                         {BOOK_TOPICS.find((t) => t.id === active.topicId)?.label}
                         {bookById(active.bookId)
-                          ? ` · ${bookById(active.bookId)!.title}`
+                          ? ` · ${bookById(active.bookId)?.title}`
                           : ""}
                       </p>
                     </div>
@@ -238,12 +238,12 @@ export function StudyDeskTab() {
                     </button>
                     {bookById(active.bookId)?.freeUrl && (
                       <a
-                        href={bookById(active.bookId)!.freeUrl}
+                        href={bookById(active.bookId)?.freeUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn btn-ghost"
                       >
-                        {bookById(active.bookId)!.freeLabel ?? "Free source"}
+                        {bookById(active.bookId)?.freeLabel ?? "Free source"}
                       </a>
                     )}
                     <button
