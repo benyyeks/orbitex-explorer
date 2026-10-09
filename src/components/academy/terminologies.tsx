@@ -1,12 +1,14 @@
 // Academy tab 1: aerospace terminology reference with search, category
-// filters, and expandable definition cards.
+// filters, expandable definition cards, and one-click Ask ORBITEX explain.
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import {
   GLOSSARY,
   GLOSSARY_CATEGORIES,
   type GlossaryCategory,
   type GlossaryEntry,
 } from "@/lib/glossary";
+import { setAskPrefill } from "@/lib/study-workspace";
 
 function matches(entry: GlossaryEntry, q: string): boolean {
   if (!q) return true;
@@ -20,6 +22,7 @@ export function TerminologiesTab() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<GlossaryCategory | "all">("all");
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   const q = query.trim().toLowerCase();
 
@@ -41,6 +44,14 @@ export function TerminologiesTab() {
       else next.add(term);
       return next;
     });
+
+  const explainTerm = (term: string, short: string) => {
+    setAskPrefill({
+      mode: "explain",
+      text: `Explain "${term}" for an engineering student. Short definition to expand on: ${short}. Use one concrete spaceflight example. Label any estimate as an estimate.`,
+    });
+    void navigate({ to: "/ask" });
+  };
 
   return (
     <section className="academy-tab-body">
@@ -84,12 +95,11 @@ export function TerminologiesTab() {
           ))}
         </div>
 
-        {total === 0 ? (
-          <div className="glass glass-card scaffold-card">
-            <h2>No matching terms</h2>
-            <p>
-              Nothing in the glossary matches that search. Try a shorter phrase, or clear
-              the filters to browse every category.
+        {groups.length === 0 ? (
+          <div className="glass glass-card scaffold-card" style={{ marginTop: 16 }}>
+            <p className="ask-hint">
+              No terms match that search. Try a shorter phrase, or clear the filters to browse
+              every category.
             </p>
           </div>
         ) : (
@@ -139,6 +149,13 @@ export function TerminologiesTab() {
                               <span>Also called {e.aka.join(", ")}</span>
                             )}
                           </div>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm glossary-ask-btn"
+                            onClick={() => explainTerm(e.term, e.short)}
+                          >
+                            Explain in Ask ORBITEX
+                          </button>
                         </div>
                       )}
                     </article>

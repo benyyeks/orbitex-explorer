@@ -2,6 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SkeletonImage } from "@/components/site/skeleton-image";
 import { EngineeringNotes } from "@/components/academy/engineering-notes";
+import { StudyPathsPanel } from "@/components/academy/study-paths-panel";
 import { useQuery } from "@tanstack/react-query";
 import { getCompetitions } from "@/lib/news.functions";
 import {
@@ -199,6 +200,7 @@ export function LearningResourcesTab({ sharedParam }: { sharedParam?: string | u
           </nav>
 
           <EngineeringNotes />
+          <StudyPathsPanel />
 
           <div
             className="glass glass-card scaffold-card"

@@ -8,6 +8,7 @@ import { AnswerText } from "@/components/site/answer-text";
 import { createFileRoute } from "@tanstack/react-router";
 import { BOOK_TOPICS } from "@/lib/books";
 import { useAskHistory } from "@/lib/ask-history";
+import { consumeAskPrefill } from "@/lib/study-workspace";
 
 export const Route = createFileRoute("/_authenticated/ask")({
   head: () => ({
@@ -107,6 +108,13 @@ function AskPage() {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const activeIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const prefill = consumeAskPrefill();
+    if (!prefill) return;
+    if (prefill.mode) setMode(prefill.mode);
+    setInput(prefill.text);
+  }, []);
   activeIdRef.current = activeId;
 
   // Auto-scroll only when the reader is already near the bottom.
