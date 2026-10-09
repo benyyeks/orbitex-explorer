@@ -1,7 +1,6 @@
 // Floating Ask ORBITEX widget, bottom right on every page except the Ask page.
-// One continuing conversation follows the user across pages (its id is kept
-// in localStorage and the thread lives in their saved chats). Opening the Ask
-// page archives it: the thread stays in saved chats and the widget starts over.
+// One continuing conversation follows the user across pages (id in localStorage).
+// Opening the Ask page archives the widget thread into saved chats.
 import { useEffect, useRef, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,12 +9,14 @@ import { useAskHistory, type AskMsg } from "@/lib/ask-history";
 import { AnswerText } from "@/components/site/answer-text";
 
 const KEY = "orbitex-widget-conversation";
+const NEAR_BOTTOM_PX = 72;
 
 function errorCopy(status: number): string {
-  if (status === 429) return "ORBITEX is answering many questions right now. Please try again in a moment.";
-  if (status === 401) return "Your session has expired. Sign in again to continue.";
-  if (status === 402 || status === 503) return "Ask ORBITEX is paused right now. Please try again later.";
-  return "The answer link failed. Check your connection and try again.";
+  if (status === 429) return "ORBITEX is answering many questions right now. Try again in a moment.";
+  if (status === 401) return "Your session expired. Sign in again to continue.";
+  if (status === 402 || status === 503) return "Ask ORBITEX is paused. Check the model key or try later.";
+  if (status === 502) return "The model did not respond in time. Retry the same question.";
+  return "The answer link failed. Check your connection and retry.";
 }
 
 export function AskWidget() {
@@ -30,9 +31,9 @@ export function AskWidget() {
   const [error, setError] = useState<string | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const stickRef = useRef(true);
   const onAsk = path.startsWith("/ask");
 
-  // Restore the continuing thread once signed in.
   useEffect(() => {
     if (!user) return;
     const saved = localStorage.getItem(KEY);
@@ -46,7 +47,6 @@ export function AskWidget() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Visiting the Ask page archives the widget chat into saved chats.
   useEffect(() => {
     if (!onAsk) return;
     abortRef.current?.abort();
@@ -56,32 +56,46 @@ export function AskWidget() {
     setOpen(false);
   }, [onAsk]);
 
+  // Auto-scroll only when the user is already near the bottom.
   useEffect(() => {
     const el = threadRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, open]);
+    if (!el || !stickRef.current) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, streaming, error]);
 
-  if (onAsk) return null;
+  const onThreadScroll = () => {
+    const el = threadRef.current;
+    if (!el) return;
+    stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+  };
 
-  const send = async () => {
-    const content = input.trim();
-    if (!content || streaming) return;
-    const thread = [...messages, { role: "user" as const, content }];
-    setMessages([...thread, { role: "assistant", content: "" }]);
+  const ensureConversation = async (): Promise<string | null> => {
+    if (convId) return convId;
+    const id = await history.createConversation("Widget chat", "chat");
+    if (id) {
+      setConvId(id);
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  };
+
+  const send = async (override?: string) => {
+    const text = (override ?? input).trim();
+    if (!text || streaming || !user) return;
+
+    stickRef.current = true;
     setInput("");
     setError(null);
+
+    const userMsg: AskMsg = { role: "user", content: text };
+    const thread = [...messages, userMsg];
+    setMessages([...thread, { role: "assistant", content: "" }]);
     setStreaming(true);
-    let id = convId;
-    if (!id) {
-      id = await history.createConversation(content, "chat");
-      if (id) {
-        setConvId(id);
-        localStorage.setItem(KEY, id);
-      }
-    }
-    if (id) await history.appendMessage(id, { role: "user", content });
+
+    const id = await ensureConversation();
     const controller = new AbortController();
     abortRef.current = controller;
+
     try {
       const { data } = await supabase.auth.getSession();
       const token = data.session?.access_token;
@@ -91,10 +105,15 @@ export function AskWidget() {
           "content-type": "application/json",
           ...(token ? { authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({ mode: "chat", messages: thread.slice(-20), conversationId: id }),
+        body: JSON.stringify({
+          mode: "chat",
+          messages: thread.slice(-20),
+          conversationId: id,
+        }),
         signal: controller.signal,
       });
       if (!res.ok || !res.body) throw new Error(errorCopy(res.status));
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let acc = "";
@@ -107,18 +126,44 @@ export function AskWidget() {
       }
       if (!acc.trim()) {
         setMessages((prev) => prev.slice(0, -1));
-        setError("No answer came back. Please try again.");
+        setError("No answer came back. Retry the same question.");
       }
     } catch (err) {
       setMessages((prev) => {
         const last = prev.at(-1);
         return last?.role === "assistant" && !last.content ? prev.slice(0, -1) : prev;
       });
-      if ((err as Error).name !== "AbortError") setError((err as Error).message);
+      if ((err as Error).name !== "AbortError") {
+        setError((err as Error).message || errorCopy(0));
+      }
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
+  };
+
+  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
+
+  const retryLast = () => {
+    if (!lastUser || streaming) return;
+    setMessages((prev) => {
+      const last = prev.at(-1);
+      if (last?.role === "assistant") return prev.slice(0, -1);
+      return prev;
+    });
+    void send(lastUser);
+  };
+
+  const editLast = () => {
+    if (!lastUser || streaming) return;
+    setInput(lastUser);
+    setMessages((prev) => {
+      const cut = [...prev];
+      while (cut.length && cut[cut.length - 1]?.role === "assistant") cut.pop();
+      if (cut.length && cut[cut.length - 1]?.role === "user") cut.pop();
+      return cut;
+    });
+    setError(null);
   };
 
   const newChat = () => {
@@ -127,20 +172,23 @@ export function AskWidget() {
     setConvId(null);
     setMessages([]);
     setError(null);
+    setInput("");
   };
+
+  if (onAsk) return null;
 
   return (
     <div className="ask-widget">
       {open && (
-        <div className="ask-widget-panel" role="dialog" aria-label="Ask ORBITEX">
+        <div className="ask-widget-panel glass" role="dialog" aria-label="Ask ORBITEX">
           <div className="ask-widget-head">
             <div>
               <strong>Ask ORBITEX</strong>
-              <span>Live data and web sources</span>
+              <span>{streaming ? "Writing…" : "Live feeds and agency sources"}</span>
             </div>
             <div className="ask-widget-actions">
               {user && messages.length > 0 && (
-                <button type="button" className="btn btn-ghost btn-sm" onClick={newChat}>
+                <button type="button" className="btn btn-ghost btn-sm" onClick={newChat} disabled={streaming}>
                   New
                 </button>
               )}
@@ -154,33 +202,70 @@ export function AskWidget() {
               </button>
             </div>
           </div>
+
           {!user ? (
             <div className="ask-widget-empty">
-              <p>Sign in to ask ORBITEX about missions, satellites and space weather.</p>
+              <p>Sign in to ask about missions, orbits, and space weather.</p>
               <Link to="/auth" className="btn btn-primary btn-sm">
                 Sign in
               </Link>
             </div>
           ) : (
             <>
-              <div className="ask-widget-thread" ref={threadRef}>
+              <div className="ask-widget-thread" ref={threadRef} onScroll={onThreadScroll}>
                 {messages.length === 0 && (
                   <p className="ask-widget-hint">
-                    Ask anything about space. This chat follows you across pages and is saved
-                    to your chats.
+                    Ask a space question. This chat follows you across pages and saves to your
+                    account.
                   </p>
                 )}
-                {messages.map((m, i) => (
-                  <div key={i} className={`ask-widget-msg ask-widget-${m.role}`}>
-                    {m.role === "assistant" ? (
-                      m.content ? <AnswerText text={m.content} /> : <span className="live-dot" aria-label="Thinking" />
-                    ) : (
-                      m.content
+                {messages.map((m, i) => {
+                  const isLast = i === messages.length - 1;
+                  const isLastUser =
+                    m.role === "user" && !messages.slice(i + 1).some((x) => x.role === "user");
+                  return (
+                    <div key={i} className={`ask-widget-msg ask-widget-${m.role}`}>
+                      {m.role === "assistant" ? (
+                        m.content ? (
+                          <AnswerText text={m.content} />
+                        ) : (
+                          <span className="live-dot" aria-label="Thinking" />
+                        )
+                      ) : (
+                        <span className="ask-widget-user-text">{m.content}</span>
+                      )}
+                      {!streaming && isLastUser && (
+                        <div className="ask-msg-actions">
+                          <button type="button" className="ask-msg-action" onClick={editLast}>
+                            Edit
+                          </button>
+                          <button type="button" className="ask-msg-action" onClick={retryLast}>
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                      {!streaming && isLast && m.role === "assistant" && m.content && (
+                        <div className="ask-msg-actions">
+                          <button type="button" className="ask-msg-action" onClick={retryLast}>
+                            Retry
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {error && (
+                  <div className="ask-widget-error-bar" role="alert">
+                    <p>{error}</p>
+                    {lastUser && (
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={retryLast}>
+                        Retry
+                      </button>
                     )}
                   </div>
-                ))}
-                {error && <p className="ask-widget-error" role="alert">{error}</p>}
+                )}
               </div>
+
               <form
                 className="ask-widget-form"
                 onSubmit={(e) => {
@@ -197,12 +282,17 @@ export function AskWidget() {
                       void send();
                     }
                   }}
-                  placeholder="Ask about a mission, satellite or event"
+                  placeholder="Mission, orbit, weather, calculation…"
                   rows={2}
                   aria-label="Your question"
+                  disabled={streaming}
                 />
                 {streaming ? (
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => abortRef.current?.abort()}>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => abortRef.current?.abort()}
+                  >
                     Stop
                   </button>
                 ) : (
@@ -215,6 +305,7 @@ export function AskWidget() {
           )}
         </div>
       )}
+
       <button
         type="button"
         className="ask-widget-fab"
