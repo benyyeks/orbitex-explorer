@@ -2703,3 +2703,130 @@ html, body { overflow-x: clip; }
 .competition-org { font-size: 0.85rem; opacity: 0.75; margin: 0; }
 .competition-desc { font-size: 0.9rem; margin: 0; flex: 1; }
 .competition-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 0.8rem; flex-wrap: wrap; }
+
+/* ==========================================================================
+   Ask ORBITEX UI patch — append to src/styles.css
+   Compact tables, message actions, smart error bar, refined widget panel
+   ========================================================================== */
+
+/* ---- Answer tables: scroll instead of wrapping ---- */
+.answer-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-bg-solid);
+}
+.answer-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+.answer-table th,
+.answer-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  vertical-align: top;
+  color: var(--color-text);
+}
+.answer-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-accent-soft);
+  position: sticky;
+  top: 0;
+}
+.answer-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- Shared message actions (page + widget) ---- */
+.ask-msg-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+.msg:hover .ask-msg-actions,
+.msg:focus-within .ask-msg-actions,
+.ask-widget-msg:hover .ask-msg-actions,
+.ask-widget-msg:focus-within .ask-msg-actions {
+  opacity: 1;
+}
+.ask-msg-action {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.72rem;
+  font-family: var(--font-body);
+  color: var(--color-accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ask-msg-action:hover {
+  color: var(--color-highlight);
+}
+
+/* ---- Error bars with retry ---- */
+.ask-error-bar,
+.ask-widget-error-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-danger) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 28%, transparent);
+}
+.ask-error-bar p,
+.ask-widget-error-bar p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--color-danger);
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- Widget panel refinement ---- */
+.ask-widget-panel {
+  width: min(380px, calc(100vw - 24px));
+  height: min(520px, calc(100vh - 100px));
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--color-border-strong);
+  box-shadow: var(--shadow-glass);
+  background: rgba(var(--surface-rgb), var(--surface-alpha-strong));
+  backdrop-filter: blur(var(--blur-glass));
+}
+.ask-widget-msg {
+  position: relative;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 92%;
+  overflow-wrap: anywhere;
+}
+.ask-widget-assistant .answer-body {
+  font-size: 0.86rem;
+}
+.ask-widget-assistant .answer-body > * + * {
+  margin-top: 8px;
+}
+.ask-widget-user-text {
+  display: block;
+  white-space: pre-wrap;
+}
+.ask-widget-form textarea:disabled {
+  opacity: 0.7;
+}
