@@ -71,7 +71,7 @@ export function AskWidget() {
 
   const ensureConversation = async (): Promise<string | null> => {
     if (convId) return convId;
-    const id = await history.createConversation("Widget chat");
+    const id = await history.createConversation("Widget chat", "chat");
     if (id) {
       setConvId(id);
       localStorage.setItem(KEY, id);
