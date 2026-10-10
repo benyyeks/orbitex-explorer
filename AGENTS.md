@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Academy study workspaces persist in browser localStorage and pass one-time Ask prompts through sessionStorage, keeping study handoffs independent of assistant streaming and saved conversations.
+- Admin inbox operations use authenticated server functions with both verified email allowlisting and the protected admin role; the shell mounts one signed-in error reporter to collect failures without duplicating listeners.

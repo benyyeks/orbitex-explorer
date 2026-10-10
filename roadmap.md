@@ -1,5 +1,10 @@
 # ORBITEX roadmap
 
+## Admin restoration
+- [ ] Restore styled health dashboard, Suggestions and Errors panels
+- [ ] Verify owner-only admin access, feedback delivery and error reporting
+- [ ] Publish restored admin
+
 ## In progress (approved plan 2026-10-01)
 - [x] NASA_API_KEY stored securely; quota headers captured on every NASA call
 - [x] Admin Site health shows live NASA hourly quota
