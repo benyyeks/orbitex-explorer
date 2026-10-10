@@ -590,11 +590,10 @@ function AdminPage() {
             News uses a separate daily path (<span className="mono">/api/public/refresh-news</span>
             ) and does not appear in this cycle table.
           </p>
-        </div>
-      </section>
-
           </>
           )}
+        </div>
+      </section>
 
       <style>{`
         .admin-page .admin-hero-row {
@@ -809,7 +808,7 @@ function Stat({
 }: {
   label: string;
   value: string;
-  tone?: "good" | "warn" | "bad";
+  tone?: "good" | "warn" | "bad" | undefined;
 }) {
   return (
     <div className="glass glass-card admin-stat" data-tone={tone}>

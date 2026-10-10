@@ -173,7 +173,7 @@ type AdminContext = {
 
 async function resolveEmail(context: AdminContext): Promise<string> {
   const fromClaims = String(
-    context.claims?.email ?? context.claims?.user_metadata?.email ?? "",
+    context.claims?.email ?? "",
   ).toLowerCase().trim();
   if (fromClaims) return fromClaims;
   try {
@@ -287,7 +287,7 @@ export const getDiagnostics = createServerFn({ method: "GET" })
 
     const feeds: FeedHealth[] = [...byFeed.values()]
       .map((f) => {
-        const c = counts.get(f.feed)!;
+        const c = counts.get(f.feed) ?? { ok: 0, all: 0 };
         return {
           ...f,
           runs: c.all,
