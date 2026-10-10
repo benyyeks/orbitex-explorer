@@ -289,6 +289,72 @@ export type Database = {
         }
         Relationships: []
       }
+      site_error_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          message: string
+          path: string | null
+          resolved: boolean
+          source: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          message: string
+          path?: string | null
+          resolved?: boolean
+          source?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          message?: string
+          path?: string | null
+          resolved?: boolean
+          source?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      site_suggestions: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          message: string
+          name: string | null
+          status: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message: string
+          name?: string | null
+          status?: string
+          type?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          message?: string
+          name?: string | null
+          status?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       space_news: {
         Row: {
           content_type: string
