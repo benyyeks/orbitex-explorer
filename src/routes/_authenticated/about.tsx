@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { FeedbackForm } from "@/components/site/feedback-form";
 
 export const Route = createFileRoute("/_authenticated/about")({
   head: () => ({
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/about")({
           "Every ORBITEX figure is fetched live or computed from a documented formula. See the full source list and methodology.",
       },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AboutPage,
@@ -143,6 +145,7 @@ function AboutPage() {
               <Link to="/sky" className="text-accent">see what is visible tonight</Link>.
             </p>
           </div>
+          <FeedbackForm />
         </div>
       </section>
     </main>

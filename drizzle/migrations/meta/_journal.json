@@ -29,6 +29,13 @@
       "when": 1791266056010,
       "tag": "0003_profiles_and_avatars",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791590737122,
+      "tag": "0004_admin_inbox",
+      "breakpoints": true
     }
   ]
 }
